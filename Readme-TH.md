@@ -1,31 +1,31 @@
-# Smart AI App
+﻿# Smart AI App
 
-Smart AI App คือระบบรัน Skill ผ่านเว็บเบราว์เซอร์ในเครื่อง สำหรับงานสร้างพรอมต์ AI, บทความ, storyboard, prompt วิดีโอ, รีวิวสินค้า, และ workflow อื่น ๆ ที่เพิ่มเป็น skill ได้ภายหลัง ระบบจะ scan โฟลเดอร์ `skills/` อัตโนมัติ สร้างฟอร์มจาก schema และสามารถรัน skill ได้ทั้งแบบ local runtime และผ่าน LLM provider ที่ตั้งค่าในหน้าเว็บ
+Smart AI App เธเธทเธญเธฃเธฐเธเธเธฃเธฑเธ Skill เธเนเธฒเธเน€เธงเนเธเน€เธเธฃเธฒเธงเนเน€เธเธญเธฃเนเนเธเน€เธเธฃเธทเนเธญเธ เธชเธณเธซเธฃเธฑเธเธเธฒเธเธชเธฃเนเธฒเธเธเธฃเธญเธกเธ•เน AI, เธเธ—เธเธงเธฒเธก, storyboard, prompt เธงเธดเธ”เธตเนเธญ, เธฃเธตเธงเธดเธงเธชเธดเธเธเนเธฒ, เนเธฅเธฐ workflow เธญเธทเนเธ เน เธ—เธตเนเน€เธเธดเนเธกเน€เธเนเธ skill เนเธ”เนเธ เธฒเธขเธซเธฅเธฑเธ เธฃเธฐเธเธเธเธฐ scan เนเธเธฅเน€เธ”เธญเธฃเน `skills/` เธญเธฑเธ•เนเธเธกเธฑเธ•เธด เธชเธฃเนเธฒเธเธเธญเธฃเนเธกเธเธฒเธ schema เนเธฅเธฐเธชเธฒเธกเธฒเธฃเธ–เธฃเธฑเธ skill เนเธ”เนเธ—เธฑเนเธเนเธเธ local runtime เนเธฅเธฐเธเนเธฒเธ LLM provider เธ—เธตเนเธ•เธฑเนเธเธเนเธฒเนเธเธซเธเนเธฒเน€เธงเนเธ
 
-ระบบนี้ไม่จำเป็นต้องใช้ database และผู้ใช้ไม่ต้องแก้ไฟล์ config โดยตรง การตั้งค่า API key ทำผ่านหน้าต่าง `Config` ใน browser เท่านั้น โดย key จะถูกเก็บใน browser local storage ของเครื่องนั้น
+เธฃเธฐเธเธเธเธตเนเนเธกเนเธเธณเน€เธเนเธเธ•เนเธญเธเนเธเน database เนเธฅเธฐเธเธนเนเนเธเนเนเธกเนเธ•เนเธญเธเนเธเนเนเธเธฅเน config เนเธ”เธขเธ•เธฃเธ เธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ API key เธ—เธณเธเนเธฒเธเธซเธเนเธฒเธ•เนเธฒเธ `Config` เนเธ browser เน€เธ—เนเธฒเธเธฑเนเธ เนเธ”เธข key เธเธฐเธ–เธนเธเน€เธเนเธเนเธ browser local storage เธเธญเธเน€เธเธฃเธทเนเธญเธเธเธฑเนเธ
 
-## ฟีเจอร์หลัก
+## เธเธตเน€เธเธญเธฃเนเธซเธฅเธฑเธ
 
-- scan skill จากโฟลเดอร์ `skills/` อัตโนมัติ
-- สร้าง UI จาก `schemas/input.schema.json`
-- รองรับ `schemas/ui.schema.json` สำหรับจัด section, label, คำอธิบาย และภาษา
-- เติม field ที่มีใน `input.schema.json` แต่ยังไม่มีใน `ui.schema.json` ให้อัตโนมัติ
-- เลือก skill ได้จาก dropdown
-- รองรับ skill ที่มี local Python runtime ที่ `python/skill.py`
-- รองรับ skill แบบ LLM-only ผ่าน OpenRouter หรือ NVIDIA NIM
-- ตั้งค่า API key ผ่านหน้าต่าง Config ใน browser
-- ช่อง API key ซ่อนด้วย password field
-- ตั้ง fallback model ได้ 4 ลำดับ
-- ทดสอบ LLM ทุก fallback row ด้วยปุ่ม `Test LLM`
-- แสดงผล test เป็น `OK`, `FAIL`, `SKIP`
-- มี rate limit ป้องกันการเรียกถี่ผิดปกติ
-- รองรับ UI สองภาษา ไทย/อังกฤษ
-- ดาวน์โหลดผลลัพธ์ JSON ได้
-- มี tab Prompt สำหรับ copy ผลลัพธ์หลัก
-- ไม่ใช้ database
-- ไม่บันทึก API key ลงไฟล์ project
+- scan skill เธเธฒเธเนเธเธฅเน€เธ”เธญเธฃเน `skills/` เธญเธฑเธ•เนเธเธกเธฑเธ•เธด
+- เธชเธฃเนเธฒเธ UI เธเธฒเธ `schemas/input.schema.json`
+- เธฃเธญเธเธฃเธฑเธ `schemas/ui.schema.json` เธชเธณเธซเธฃเธฑเธเธเธฑเธ” section, label, เธเธณเธญเธเธดเธเธฒเธข เนเธฅเธฐเธ เธฒเธฉเธฒ
+- เน€เธ•เธดเธก field เธ—เธตเนเธกเธตเนเธ `input.schema.json` เนเธ•เนเธขเธฑเธเนเธกเนเธกเธตเนเธ `ui.schema.json` เนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธด
+- เน€เธฅเธทเธญเธ skill เนเธ”เนเธเธฒเธ dropdown
+- เธฃเธญเธเธฃเธฑเธ skill เธ—เธตเนเธกเธต local Python runtime เธ—เธตเน `python/skill.py`
+- เธฃเธญเธเธฃเธฑเธ skill เนเธเธ LLM-only เธเนเธฒเธ OpenRouter เธซเธฃเธทเธญ NVIDIA NIM
+- เธ•เธฑเนเธเธเนเธฒ API key เธเนเธฒเธเธซเธเนเธฒเธ•เนเธฒเธ Config เนเธ browser
+- เธเนเธญเธ API key เธเนเธญเธเธ”เนเธงเธข password field
+- เธ•เธฑเนเธ fallback model เนเธ”เน 4 เธฅเธณเธ”เธฑเธ
+- เธ—เธ”เธชเธญเธ LLM เธ—เธธเธ fallback row เธ”เนเธงเธขเธเธธเนเธก `Test LLM`
+- เนเธชเธ”เธเธเธฅ test เน€เธเนเธ `OK`, `FAIL`, `SKIP`
+- เธกเธต rate limit เธเนเธญเธเธเธฑเธเธเธฒเธฃเน€เธฃเธตเธขเธเธ–เธตเนเธเธดเธ”เธเธเธ•เธด
+- เธฃเธญเธเธฃเธฑเธ UI เธชเธญเธเธ เธฒเธฉเธฒ เนเธ—เธข/เธญเธฑเธเธเธคเธฉ
+- เธ”เธฒเธงเธเนเนเธซเธฅเธ”เธเธฅเธฅเธฑเธเธเน JSON เนเธ”เน
+- เธกเธต tab Prompt เธชเธณเธซเธฃเธฑเธ copy เธเธฅเธฅเธฑเธเธเนเธซเธฅเธฑเธ
+- เนเธกเนเนเธเน database
+- เนเธกเนเธเธฑเธเธ—เธถเธ API key เธฅเธเนเธเธฅเน project
 
-## โครงสร้างโปรเจกต์
+## เนเธเธฃเธเธชเธฃเนเธฒเธเนเธเธฃเน€เธเธเธ•เน
 
 ```text
 Smart AI App/
@@ -45,140 +45,140 @@ Smart AI App/
   .env.example
 ```
 
-ไฟล์สำคัญ:
+เนเธเธฅเนเธชเธณเธเธฑเธ:
 
-- `server.js`: server หลัก, skill scanner, LLM gateway, rate limiter
-- `public/index.html`: UI หน้าเว็บแบบไฟล์เดียว
-- `skills/`: โฟลเดอร์รวม skill ทั้งหมด
-- `schemas/input.schema.json`: schema หลักที่ทุก skill ต้องมี
-- `schemas/ui.schema.json`: schema สำหรับจัดหน้าฟอร์ม แนะนำให้มี
-- `python/skill.py`: runtime เฉพาะ skill ถ้ามี
+- `server.js`: server เธซเธฅเธฑเธ, skill scanner, LLM gateway, rate limiter
+- `public/index.html`: UI เธซเธเนเธฒเน€เธงเนเธเนเธเธเนเธเธฅเนเน€เธ”เธตเธขเธง
+- `skills/`: เนเธเธฅเน€เธ”เธญเธฃเนเธฃเธงเธก skill เธ—เธฑเนเธเธซเธกเธ”
+- `schemas/input.schema.json`: schema เธซเธฅเธฑเธเธ—เธตเนเธ—เธธเธ skill เธ•เนเธญเธเธกเธต
+- `schemas/ui.schema.json`: schema เธชเธณเธซเธฃเธฑเธเธเธฑเธ”เธซเธเนเธฒเธเธญเธฃเนเธก เนเธเธฐเธเธณเนเธซเนเธกเธต
+- `python/skill.py`: runtime เน€เธเธเธฒเธฐ skill เธ–เนเธฒเธกเธต
 
-## สิ่งที่ต้องติดตั้ง
+## เธชเธดเนเธเธ—เธตเนเธ•เนเธญเธเธ•เธดเธ”เธ•เธฑเนเธ
 
-### จำเป็น
+### เธเธณเน€เธเนเธ
 
-- Node.js 20 ขึ้นไป
+- Node.js 20 เธเธถเนเธเนเธ
 - npm
-- browser สมัยใหม่ เช่น Chrome, Edge, Firefox, Safari
+- browser เธชเธกเธฑเธขเนเธซเธกเน เน€เธเนเธ Chrome, Edge, Firefox, Safari
 
-### จำเป็นสำหรับ skill ที่รัน Python
+### เธเธณเน€เธเนเธเธชเธณเธซเธฃเธฑเธ skill เธ—เธตเนเธฃเธฑเธ Python
 
-- Python 3.10 ขึ้นไป
+- Python 3.10 เธเธถเนเธเนเธ
 
-ถ้าไม่ติดตั้ง Python ยังสามารถรัน skill แบบ LLM-only ได้ หากตั้งค่า OpenRouter หรือ NVIDIA แล้ว
+เธ–เนเธฒเนเธกเนเธ•เธดเธ”เธ•เธฑเนเธ Python เธขเธฑเธเธชเธฒเธกเธฒเธฃเธ–เธฃเธฑเธ skill เนเธเธ LLM-only เนเธ”เน เธซเธฒเธเธ•เธฑเนเธเธเนเธฒ OpenRouter เธซเธฃเธทเธญ NVIDIA เนเธฅเนเธง
 
-### แนะนำ
+### เนเธเธฐเธเธณ
 
-- Git สำหรับ clone/push project
-- GitHub CLI ถ้าต้องการจัดการ GitHub ผ่าน terminal
+- Git เธชเธณเธซเธฃเธฑเธ clone/push project
+- GitHub CLI เธ–เนเธฒเธ•เนเธญเธเธเธฒเธฃเธเธฑเธ”เธเธฒเธฃ GitHub เธเนเธฒเธ terminal
 - OpenRouter API key
 - NVIDIA NIM API key
 
-## วิธีติดตั้งบน Windows
+## เธงเธดเธเธตเธ•เธดเธ”เธ•เธฑเนเธเธเธ Windows
 
-### 1. ติดตั้ง Node.js
+### 1. เธ•เธดเธ”เธ•เธฑเนเธ Node.js
 
-1. เปิด <https://nodejs.org/>
-2. ดาวน์โหลดเวอร์ชัน LTS
-3. ติดตั้งด้วยค่า default
-4. เปิด PowerShell หรือ Command Prompt ใหม่
-5. ตรวจสอบ:
+1. เน€เธเธดเธ” <https://nodejs.org/>
+2. เธ”เธฒเธงเธเนเนเธซเธฅเธ”เน€เธงเธญเธฃเนเธเธฑเธ LTS
+3. เธ•เธดเธ”เธ•เธฑเนเธเธ”เนเธงเธขเธเนเธฒ default
+4. เน€เธเธดเธ” PowerShell เธซเธฃเธทเธญ Command Prompt เนเธซเธกเน
+5. เธ•เธฃเธงเธเธชเธญเธ:
 
 ```powershell
 node --version
 npm --version
 ```
 
-ควรเป็น Node.js 20 หรือใหม่กว่า
+เธเธงเธฃเน€เธเนเธ Node.js 20 เธซเธฃเธทเธญเนเธซเธกเนเธเธงเนเธฒ
 
-### 2. ติดตั้ง Python
+### 2. เธ•เธดเธ”เธ•เธฑเนเธ Python
 
-1. เปิด <https://www.python.org/downloads/windows/>
-2. ดาวน์โหลด Python 3.10 หรือใหม่กว่า
-3. ตอนติดตั้งให้เลือก `Add python.exe to PATH`
-4. ตรวจสอบ:
+1. เน€เธเธดเธ” <https://www.python.org/downloads/windows/>
+2. เธ”เธฒเธงเธเนเนเธซเธฅเธ” Python 3.10 เธซเธฃเธทเธญเนเธซเธกเนเธเธงเนเธฒ
+3. เธ•เธญเธเธ•เธดเธ”เธ•เธฑเนเธเนเธซเนเน€เธฅเธทเธญเธ `Add python.exe to PATH`
+4. เธ•เธฃเธงเธเธชเธญเธ:
 
 ```powershell
 python --version
 ```
 
-ถ้าไม่พบคำสั่ง `python` ให้ลอง:
+เธ–เนเธฒเนเธกเนเธเธเธเธณเธชเธฑเนเธ `python` เนเธซเนเธฅเธญเธ:
 
 ```powershell
 py --version
 ```
 
-### 3. ติดตั้ง Git
+### 3. เธ•เธดเธ”เธ•เธฑเนเธ Git
 
-1. เปิด <https://git-scm.com/download/win>
-2. ดาวน์โหลดและติดตั้ง
-3. ตรวจสอบ:
+1. เน€เธเธดเธ” <https://git-scm.com/download/win>
+2. เธ”เธฒเธงเธเนเนเธซเธฅเธ”เนเธฅเธฐเธ•เธดเธ”เธ•เธฑเนเธ
+3. เธ•เธฃเธงเธเธชเธญเธ:
 
 ```powershell
 git --version
 ```
 
-### 4. เปิดหรือ clone project
+### 4. เน€เธเธดเธ”เธซเธฃเธทเธญ clone project
 
-ถ้า clone จาก GitHub:
+เธ–เนเธฒ clone เธเธฒเธ GitHub:
 
 ```powershell
-cd "D:\Smart AI Hub\Projects"
+cd "C:\Projects"
 git clone https://github.com/pruksacharttk/Smart-AI-App
 cd "Smart-AI-App"
 ```
 
-ถ้ามีโฟลเดอร์อยู่แล้ว:
+เธ–เนเธฒเธกเธตเนเธเธฅเน€เธ”เธญเธฃเนเธญเธขเธนเนเนเธฅเนเธง:
 
 ```powershell
-cd "D:\Smart AI Hub\Projects\Smart AI App"
+cd "C:\Projects\Smart AI App"
 ```
 
-### 5. ติดตั้ง npm dependencies
+### 5. เธ•เธดเธ”เธ•เธฑเนเธ npm dependencies
 
 ```powershell
 npm install
 ```
 
-### 6. รันระบบ
+### 6. เธฃเธฑเธเธฃเธฐเธเธ
 
 ```powershell
 npm start
 ```
 
-เปิด browser:
+เน€เธเธดเธ” browser:
 
 ```text
 http://localhost:4173
 ```
 
-ถ้า port 4173 ถูกใช้แล้ว:
+เธ–เนเธฒ port 4173 เธ–เธนเธเนเธเนเนเธฅเนเธง:
 
 ```powershell
 $env:PORT=4174
 npm start
 ```
 
-แล้วเปิด:
+เนเธฅเนเธงเน€เธเธดเธ”:
 
 ```text
 http://localhost:4174
 ```
 
-## วิธีติดตั้งบน macOS
+## เธงเธดเธเธตเธ•เธดเธ”เธ•เธฑเนเธเธเธ macOS
 
-### 1. ติดตั้ง Homebrew
+### 1. เธ•เธดเธ”เธ•เธฑเนเธ Homebrew
 
-เปิด <https://brew.sh/> แล้วทำตามคำสั่งติดตั้ง
+เน€เธเธดเธ” <https://brew.sh/> เนเธฅเนเธงเธ—เธณเธ•เธฒเธกเธเธณเธชเธฑเนเธเธ•เธดเธ”เธ•เธฑเนเธ
 
-ตรวจสอบ:
+เธ•เธฃเธงเธเธชเธญเธ:
 
 ```bash
 brew --version
 ```
 
-### 2. ติดตั้ง Node.js
+### 2. เธ•เธดเธ”เธ•เธฑเนเธ Node.js
 
 ```bash
 brew install node
@@ -186,42 +186,42 @@ node --version
 npm --version
 ```
 
-ถ้า Node ต่ำกว่า 20 ให้ใช้ `nvm`:
+เธ–เนเธฒ Node เธ•เนเธณเธเธงเนเธฒ 20 เนเธซเนเนเธเน `nvm`:
 
 ```bash
 brew install nvm
 mkdir -p ~/.nvm
 ```
 
-ทำตามคำแนะนำของ Homebrew เพื่อเพิ่ม nvm ใน shell profile แล้วติดตั้ง:
+เธ—เธณเธ•เธฒเธกเธเธณเนเธเธฐเธเธณเธเธญเธ Homebrew เน€เธเธทเนเธญเน€เธเธดเนเธก nvm เนเธ shell profile เนเธฅเนเธงเธ•เธดเธ”เธ•เธฑเนเธ:
 
 ```bash
 nvm install 20
 nvm use 20
 ```
 
-### 3. ติดตั้ง Python
+### 3. เธ•เธดเธ”เธ•เธฑเนเธ Python
 
 ```bash
 brew install python
 python3 --version
 ```
 
-### 4. ติดตั้ง Git
+### 4. เธ•เธดเธ”เธ•เธฑเนเธ Git
 
-ตรวจสอบ:
+เธ•เธฃเธงเธเธชเธญเธ:
 
 ```bash
 git --version
 ```
 
-ถ้ายังไม่มี:
+เธ–เนเธฒเธขเธฑเธเนเธกเนเธกเธต:
 
 ```bash
 brew install git
 ```
 
-### 5. Clone หรือเปิด project
+### 5. Clone เธซเธฃเธทเธญเน€เธเธดเธ” project
 
 ```bash
 cd ~/Projects
@@ -229,100 +229,100 @@ git clone https://github.com/pruksacharttk/Smart-AI-App
 cd Smart-AI-App
 ```
 
-หรือ:
+เธซเธฃเธทเธญ:
 
 ```bash
 cd "/path/to/Smart AI App"
 ```
 
-### 6. ติดตั้ง dependencies
+### 6. เธ•เธดเธ”เธ•เธฑเนเธ dependencies
 
 ```bash
 npm install
 ```
 
-### 7. รันระบบ
+### 7. เธฃเธฑเธเธฃเธฐเธเธ
 
 ```bash
 npm start
 ```
 
-เปิด:
+เน€เธเธดเธ”:
 
 ```text
 http://localhost:4173
 ```
 
-ถ้าต้องเปลี่ยน port:
+เธ–เนเธฒเธ•เนเธญเธเน€เธเธฅเธตเนเธขเธ port:
 
 ```bash
 PORT=4174 npm start
 ```
 
-## วิธีรันระบบ
+## เธงเธดเธเธตเธฃเธฑเธเธฃเธฐเธเธ
 
-รันแบบปกติ:
+เธฃเธฑเธเนเธเธเธเธเธ•เธด:
 
 ```bash
 npm start
 ```
 
-รันแบบ development:
+เธฃเธฑเธเนเธเธ development:
 
 ```bash
 npm run dev
 ```
 
-ตัวแปร environment ที่รองรับ:
+เธ•เธฑเธงเนเธเธฃ environment เธ—เธตเนเธฃเธญเธเธฃเธฑเธ:
 
 ```text
 PORT=4173
 LLM_TIMEOUT_MS=35000
 ```
 
-- `PORT`: port ของ server
-- `LLM_TIMEOUT_MS`: timeout ต่อ model fallback หน่วย millisecond
+- `PORT`: port เธเธญเธ server
+- `LLM_TIMEOUT_MS`: timeout เธ•เนเธญ model fallback เธซเธเนเธงเธข millisecond
 
-## การตั้งค่า OpenRouter แบบละเอียด
+## เธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ OpenRouter เนเธเธเธฅเธฐเน€เธญเธตเธขเธ”
 
-OpenRouter ใช้สำหรับเรียก LLM หลายค่ายผ่าน API รูปแบบเดียวกัน เหมาะสำหรับ skill แบบ LLM-only หรือใช้เป็น fallback หลัก
+OpenRouter เนเธเนเธชเธณเธซเธฃเธฑเธเน€เธฃเธตเธขเธ LLM เธซเธฅเธฒเธขเธเนเธฒเธขเธเนเธฒเธ API เธฃเธนเธเนเธเธเน€เธ”เธตเธขเธงเธเธฑเธ เน€เธซเธกเธฒเธฐเธชเธณเธซเธฃเธฑเธ skill เนเธเธ LLM-only เธซเธฃเธทเธญเนเธเนเน€เธเนเธ fallback เธซเธฅเธฑเธ
 
-### 1. สมัครหรือเข้าสู่ระบบ
+### 1. เธชเธกเธฑเธเธฃเธซเธฃเธทเธญเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ
 
-1. เปิด <https://openrouter.ai/>
-2. กด Sign In หรือ Sign Up
-3. เข้าสู่ระบบด้วยบัญชีที่ต้องการ
+1. เน€เธเธดเธ” <https://openrouter.ai/>
+2. เธเธ” Sign In เธซเธฃเธทเธญ Sign Up
+3. เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเธ”เนเธงเธขเธเธฑเธเธเธตเธ—เธตเนเธ•เนเธญเธเธเธฒเธฃ
 
-### 2. สร้าง API key
+### 2. เธชเธฃเนเธฒเธ API key
 
-1. เปิด <https://openrouter.ai/settings/keys>
-2. กด `Create Key`
-3. ตั้งชื่อ key เช่น `Smart AI App Local`
-4. สร้าง key
-5. copy key ทันที เพราะบางระบบอาจแสดง key เต็มเพียงครั้งเดียว
+1. เน€เธเธดเธ” <https://openrouter.ai/settings/keys>
+2. เธเธ” `Create Key`
+3. เธ•เธฑเนเธเธเธทเนเธญ key เน€เธเนเธ `Smart AI App Local`
+4. เธชเธฃเนเธฒเธ key
+5. copy key เธ—เธฑเธเธ—เธต เน€เธเธฃเธฒเธฐเธเธฒเธเธฃเธฐเธเธเธญเธฒเธเนเธชเธ”เธ key เน€เธ•เนเธกเน€เธเธตเธขเธเธเธฃเธฑเนเธเน€เธ”เธตเธขเธง
 
-### 3. ใส่ key ในระบบ
+### 3. เนเธชเน key เนเธเธฃเธฐเธเธ
 
-1. เปิด Smart AI App ที่ `http://localhost:4173`
-2. กดปุ่ม `ตั้งค่า`
-3. ไปที่กล่อง `OpenRouter`
-4. วาง API key ในช่อง `API Key`
-5. ตรวจสอบ `Base URL`
+1. เน€เธเธดเธ” Smart AI App เธ—เธตเน `http://localhost:4173`
+2. เธเธ”เธเธธเนเธก `เธ•เธฑเนเธเธเนเธฒ`
+3. เนเธเธ—เธตเนเธเธฅเนเธญเธ `OpenRouter`
+4. เธงเธฒเธ API key เนเธเธเนเธญเธ `API Key`
+5. เธ•เธฃเธงเธเธชเธญเธ `Base URL`
 
 ```text
 https://openrouter.ai/api/v1
 ```
 
-### 4. เลือก model
+### 4. เน€เธฅเธทเธญเธ model
 
-ในส่วน `Fallback order`:
+เนเธเธชเนเธงเธ `Fallback order`:
 
-1. เลือก Provider เป็น `OpenRouter`
-2. เลือก Model จาก dropdown
-3. ถ้าต้องการใช้ model ที่ไม่มีใน dropdown ให้เลือก `Custom model`
-4. ใส่ model id ในช่อง `Custom model`
+1. เน€เธฅเธทเธญเธ Provider เน€เธเนเธ `OpenRouter`
+2. เน€เธฅเธทเธญเธ Model เธเธฒเธ dropdown
+3. เธ–เนเธฒเธ•เนเธญเธเธเธฒเธฃเนเธเน model เธ—เธตเนเนเธกเนเธกเธตเนเธ dropdown เนเธซเนเน€เธฅเธทเธญเธ `Custom model`
+4. เนเธชเน model id เนเธเธเนเธญเธ `Custom model`
 
-ตัวอย่าง OpenRouter model id:
+เธ•เธฑเธงเธญเธขเนเธฒเธ OpenRouter model id:
 
 ```text
 openrouter/free
@@ -331,67 +331,67 @@ openai/gpt-oss-120b:free
 deepseek/deepseek-v4-flash
 ```
 
-หมายเหตุ:
+เธซเธกเธฒเธขเน€เธซเธ•เธธ:
 
-- model ที่ลงท้าย `:free` มักเป็น free model
-- model แบบ paid ต้องมี credit หรือ billing ในบัญชี OpenRouter
-- รายชื่อ model เปลี่ยนได้ ควรใช้ `Test LLM` ตรวจสอบเสมอ
+- model เธ—เธตเนเธฅเธเธ—เนเธฒเธข `:free` เธกเธฑเธเน€เธเนเธ free model
+- model เนเธเธ paid เธ•เนเธญเธเธกเธต credit เธซเธฃเธทเธญ billing เนเธเธเธฑเธเธเธต OpenRouter
+- เธฃเธฒเธขเธเธทเนเธญ model เน€เธเธฅเธตเนเธขเธเนเธ”เน เธเธงเธฃเนเธเน `Test LLM` เธ•เธฃเธงเธเธชเธญเธเน€เธชเธกเธญ
 
 ### 5. Test LLM
 
-1. กด `Test LLM`
-2. ดูผลแต่ละ row:
-   - `OK`: ใช้ได้
-   - `FAIL`: ใช้ไม่ได้
-   - `SKIP`: ข้อมูลไม่ครบ
-3. ถ้า row ไหน OK ให้ย้ายขึ้นลำดับ 1
-4. กด `Save Config`
+1. เธเธ” `Test LLM`
+2. เธ”เธนเธเธฅเนเธ•เนเธฅเธฐ row:
+   - `OK`: เนเธเนเนเธ”เน
+   - `FAIL`: เนเธเนเนเธกเนเนเธ”เน
+   - `SKIP`: เธเนเธญเธกเธนเธฅเนเธกเนเธเธฃเธ
+3. เธ–เนเธฒ row เนเธซเธ OK เนเธซเนเธขเนเธฒเธขเธเธถเนเธเธฅเธณเธ”เธฑเธ 1
+4. เธเธ” `Save Config`
 
-### 6. Error ที่พบบ่อย
+### 6. Error เธ—เธตเนเธเธเธเนเธญเธข
 
-- `HTTP 401`: key ผิดหรือหมดอายุ
-- `HTTP 403`: บัญชีไม่มีสิทธิ์ใช้ model
-- `HTTP 404`: model id ไม่ถูกต้อง
-- `Timed out`: model ช้าหรือ provider ไม่ตอบ
-- `LLM returned empty content`: model ตอบกลับว่าง
+- `HTTP 401`: key เธเธดเธ”เธซเธฃเธทเธญเธซเธกเธ”เธญเธฒเธขเธธ
+- `HTTP 403`: เธเธฑเธเธเธตเนเธกเนเธกเธตเธชเธดเธ—เธเธดเนเนเธเน model
+- `HTTP 404`: model id เนเธกเนเธ–เธนเธเธ•เนเธญเธ
+- `Timed out`: model เธเนเธฒเธซเธฃเธทเธญ provider เนเธกเนเธ•เธญเธ
+- `LLM returned empty content`: model เธ•เธญเธเธเธฅเธฑเธเธงเนเธฒเธ
 
-## การตั้งค่า NVIDIA NIM แบบละเอียด
+## เธเธฒเธฃเธ•เธฑเนเธเธเนเธฒ NVIDIA NIM เนเธเธเธฅเธฐเน€เธญเธตเธขเธ”
 
-NVIDIA NIM ให้บริการ model ผ่าน OpenAI-compatible API endpoint เหมาะสำหรับใช้เป็น provider หรือ fallback
+NVIDIA NIM เนเธซเนเธเธฃเธดเธเธฒเธฃ model เธเนเธฒเธ OpenAI-compatible API endpoint เน€เธซเธกเธฒเธฐเธชเธณเธซเธฃเธฑเธเนเธเนเน€เธเนเธ provider เธซเธฃเธทเธญ fallback
 
-### 1. สมัครหรือเข้าสู่ระบบ NVIDIA
+### 1. เธชเธกเธฑเธเธฃเธซเธฃเธทเธญเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ NVIDIA
 
-1. เปิด <https://build.nvidia.com/>
-2. Sign in ด้วยบัญชี NVIDIA
-3. ถ้ายังไม่มีบัญชี ให้สมัครก่อน
+1. เน€เธเธดเธ” <https://build.nvidia.com/>
+2. Sign in เธ”เนเธงเธขเธเธฑเธเธเธต NVIDIA
+3. เธ–เนเธฒเธขเธฑเธเนเธกเนเธกเธตเธเธฑเธเธเธต เนเธซเนเธชเธกเธฑเธเธฃเธเนเธญเธ
 
-### 2. สร้าง API key
+### 2. เธชเธฃเนเธฒเธ API key
 
-1. เปิด <https://build.nvidia.com/settings/api-keys>
-2. กดสร้าง API key
-3. copy key เก็บไว้ทันที
+1. เน€เธเธดเธ” <https://build.nvidia.com/settings/api-keys>
+2. เธเธ”เธชเธฃเนเธฒเธ API key
+3. copy key เน€เธเนเธเนเธงเนเธ—เธฑเธเธ—เธต
 
-### 3. ใส่ key ในระบบ
+### 3. เนเธชเน key เนเธเธฃเธฐเธเธ
 
-1. เปิด Smart AI App
-2. กด `ตั้งค่า`
-3. ไปที่กล่อง `NVIDIA NIM`
-4. วาง key ในช่อง `API Key`
-5. ตรวจสอบ `Base URL`
+1. เน€เธเธดเธ” Smart AI App
+2. เธเธ” `เธ•เธฑเนเธเธเนเธฒ`
+3. เนเธเธ—เธตเนเธเธฅเนเธญเธ `NVIDIA NIM`
+4. เธงเธฒเธ key เนเธเธเนเธญเธ `API Key`
+5. เธ•เธฃเธงเธเธชเธญเธ `Base URL`
 
 ```text
 https://integrate.api.nvidia.com/v1
 ```
 
-### 4. เลือก model
+### 4. เน€เธฅเธทเธญเธ model
 
-ใน fallback row:
+เนเธ fallback row:
 
-1. เลือก Provider เป็น `NVIDIA`
-2. เลือก model จาก dropdown
-3. หรือเลือก `Custom model` แล้วใส่ model id เอง
+1. เน€เธฅเธทเธญเธ Provider เน€เธเนเธ `NVIDIA`
+2. เน€เธฅเธทเธญเธ model เธเธฒเธ dropdown
+3. เธซเธฃเธทเธญเน€เธฅเธทเธญเธ `Custom model` เนเธฅเนเธงเนเธชเน model id เน€เธญเธ
 
-ตัวอย่าง NVIDIA model id:
+เธ•เธฑเธงเธญเธขเนเธฒเธ NVIDIA model id:
 
 ```text
 deepseek-ai/deepseek-v4-flash
@@ -400,52 +400,52 @@ openai/gpt-oss-20b
 deepseek-ai/deepseek-r1
 ```
 
-ข้อควรระวัง:
+เธเนเธญเธเธงเธฃเธฃเธฐเธงเธฑเธ:
 
-- model id ของ NVIDIA และ OpenRouter อาจไม่เหมือนกัน
-- เช่น NVIDIA ใช้ `deepseek-ai/deepseek-v4-flash`
-- แต่ OpenRouter ใช้ `deepseek/deepseek-v4-flash`
-- ถ้า model id ผิดจะเจอ `HTTP 404`
+- model id เธเธญเธ NVIDIA เนเธฅเธฐ OpenRouter เธญเธฒเธเนเธกเนเน€เธซเธกเธทเธญเธเธเธฑเธ
+- เน€เธเนเธ NVIDIA เนเธเน `deepseek-ai/deepseek-v4-flash`
+- เนเธ•เน OpenRouter เนเธเน `deepseek/deepseek-v4-flash`
+- เธ–เนเธฒ model id เธเธดเธ”เธเธฐเน€เธเธญ `HTTP 404`
 
 ### 5. Test NVIDIA
 
-1. กด `Test LLM`
-2. ตรวจ row ของ NVIDIA
-3. ถ้า OK สามารถใช้เป็น fallback ลำดับ 1 ได้
-4. ถ้า FAIL ให้ลอง model อื่น หรือใช้ OpenRouter เป็น fallback แรก
+1. เธเธ” `Test LLM`
+2. เธ•เธฃเธงเธ row เธเธญเธ NVIDIA
+3. เธ–เนเธฒ OK เธชเธฒเธกเธฒเธฃเธ–เนเธเนเน€เธเนเธ fallback เธฅเธณเธ”เธฑเธ 1 เนเธ”เน
+4. เธ–เนเธฒ FAIL เนเธซเนเธฅเธญเธ model เธญเธทเนเธ เธซเธฃเธทเธญเนเธเน OpenRouter เน€เธเนเธ fallback เนเธฃเธ
 
-## วิธีใช้งานผ่าน Browser
+## เธงเธดเธเธตเนเธเนเธเธฒเธเธเนเธฒเธ Browser
 
-1. เปิด `http://localhost:4173`
-2. เลือก skill จาก dropdown
-3. เลือกภาษา UI ด้วย `EN` หรือ `TH`
-4. กรอก field ที่มีเครื่องหมาย `*`
-5. ตั้งค่า API key ใน `Config`
-6. กด `Test LLM`
-7. จัด fallback model ให้ row ที่ OK อยู่ด้านบน
-8. กด `Save Config`
-9. กด `Run Skill`
-10. ดูผลที่ tab:
-    - `Prompt`: ผลลัพธ์หลัก
-    - `JSON`: ข้อมูลเต็ม
-    - `Review`: รายงานและคำเตือน
-11. กด `Copy` หรือ `Download JSON`
+1. เน€เธเธดเธ” `http://localhost:4173`
+2. เน€เธฅเธทเธญเธ skill เธเธฒเธ dropdown
+3. เน€เธฅเธทเธญเธเธ เธฒเธฉเธฒ UI เธ”เนเธงเธข `EN` เธซเธฃเธทเธญ `TH`
+4. เธเธฃเธญเธ field เธ—เธตเนเธกเธตเน€เธเธฃเธทเนเธญเธเธซเธกเธฒเธข `*`
+5. เธ•เธฑเนเธเธเนเธฒ API key เนเธ `Config`
+6. เธเธ” `Test LLM`
+7. เธเธฑเธ” fallback model เนเธซเน row เธ—เธตเน OK เธญเธขเธนเนเธ”เนเธฒเธเธเธ
+8. เธเธ” `Save Config`
+9. เธเธ” `Run Skill`
+10. เธ”เธนเธเธฅเธ—เธตเน tab:
+    - `Prompt`: เธเธฅเธฅเธฑเธเธเนเธซเธฅเธฑเธ
+    - `JSON`: เธเนเธญเธกเธนเธฅเน€เธ•เนเธก
+    - `Review`: เธฃเธฒเธขเธเธฒเธเนเธฅเธฐเธเธณเน€เธ•เธทเธญเธ
+11. เธเธ” `Copy` เธซเธฃเธทเธญ `Download JSON`
 
-## การเพิ่ม Skill ใหม่
+## เธเธฒเธฃเน€เธเธดเนเธก Skill เนเธซเธกเน
 
-เพิ่มโฟลเดอร์ใหม่ใน:
+เน€เธเธดเนเธกเนเธเธฅเน€เธ”เธญเธฃเนเนเธซเธกเนเนเธ:
 
 ```text
 skills/
 ```
 
-ตัวอย่าง:
+เธ•เธฑเธงเธญเธขเนเธฒเธ:
 
 ```text
 skills/my-new-skill/
 ```
 
-โครงสร้างขั้นต่ำ:
+เนเธเธฃเธเธชเธฃเนเธฒเธเธเธฑเนเธเธ•เนเธณ:
 
 ```text
 skills/my-new-skill/
@@ -454,7 +454,7 @@ skills/my-new-skill/
     input.schema.json
 ```
 
-โครงสร้างที่แนะนำ:
+เนเธเธฃเธเธชเธฃเนเธฒเธเธ—เธตเนเนเธเธฐเธเธณ:
 
 ```text
 skills/my-new-skill/
@@ -473,34 +473,34 @@ skills/my-new-skill/
 
 ### input.schema.json
 
-จำเป็นต้องมีทุก skill ระบบจะ scan เฉพาะ skill ที่มีไฟล์นี้
+เธเธณเน€เธเนเธเธ•เนเธญเธเธกเธตเธ—เธธเธ skill เธฃเธฐเธเธเธเธฐ scan เน€เธเธเธฒเธฐ skill เธ—เธตเนเธกเธตเนเธเธฅเนเธเธตเน
 
-ควรมี:
+เธเธงเธฃเธกเธต:
 
 - `type: "object"`
 - `properties`
-- `required` ถ้ามี field บังคับ
+- `required` เธ–เนเธฒเธกเธต field เธเธฑเธเธเธฑเธ
 - `default`
-- `enum` สำหรับตัวเลือก
+- `enum` เธชเธณเธซเธฃเธฑเธเธ•เธฑเธงเน€เธฅเธทเธญเธ
 
 ### ui.schema.json
 
-ใช้จัดหน้าฟอร์ม เช่น section, label, description, ภาษาไทย/อังกฤษ
+เนเธเนเธเธฑเธ”เธซเธเนเธฒเธเธญเธฃเนเธก เน€เธเนเธ section, label, description, เธ เธฒเธฉเธฒเนเธ—เธข/เธญเธฑเธเธเธคเธฉ
 
-ถ้าไม่มีหรือไม่ครบ ระบบจะเติม field จาก `input.schema.json` ให้ใน section เพิ่มเติม
+เธ–เนเธฒเนเธกเนเธกเธตเธซเธฃเธทเธญเนเธกเนเธเธฃเธ เธฃเธฐเธเธเธเธฐเน€เธ•เธดเธก field เธเธฒเธ `input.schema.json` เนเธซเนเนเธ section เน€เธเธดเนเธกเน€เธ•เธดเธก
 
 ### output.schema.json
 
-ใช้บอกว่า output ควรมีโครงสร้างแบบใด
+เนเธเนเธเธญเธเธงเนเธฒ output เธเธงเธฃเธกเธตเนเธเธฃเธเธชเธฃเนเธฒเธเนเธเธเนเธ”
 
 ### python/skill.py
 
-ถ้ามีไฟล์นี้ ระบบจะรัน skill แบบ local Python ได้
+เธ–เนเธฒเธกเธตเนเธเธฅเนเธเธตเน เธฃเธฐเธเธเธเธฐเธฃเธฑเธ skill เนเธเธ local Python เนเธ”เน
 
-รูปแบบที่ควรทำ:
+เธฃเธนเธเนเธเธเธ—เธตเนเธเธงเธฃเธ—เธณ:
 
-1. อ่าน JSON จาก stdin
-2. รับข้อมูลในรูป:
+1. เธญเนเธฒเธ JSON เธเธฒเธ stdin
+2. เธฃเธฑเธเธเนเธญเธกเธนเธฅเนเธเธฃเธนเธ:
 
 ```json
 {
@@ -510,9 +510,9 @@ skills/my-new-skill/
 }
 ```
 
-3. print JSON ออก stdout
+3. print JSON เธญเธญเธ stdout
 
-ตัวอย่าง:
+เธ•เธฑเธงเธญเธขเนเธฒเธ:
 
 ```json
 {
@@ -524,27 +524,27 @@ skills/my-new-skill/
 }
 ```
 
-## การแก้ไข Skill
+## เธเธฒเธฃเนเธเนเนเธ Skill
 
-1. เปิดโฟลเดอร์ skill ใน `skills/<skill-id>/`
-2. แก้ `skill.md` เพื่อเปลี่ยน behavior
-3. แก้ `schemas/input.schema.json` เมื่อเพิ่มหรือลด input
-4. แก้ `schemas/ui.schema.json` เพื่อเปลี่ยนหน้าฟอร์ม
-5. แก้ `schemas/output.schema.json` เพื่อเปลี่ยนรูปแบบผลลัพธ์
-6. ถ้ามี local runtime ให้แก้ `python/skill.py`
+1. เน€เธเธดเธ”เนเธเธฅเน€เธ”เธญเธฃเน skill เนเธ `skills/<skill-id>/`
+2. เนเธเน `skill.md` เน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธ behavior
+3. เนเธเน `schemas/input.schema.json` เน€เธกเธทเนเธญเน€เธเธดเนเธกเธซเธฃเธทเธญเธฅเธ” input
+4. เนเธเน `schemas/ui.schema.json` เน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธเธซเธเนเธฒเธเธญเธฃเนเธก
+5. เนเธเน `schemas/output.schema.json` เน€เธเธทเนเธญเน€เธเธฅเธตเนเธขเธเธฃเธนเธเนเธเธเธเธฅเธฅเธฑเธเธเน
+6. เธ–เนเธฒเธกเธต local runtime เนเธซเนเนเธเน `python/skill.py`
 7. refresh browser
-8. ทดลอง Run และดู tab JSON/Review
+8. เธ—เธ”เธฅเธญเธ Run เนเธฅเธฐเธ”เธน tab JSON/Review
 
 ## Rate Limit
 
-ระบบมี rate limit แบบ in-memory:
+เธฃเธฐเธเธเธกเธต rate limit เนเธเธ in-memory:
 
 ```text
-/api/run-skill = 12 ครั้งต่อนาที
-/api/test-llm = 8 ครั้งต่อนาที
+/api/run-skill = 12 เธเธฃเธฑเนเธเธ•เนเธญเธเธฒเธ—เธต
+/api/test-llm = 8 เธเธฃเธฑเนเธเธ•เนเธญเธเธฒเธ—เธต
 ```
 
-ถ้าเกินจะขึ้น:
+เธ–เนเธฒเน€เธเธดเธเธเธฐเธเธถเนเธ:
 
 ```text
 Rate limit exceeded. Try again in ...s.
@@ -554,55 +554,56 @@ Rate limit exceeded. Try again in ...s.
 
 ### npm error: No workspaces found
 
-โปรเจกต์มี `.npmrc`:
+เนเธเธฃเน€เธเธเธ•เนเธกเธต `.npmrc`:
 
 ```text
 workspaces=false
 ```
 
-ให้รันจากโฟลเดอร์ project:
+เนเธซเนเธฃเธฑเธเธเธฒเธเนเธเธฅเน€เธ”เธญเธฃเน project:
 
 ```powershell
-cd "D:\Smart AI Hub\Projects\Smart AI App"
+cd "C:\Projects\Smart AI App"
 npm install
 npm start
 ```
 
-### เปิด localhost ไม่ได้
+### เน€เธเธดเธ” localhost เนเธกเนเนเธ”เน
 
-ตรวจว่า server รันอยู่:
+เธ•เธฃเธงเธเธงเนเธฒ server เธฃเธฑเธเธญเธขเธนเน:
 
 ```bash
 npm start
 ```
 
-เปิด:
+เน€เธเธดเธ”:
 
 ```text
 http://localhost:4173
 ```
 
-### Skill ไม่ขึ้นใน dropdown
+### Skill เนเธกเนเธเธถเนเธเนเธ dropdown
 
-ตรวจว่า skill มีไฟล์:
+เธ•เธฃเธงเธเธงเนเธฒ skill เธกเธตเนเธเธฅเน:
 
 ```text
 skills/<skill-id>/schemas/input.schema.json
 ```
 
-และ JSON ต้องถูกต้อง
+เนเธฅเธฐ JSON เธ•เนเธญเธเธ–เธนเธเธ•เนเธญเธ
 
-### ภาษาไทยเพี้ยน
+### เธ เธฒเธฉเธฒเนเธ—เธขเน€เธเธตเนเธขเธ
 
-ตรวจว่าไฟล์ถูก save เป็น UTF-8
+เธ•เธฃเธงเธเธงเนเธฒเนเธเธฅเนเธ–เธนเธ save เน€เธเนเธ UTF-8
 
-### LLM ใช้ไม่ได้
+### LLM เนเธเนเนเธกเนเนเธ”เน
 
-ใช้ `Config > Test LLM` แล้วดูผล:
+เนเธเน `Config > Test LLM` เนเธฅเนเธงเธ”เธนเธเธฅ:
 
-- `401`: key ผิด
-- `403`: ไม่มีสิทธิ์ใช้ model
-- `404`: model id/base URL ผิด
-- timeout: provider หรือ model ช้า
-- empty content: model ตอบกลับว่าง
+- `401`: key เธเธดเธ”
+- `403`: เนเธกเนเธกเธตเธชเธดเธ—เธเธดเนเนเธเน model
+- `404`: model id/base URL เธเธดเธ”
+- timeout: provider เธซเธฃเธทเธญ model เธเนเธฒ
+- empty content: model เธ•เธญเธเธเธฅเธฑเธเธงเนเธฒเธ
+
 

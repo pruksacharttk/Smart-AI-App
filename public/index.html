@@ -67,6 +67,17 @@
       }
       .status.ok { color: var(--green); border-color: rgba(22, 114, 86, .34); }
       .status.warn { color: var(--amber); border-color: rgba(161, 92, 0, .34); }
+      .llm-status {
+        margin: 0 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f8fbff;
+        padding: 10px 12px;
+        color: var(--muted);
+        font-size: .82rem;
+        line-height: 1.45;
+      }
+      .llm-status strong { color: var(--ink); }
       .icon-btn {
         min-height: 42px;
         border: 1px solid var(--line);
@@ -351,6 +362,7 @@
             <button class="tab" type="button" data-tab="json">JSON</button>
             <button class="tab" type="button" data-tab="review">Review</button>
           </div>
+          <div class="llm-status" id="llmStatus">LLM: not run yet</div>
           <div class="pane active" id="promptPane"><pre id="promptOutput">Loading...</pre></div>
           <div class="pane" id="jsonPane"><pre id="jsonOutput">{}</pre></div>
           <div class="pane" id="reviewPane"><div class="review-grid" id="reviewOutput"></div></div>
@@ -440,6 +452,7 @@
       const promptOutput = document.querySelector("#promptOutput");
       const jsonOutput = document.querySelector("#jsonOutput");
       const reviewOutput = document.querySelector("#reviewOutput");
+      const llmStatus = document.querySelector("#llmStatus");
       const appTitle = document.querySelector("#appTitle");
       const appDescription = document.querySelector("#appDescription");
       const skillSelect = document.querySelector("#skillSelect");
@@ -502,6 +515,9 @@
       function setStatus(text, type="") {
         statusEl.textContent = text;
         statusEl.className = `status ${type}`.trim();
+      }
+      function setLlmStatus(text) {
+        llmStatus.innerHTML = text;
       }
       function loadConfig() {
         try {
@@ -914,6 +930,34 @@
           clearTimeout(timer);
         }
       }
+      async function postJsonStream(url, payload, onEvent) {
+        const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
+        if (!response.ok || !response.body) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "Request failed");
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let finalResult = null;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream:true });
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+          for (const chunk of chunks) {
+            const event = chunk.match(/^event:\s*(.+)$/m)?.[1] || "message";
+            const dataRaw = chunk.match(/^data:\s*(.+)$/m)?.[1] || "{}";
+            const data = JSON.parse(dataRaw);
+            onEvent?.(event, data);
+            if (event === "result") finalResult = data;
+            if (event === "error") throw new Error(data.error || "Request failed");
+          }
+        }
+        if (!finalResult) throw new Error("No result returned from server.");
+        return finalResult;
+      }
       function runtimeOutput(result) {
         if (typeof result.output === "string") { try { return JSON.parse(result.output); } catch { return result; } }
         return result.output && typeof result.output === "object" ? result.output : result;
@@ -992,15 +1036,24 @@
         runBtn.disabled = true;
         promptOutput.textContent = "Running selected skill...";
         jsonOutput.textContent = "{}";
+        setLlmStatus("LLM: preparing request...");
         try {
-          const result = await postJson("/api/run-skill", { skillId:selectedSkillId, params:payload, llmConfig });
+          const result = await postJsonStream("/api/run-skill-stream", { skillId:selectedSkillId, params:payload, llmConfig }, (event, data) => {
+            if (event !== "status") return;
+            if (data.phase === "calling") setLlmStatus(`LLM: calling <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)})`);
+            if (data.phase === "failed") setLlmStatus(`LLM: failed <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)}): ${escapeHtml(data.error || "")}`);
+            if (data.phase === "success") setLlmStatus(`LLM: latest success <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)})`);
+          });
           currentBundle = result;
           promptOutput.textContent = extractPrompt(result);
           jsonOutput.textContent = JSON.stringify(result, null, 2);
           renderReview(result);
+          const last = result.lastSuccessfulLlm || result.llm;
+          if (last) setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>${last.fallbackRank ? ` (fallback #${escapeHtml(last.fallbackRank)})` : ""}`);
           setStatus(t("completed"), "ok");
         } catch (err) {
           setStatus("Error", "warn");
+          setLlmStatus(`LLM: error ${escapeHtml(err.message)}`);
           promptOutput.textContent = err.message;
           jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
         } finally {
@@ -1031,6 +1084,7 @@
       }
       async function loadSchema(preserve=false) {
         setStatus(t("loading"), "warn");
+        setLlmStatus("LLM: not run yet");
         fileFieldValues = {};
         schemaState = await fetch(`/api/ui-schema?skill=${encodeURIComponent(selectedSkillId)}`).then((r) => r.json());
         renderForm(preserve);

@@ -1,4 +1,4 @@
-# Smart AI App
+﻿# Smart AI App
 
 Smart AI App is a local, browser-based skill runner for AI prompt, content, storyboard, and planning workflows. It scans local skill folders, builds forms from each skill schema, and can run skills either through a bundled local runtime or through an OpenAI-compatible LLM provider configured from the browser UI.
 
@@ -143,7 +143,7 @@ git --version
 If cloning from GitHub:
 
 ```powershell
-cd "D:\Smart AI Hub\Projects"
+cd "C:\Projects"
 git clone https://github.com/pruksacharttk/Smart-AI-App
 cd "Smart-AI-App"
 ```
@@ -151,7 +151,7 @@ cd "Smart-AI-App"
 If you already have the folder locally:
 
 ```powershell
-cd "D:\Smart AI Hub\Projects\Smart AI App"
+cd "C:\Projects\Smart AI App"
 ```
 
 ### 5. Install npm Dependencies
@@ -810,7 +810,7 @@ workspaces=false
 Run npm commands from the project folder:
 
 ```bash
-cd "D:\Smart AI Hub\Projects\Smart AI App"
+cd "C:\Projects\Smart AI App"
 npm install
 npm start
 ```
@@ -901,3 +901,4 @@ python3 --version
 - API keys are not written to project files.
 - Config is stored in browser local storage.
 - Skill folders should be treated as portable packages.
+

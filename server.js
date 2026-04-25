@@ -14,6 +14,7 @@ const llmRequestTimeoutMs = Number(process.env.LLM_TIMEOUT_MS || 35000);
 const rateBuckets = new Map();
 const rateLimits = {
   "/api/run-skill": { limit: 12, windowMs: 60_000 },
+  "/api/run-skill-stream": { limit: 12, windowMs: 60_000 },
   "/api/test-llm": { limit: 8, windowMs: 60_000 }
 };
 
@@ -25,6 +26,11 @@ const mimeTypes = {
 function sendJson(res, status, body) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(body));
+}
+
+function sendSse(res, event, data) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
 function clientIp(req) {
@@ -584,7 +590,7 @@ async function handleTestLlm(req, res) {
   sendJson(res, results.some((item) => item.ok) ? 200 : 400, { results });
 }
 
-async function runLlmSkill(info, params, llmConfig) {
+async function runLlmSkill(info, params, llmConfig, onStatus = null) {
   const targets = configuredFallbacks(llmConfig);
   if (!targets.length) {
     throw new Error("No usable LLM config found. Open Config, add an API key, and choose at least one fallback model.");
@@ -592,9 +598,12 @@ async function runLlmSkill(info, params, llmConfig) {
   const errors = [];
   for (const target of targets) {
     try {
+      onStatus?.({ phase:"calling", rank:target.index, provider:target.provider, model:target.model });
       const result = await postChatCompletion(target, info, params);
-      return { ...result, fallbackErrors: errors };
+      onStatus?.({ phase:"success", rank:target.index, provider:target.provider, model:result.llm?.model || target.model });
+      return { ...result, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model:result.llm?.model || target.model, fallbackRank:target.index } };
     } catch (error) {
+      onStatus?.({ phase:"failed", rank:target.index, provider:target.provider, model:target.model, error:error.message || "LLM request failed" });
       errors.push({
         rank: target.index,
         provider: target.provider,
@@ -649,6 +658,11 @@ function runPythonSkill(skillId, envelope) {
 
 async function handleRunSkill(req, res) {
   const body = await readJson(req);
+  const result = await executeRunSkill(body);
+  sendJson(res, 200, result);
+}
+
+async function executeRunSkill(body, onStatus = null) {
   const skillId = safeSkillId(body.skillId || body.skill_id);
   const params = body.params && typeof body.params === "object" ? body.params : body;
   delete params.skillId;
@@ -657,25 +671,45 @@ async function handleRunSkill(req, res) {
   delete params.useLlm;
   const info = await readSkillInfo(skillId);
   if (!info) {
-    sendJson(res, 404, { error: `Skill not found or missing input schema: ${skillId}` });
-    return;
+    const error = new Error(`Skill not found or missing input schema: ${skillId}`);
+    error.status = 404;
+    throw error;
   }
   const required = info.inputSchema.required || [];
   const missing = required.filter((field) => params[field] === undefined || params[field] === null || params[field] === "");
   if (missing.length) {
-    sendJson(res, 400, { error: `Missing required field(s): ${missing.join(", ")}` });
-    return;
+    const error = new Error(`Missing required field(s): ${missing.join(", ")}`);
+    error.status = 400;
+    throw error;
   }
   const llmConfig = body.llmConfig && typeof body.llmConfig === "object" ? body.llmConfig : null;
   const hasConfiguredLlm = configuredFallbacks(llmConfig).length > 0;
   if (!hasConfiguredLlm && !info.hasRuntime) {
-    sendJson(res, 400, { error: `Skill "${skillId}" has no local runtime. Open Config, add an OpenRouter or NVIDIA API key, and choose at least one fallback model.` });
-    return;
+    const error = new Error(`Skill "${skillId}" has no local runtime. Open Config, add an OpenRouter or NVIDIA API key, and choose at least one fallback model.`);
+    error.status = 400;
+    throw error;
   }
-  const result = hasConfiguredLlm
-    ? await runLlmSkill(info, params, llmConfig)
+  return hasConfiguredLlm
+    ? await runLlmSkill(info, params, llmConfig, onStatus)
     : await runPythonSkill(skillId, { params });
-  sendJson(res, 200, result);
+}
+
+async function handleRunSkillStream(req, res) {
+  const body = await readJson(req);
+  res.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache, no-transform",
+    "connection": "keep-alive"
+  });
+  try {
+    sendSse(res, "status", { phase:"started" });
+    const result = await executeRunSkill(body, (status) => sendSse(res, "status", status));
+    sendSse(res, "result", result);
+  } catch (error) {
+    sendSse(res, "error", { error:error.message || "Unexpected server error" });
+  } finally {
+    res.end();
+  }
 }
 
 async function handleSkills(_req, res) {
@@ -764,6 +798,10 @@ createServer(async (req, res) => {
     if (!checkRateLimit(req, res)) return;
     if (req.method === "POST" && req.url === "/api/run-skill") {
       await handleRunSkill(req, res);
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/run-skill-stream") {
+      await handleRunSkillStream(req, res);
       return;
     }
     if (req.method === "POST" && req.url === "/api/test-llm") {
