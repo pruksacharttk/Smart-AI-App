@@ -4,6 +4,10 @@ Smart AI App is a local, browser-based skill runner for AI prompt, content, stor
 
 The app is designed to stay simple to install and operate. It does not require a database. API keys are entered through the Config window in the browser and are stored only in that browser's local storage.
 
+## Screenshot
+
+![Smart AI App GPT Image Prompt Engineer UI](docs/images/smart-ai-app-gpt-image-prompt-engineer.png)
+
 ## Features
 
 - Dynamic skill discovery from the `skills/` folder.
@@ -31,6 +35,9 @@ The app is designed to stay simple to install and operate. It does not require a
 
 ```text
 Smart AI App/
+  docs/
+    images/
+      smart-ai-app-gpt-image-prompt-engineer.png
   public/
     index.html
   skills/

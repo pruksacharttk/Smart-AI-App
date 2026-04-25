@@ -6,6 +6,10 @@ Smart AI App คือระบบรัน Skill ผ่านเว็บเบ
 
 ระบบนี้ไม่จำเป็นต้องใช้ database และไม่ต้องให้ผู้ใช้แก้ไฟล์ config โดยตรง การตั้งค่า API key ทำผ่านหน้าต่าง `Config` ใน browser เท่านั้น โดย key จะถูกเก็บใน browser local storage ของเครื่องนั้น
 
+## ภาพประกอบ
+
+![หน้าจอ Smart AI App GPT Image Prompt Engineer](docs/images/smart-ai-app-gpt-image-prompt-engineer.png)
+
 ## ฟีเจอร์หลัก
 
 - สแกน skill จากโฟลเดอร์ `skills/` อัตโนมัติ
@@ -35,6 +39,9 @@ Smart AI App คือระบบรัน Skill ผ่านเว็บเบ
 
 ```text
 Smart AI App/
+  docs/
+    images/
+      smart-ai-app-gpt-image-prompt-engineer.png
   public/
     index.html
   skills/
@@ -615,4 +622,3 @@ skills/<skill-id>/schemas/input.schema.json
 - `404`: model id/base URL ผิด
 - timeout: provider หรือ model ช้า
 - empty content: model ตอบกลับว่าง
-
