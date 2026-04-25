@@ -154,6 +154,49 @@ function targetLanguageName(params) {
   return raw || "the language requested by the user";
 }
 
+function isImagePayload(value) {
+  return value && typeof value === "object" && typeof value.dataUrl === "string" && value.dataUrl.startsWith("data:image/");
+}
+
+function collectImages(value, path = []) {
+  const images = [];
+  if (isImagePayload(value)) {
+    images.push({ ...value, path:path.join(".") });
+  } else if (Array.isArray(value)) {
+    value.forEach((item, index) => images.push(...collectImages(item, [...path, String(index)])));
+  } else if (value && typeof value === "object") {
+    for (const [key, nested] of Object.entries(value)) images.push(...collectImages(nested, [...path, key]));
+  }
+  return images;
+}
+
+function paramsWithoutImageData(value) {
+  if (isImagePayload(value)) {
+    return { type:"image", name:value.name, mimeType:value.mimeType, size:value.size, note:"Image data sent as base64 multimodal attachment." };
+  }
+  if (Array.isArray(value)) return value.map(paramsWithoutImageData);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, paramsWithoutImageData(nested)]));
+  }
+  return value;
+}
+
+function userMessageContent(params) {
+  const cleanParams = paramsWithoutImageData(params);
+  const images = collectImages(params);
+  const text = JSON.stringify({ params:cleanParams, image_count:images.length }, null, 2);
+  if (!images.length) return text;
+  return [
+    { type:"text", text },
+    ...images.map((image, index) => ({
+      type:"image_url",
+      image_url: { url:image.dataUrl },
+      detail:"auto",
+      name:image.name || `reference-image-${index + 1}`
+    }))
+  ];
+}
+
 function llmSystemPrompt(info, params) {
   const languageName = targetLanguageName(params);
   return [
@@ -401,7 +444,7 @@ async function postChatCompletion(target, info, params) {
         model: target.model,
         messages: [
           { role: "system", content: llmSystemPrompt(info, params) },
-          { role: "user", content: JSON.stringify({ params }, null, 2) }
+          { role: "user", content: userMessageContent(params) }
         ],
         temperature: 0.4,
         max_tokens: 2500,

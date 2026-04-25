@@ -143,6 +143,30 @@
       input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24, 100, 216, .13); }
       .checkbox { display: flex; align-items: center; gap: 9px; min-height: 42px; }
       .checkbox input { width: 18px; height: 18px; }
+      .dropzone {
+        display: grid;
+        gap: 8px;
+        place-items: center;
+        min-height: 132px;
+        border: 1.5px dashed rgba(24, 100, 216, .42);
+        border-radius: 8px;
+        background: rgba(24, 100, 216, .045);
+        padding: 14px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .dropzone.dragover { border-color: var(--blue); background: rgba(24, 100, 216, .12); }
+      .dropzone strong { color: var(--ink); }
+      .dropzone input { display: none; }
+      .thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; width: 100%; }
+      .thumb {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        overflow: hidden;
+      }
+      .thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+      .thumb span { display: block; padding: 5px 6px; font-size: .7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
       .btn { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 9px 13px; font-weight: 900; }
       .btn.primary { flex: 1; color: white; background: linear-gradient(135deg, var(--blue), var(--cyan)); }
@@ -470,6 +494,7 @@
       let schemaState = null;
       let currentBundle = null;
       let llmConfig = loadConfig();
+      let fileFieldValues = {};
 
       const t = (key) => uiText[language][key] || uiText.en[key] || key;
       const escapeHtml = (text) => String(text).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -598,6 +623,74 @@
         if (field.type === "boolean" || prop.type === "boolean") return false;
         return "";
       }
+      function isImageUploadField(id, prop, field={}) {
+        const haystack = `${id} ${prop.title || ""} ${prop.description || ""} ${field.label || ""} ${field.helpText || ""}`.toLowerCase();
+        const imageName = /(image|photo|picture|reference|source|mask|asset)/i.test(haystack);
+        const urlLike = prop.format === "uri" || prop.items?.format === "uri" || /url|path|uri/i.test(haystack);
+        const type = Array.isArray(prop.type) ? prop.type.find((x) => x !== "null") : prop.type;
+        return imageName && urlLike && ["string", "array"].includes(type);
+      }
+      function isMultiImageField(prop) {
+        return prop.type === "array" || (Array.isArray(prop.type) && prop.type.includes("array"));
+      }
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ name:file.name, type:file.type, size:file.size, dataUrl:String(reader.result) });
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+      function renderImageFiles(id, grid) {
+        const files = fileFieldValues[id] || [];
+        grid.innerHTML = "";
+        for (const item of files) {
+          const thumb = document.createElement("div");
+          thumb.className = "thumb";
+          thumb.innerHTML = `<img alt="${escapeHtml(item.name)}" src="${item.dataUrl}"><span>${escapeHtml(item.name)}</span>`;
+          grid.append(thumb);
+        }
+      }
+      function renderImageField(field, prop, label, help, required, wide) {
+        const wrap = document.createElement("div");
+        wrap.className = `field ${wide ? "wide" : ""}`;
+        wrap.innerHTML = `<div class="label-row"><span>${escapeHtml(label)}${required ? ' <b class="required">*</b>' : ""}</span></div>`;
+        const multi = isMultiImageField(prop);
+        const zone = document.createElement("label");
+        zone.className = "dropzone";
+        zone.innerHTML = `<strong>${multi ? "Drop images here or click to upload" : "Drop one image here or click to upload"}</strong><span>${multi ? "Supports multiple reference images. Images are sent as base64, not external URLs." : "Image is sent as base64, not an external URL."}</span>`;
+        const input = document.createElement("input");
+        input.type = "file";
+        input.name = field.id;
+        input.accept = "image/*";
+        input.multiple = multi;
+        input.dataset.fileUpload = "image";
+        const grid = document.createElement("div");
+        grid.className = "thumb-grid";
+        async function addFiles(files) {
+          const incoming = [...files].filter((file) => file.type.startsWith("image/"));
+          const encoded = await Promise.all(incoming.map(fileToDataUrl));
+          fileFieldValues[field.id] = multi ? [...(fileFieldValues[field.id] || []), ...encoded].slice(0, 12) : encoded.slice(0, 1);
+          renderImageFiles(field.id, grid);
+        }
+        input.addEventListener("change", () => addFiles(input.files || []));
+        zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("dragover"); });
+        zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+        zone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          zone.classList.remove("dragover");
+          addFiles(event.dataTransfer.files || []);
+        });
+        zone.append(input);
+        wrap.append(zone, grid);
+        if (help) {
+          const helpEl = document.createElement("div");
+          helpEl.className = "help";
+          helpEl.textContent = `${help} Images are encoded and sent directly; local/private URLs are not sent to the LLM.`;
+          wrap.append(helpEl);
+        }
+        return wrap;
+      }
       function makeFieldFromProp(id, prop=inputProp(id), ui={}) {
         const propType = Array.isArray(prop.type) ? prop.type.find((x) => x !== "null") : prop.type;
         const widget = ui["ui:widget"];
@@ -655,6 +748,10 @@
         const type = field.type || (prop.enum ? "select" : prop.type);
         const wide = ["textarea","json","images"].includes(type) || arrayFields.has(field.id) || field.id === "topic";
         const def = fieldDefault(field);
+
+        if (isImageUploadField(field.id, prop, field)) {
+          return renderImageField(field, prop, label, help, required, true);
+        }
 
         if (type === "boolean") {
           const wrap = document.createElement("label");
@@ -784,8 +881,14 @@
         const payload = {};
         const props = schemaState.inputSchema.properties || {};
         for (const id of Object.keys(props)) {
+          if (fileFieldValues[id]?.length) {
+            const images = fileFieldValues[id].map((item) => ({ type:"image", name:item.name, mimeType:item.type, size:item.size, dataUrl:item.dataUrl }));
+            payload[id] = isMultiImageField(props[id]) ? images : images[0];
+            continue;
+          }
           const field = form.elements[id];
           if (!field) continue;
+          if (field.dataset?.fileUpload === "image") continue;
           const raw = fieldValue(id);
           const val = parseField(id, raw, props[id]);
           const def = fieldDefault(fieldById(id));
@@ -928,6 +1031,7 @@
       }
       async function loadSchema(preserve=false) {
         setStatus(t("loading"), "warn");
+        fileFieldValues = {};
         schemaState = await fetch(`/api/ui-schema?skill=${encodeURIComponent(selectedSkillId)}`).then((r) => r.json());
         renderForm(preserve);
         promptOutput.textContent = schemaState.skill.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime");
