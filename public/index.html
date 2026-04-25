@@ -650,7 +650,16 @@
         if (!item) return "";
         return language === "th" ? item[`${base}Th`] || item[base] || "" : item[base] || item[`${base}Th`] || "";
       }
-      function inputProp(id) { return schemaState?.inputSchema?.properties?.[id] || {}; }
+      function toSnakeCase(id) {
+        return String(id || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[-\s]+/g, "_").toLowerCase();
+      }
+      function schemaFieldId(id) {
+        const props = schemaState?.inputSchema?.properties || {};
+        const mapped = schemaState?.uiSchema?.outputMapping?.[id];
+        const candidates = [id, mapped, toSnakeCase(id), toSnakeCase(mapped)].filter(Boolean);
+        return candidates.find((candidate) => props[candidate]) || id;
+      }
+      function inputProp(id) { return schemaState?.inputSchema?.properties?.[schemaFieldId(id)] || {}; }
       function fieldDefault(field) {
         const prop = inputProp(field.id);
         if (field.default !== undefined) return field.default;
@@ -662,16 +671,18 @@
         const haystack = `${id} ${prop.title || ""} ${prop.description || ""} ${field.label || ""} ${field.helpText || ""}`.toLowerCase();
         const idText = String(id || "").toLowerCase();
         const titleText = `${prop.title || ""} ${field.label || ""}`.toLowerCase();
-        const explicitImageField = /(^|[_-])(image|images|photo|photos|picture|pictures|mask|asset|assets)([_-]|$)/i.test(idText)
+        const explicitImageField = field.type === "imageUpload"
+          || field["ui:widget"] === "imageUpload"
+          || /(^|[_-])(image|images|photo|photos|picture|pictures|mask|asset|assets)([_-]|$)/i.test(idText)
           || /(source|reference)[_-]?(image|images|photo|photos|picture|pictures|asset|assets)/i.test(idText)
-          || /(image|images|photo|photos|picture|pictures|mask|asset|assets|ภาพ|รูป|มาสก์)/i.test(titleText);
+          || /(image|images|photo|photos|picture|pictures|mask|asset|assets)/i.test(titleText);
         const referenceImagePhrase = /(reference|product|source|original|mask|attached|uploaded)\s+(image|images|photo|photos|picture|pictures|asset|assets)/i.test(haystack)
           || /(image|images|photo|photos|picture|pictures|asset|assets)\s+(reference|references|url|urls|path|paths|upload|uploads)/i.test(haystack)
-          || /(ภาพ|รูป).*(อ้างอิง|ต้นฉบับ|มาสก์|อัปโหลด|แนบ)/i.test(haystack);
+          || /upload\s+\d*[-–]?\d*\s*(reference\s+)?(image|images|photo|photos|picture|pictures)/i.test(haystack);
         const transportHint = prop.format === "uri" || prop.items?.format === "uri" || /url|urls|uri|path|paths|base64|data url/i.test(haystack);
         const typeList = Array.isArray(prop.type) ? prop.type.filter((x) => x !== "null") : [prop.type];
         const itemTypeList = Array.isArray(prop.items?.type) ? prop.items.type.filter((x) => x !== "null") : [prop.items?.type].filter(Boolean);
-        const fileWidget = field.type === "images" || field["ui:widget"] === "images" || prop.contentMediaType?.startsWith?.("image/");
+        const fileWidget = field.type === "images" || field.type === "imageUpload" || field["ui:widget"] === "images" || field["ui:widget"] === "imageUpload" || prop.contentMediaType?.startsWith?.("image/");
         const isVisualInput = explicitImageField || referenceImagePhrase;
         const scalarImage = typeList.includes("string") && isVisualInput && transportHint;
         const arrayImage = typeList.includes("array") && isVisualInput && (!itemTypeList.length || itemTypeList.some((x) => ["string", "object"].includes(x)) || transportHint);
@@ -720,6 +731,7 @@
         });
       }
       function renderImageField(field, prop, label, help, required, wide) {
+        const canonicalId = schemaFieldId(field.id);
         const wrap = document.createElement("div");
         wrap.className = `field ${wide ? "wide" : ""}`;
         wrap.innerHTML = `<div class="label-row"><span>${escapeHtml(label)}${required ? ' <b class="required">*</b>' : ""}</span></div>`;
@@ -730,7 +742,7 @@
         zone.innerHTML = `<strong>${escapeHtml(copy.title)}</strong><span>${escapeHtml(copy.detail)}</span>`;
         const input = document.createElement("input");
         input.type = "file";
-        input.name = field.id;
+        input.name = canonicalId;
         input.accept = "image/*";
         input.multiple = multi;
         input.dataset.fileUpload = "image";
@@ -740,9 +752,9 @@
           const incoming = [...files].filter((file) => file.type.startsWith("image/"));
           if (!incoming.length) return;
           const encoded = await Promise.all(incoming.map(fileToDataUrl));
-          fileFieldValues[field.id] = multi ? [...(fileFieldValues[field.id] || []), ...encoded].slice(0, 12) : encoded.slice(0, 1);
+          fileFieldValues[canonicalId] = multi ? [...(fileFieldValues[canonicalId] || []), ...encoded].slice(0, field.maxCount || 12) : encoded.slice(0, 1);
           input.value = "";
-          renderImageFiles(field.id, grid);
+          renderImageFiles(canonicalId, grid);
         }
         input.addEventListener("change", () => addFiles(input.files || []));
         zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("dragover"); });
@@ -781,11 +793,11 @@
         };
       }
       function uiFieldIds() {
-        return new Set((schemaState.uiSchema.sections || []).flatMap((section) => (section.fields || []).map((field) => field.id)));
+        return new Set((schemaState.uiSchema.sections || []).flatMap((section) => (section.fields || []).map((field) => schemaFieldId(field.id))));
       }
       function fieldById(id) {
         for (const section of schemaSections()) {
-          const field = (section.fields || []).find((item) => item.id === id);
+          const field = (section.fields || []).find((item) => item.id === id || schemaFieldId(item.id) === id);
           if (field) return field;
         }
         return makeFieldFromProp(id);
@@ -805,19 +817,20 @@
       function schemaSections() {
         if (!schemaState?.uiSchema?.sections) return fallbackSections();
         const uiSet = uiFieldIds();
-        const extras = (schemaState.coverage.missingUi || []).map((id) => makeFieldFromProp(id));
+        const extras = (schemaState.coverage.missingUi || []).filter((id) => !uiSet.has(id)).map((id) => makeFieldFromProp(id));
         const sections = (schemaState.uiSchema.sections || []).map((section, index) => ({...section, pinned:index===0 && section.collapsible === false}));
         if (extras.length) sections.push({ id:"schema_extras", title:t("extrasTitle"), titleTh:t("extrasTitle"), description:t("extrasDesc"), descriptionTh:t("extrasDesc"), fields:extras, collapsed:true });
         return sections;
       }
       function renderField(field) {
+        const canonicalId = schemaFieldId(field.id);
         const prop = inputProp(field.id);
         const label = localText(field, "label") || field.id;
         const help = localText(field, "helpText") || prop.description || "";
         const placeholder = localText(field, "placeholder");
-        const required = (schemaState.inputSchema.required || []).includes(field.id) || field.required;
+        const required = (schemaState.inputSchema.required || []).includes(canonicalId) || field.required;
         const type = field.type || (prop.enum ? "select" : prop.type);
-        const wide = ["textarea","json","images"].includes(type) || arrayFields.has(field.id) || field.id === "topic";
+        const wide = ["textarea","json","images","imageUpload"].includes(type) || arrayFields.has(canonicalId) || canonicalId === "topic";
         const def = fieldDefault(field);
 
         if (isImageUploadField(field.id, prop, field)) {
@@ -850,10 +863,10 @@
             control.append(item);
           }
           control.value = def ?? "";
-        } else if (type === "textarea" || arrayFields.has(field.id)) {
+        } else if (type === "textarea" || arrayFields.has(canonicalId)) {
           control = document.createElement("textarea");
-          control.rows = field.rows || (arrayFields.has(field.id) ? 3 : 2);
-          control.placeholder = placeholder || (arrayFields.has(field.id) ? "One item per line" : "");
+          control.rows = field.rows || (arrayFields.has(canonicalId) ? 3 : 2);
+          control.placeholder = placeholder || (arrayFields.has(canonicalId) ? "One item per line" : "");
           control.value = Array.isArray(def) ? def.join("\n") : def || "";
         } else if (type === "json" || type === "images") {
           control = document.createElement("textarea");
@@ -869,7 +882,7 @@
           control.placeholder = placeholder || "";
           if (def !== null && def !== undefined) control.value = def;
         }
-        control.name = field.id;
+        control.name = canonicalId;
         if (required) control.required = true;
         wrap.append(control);
         if (help) {
