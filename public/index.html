@@ -171,6 +171,7 @@
       .dropzone input { display: none; }
       .thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; width: 100%; }
       .thumb {
+        position: relative;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: white;
@@ -178,6 +179,24 @@
       }
       .thumb img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
       .thumb span { display: block; padding: 5px 6px; font-size: .7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .thumb-remove {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(15, 23, 42, .18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .94);
+        color: #991b1b;
+        font-size: 1rem;
+        font-weight: 900;
+        line-height: 1;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, .12);
+      }
+      .thumb-remove:hover { background: #fee2e2; border-color: #fecaca; }
       .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
       .btn { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 9px 13px; font-weight: 900; }
       .btn.primary { flex: 1; color: white; background: linear-gradient(135deg, var(--blue), var(--cyan)); }
@@ -641,10 +660,22 @@
       }
       function isImageUploadField(id, prop, field={}) {
         const haystack = `${id} ${prop.title || ""} ${prop.description || ""} ${field.label || ""} ${field.helpText || ""}`.toLowerCase();
-        const imageName = /(image|photo|picture|reference|source|mask|asset)/i.test(haystack);
-        const urlLike = prop.format === "uri" || prop.items?.format === "uri" || /url|path|uri/i.test(haystack);
-        const type = Array.isArray(prop.type) ? prop.type.find((x) => x !== "null") : prop.type;
-        return imageName && urlLike && ["string", "array"].includes(type);
+        const idText = String(id || "").toLowerCase();
+        const titleText = `${prop.title || ""} ${field.label || ""}`.toLowerCase();
+        const explicitImageField = /(^|[_-])(image|images|photo|photos|picture|pictures|mask|asset|assets)([_-]|$)/i.test(idText)
+          || /(source|reference)[_-]?(image|images|photo|photos|picture|pictures|asset|assets)/i.test(idText)
+          || /(image|images|photo|photos|picture|pictures|mask|asset|assets|ภาพ|รูป|มาสก์)/i.test(titleText);
+        const referenceImagePhrase = /(reference|product|source|original|mask|attached|uploaded)\s+(image|images|photo|photos|picture|pictures|asset|assets)/i.test(haystack)
+          || /(image|images|photo|photos|picture|pictures|asset|assets)\s+(reference|references|url|urls|path|paths|upload|uploads)/i.test(haystack)
+          || /(ภาพ|รูป).*(อ้างอิง|ต้นฉบับ|มาสก์|อัปโหลด|แนบ)/i.test(haystack);
+        const transportHint = prop.format === "uri" || prop.items?.format === "uri" || /url|urls|uri|path|paths|base64|data url/i.test(haystack);
+        const typeList = Array.isArray(prop.type) ? prop.type.filter((x) => x !== "null") : [prop.type];
+        const itemTypeList = Array.isArray(prop.items?.type) ? prop.items.type.filter((x) => x !== "null") : [prop.items?.type].filter(Boolean);
+        const fileWidget = field.type === "images" || field["ui:widget"] === "images" || prop.contentMediaType?.startsWith?.("image/");
+        const isVisualInput = explicitImageField || referenceImagePhrase;
+        const scalarImage = typeList.includes("string") && isVisualInput && transportHint;
+        const arrayImage = typeList.includes("array") && isVisualInput && (!itemTypeList.length || itemTypeList.some((x) => ["string", "object"].includes(x)) || transportHint);
+        return fileWidget || scalarImage || arrayImage;
       }
       function isMultiImageField(prop) {
         return prop.type === "array" || (Array.isArray(prop.type) && prop.type.includes("array"));
@@ -657,24 +688,46 @@
           reader.readAsDataURL(file);
         });
       }
+      function imageUploadText(multi) {
+        if (language === "th") {
+          return {
+            title: multi ? "ลากภาพมาวาง หรือคลิกเพื่ออัปโหลด" : "ลากภาพเดียวมาวาง หรือคลิกเพื่ออัปโหลด",
+            detail: multi ? "รองรับภาพอ้างอิงหลายภาพ และส่งเป็น base64 ไม่ใช้ URL ภายนอก" : "ภาพจะถูกส่งเป็น base64 ไม่ใช้ URL ภายนอก",
+            remove: "ลบภาพ"
+          };
+        }
+        return {
+          title: multi ? "Drop images here or click to upload" : "Drop one image here or click to upload",
+          detail: multi ? "Supports multiple reference images. Images are sent as base64, not external URLs." : "Image is sent as base64, not an external URL.",
+          remove: "Remove image"
+        };
+      }
       function renderImageFiles(id, grid) {
         const files = fileFieldValues[id] || [];
         grid.innerHTML = "";
-        for (const item of files) {
+        const copy = imageUploadText(true);
+        files.forEach((item, index) => {
           const thumb = document.createElement("div");
           thumb.className = "thumb";
-          thumb.innerHTML = `<img alt="${escapeHtml(item.name)}" src="${item.dataUrl}"><span>${escapeHtml(item.name)}</span>`;
+          thumb.innerHTML = `<img alt="${escapeHtml(item.name)}" src="${item.dataUrl}"><button class="thumb-remove" type="button" aria-label="${escapeHtml(copy.remove)}" title="${escapeHtml(copy.remove)}">&times;</button><span>${escapeHtml(item.name)}</span>`;
+          thumb.querySelector(".thumb-remove").addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            fileFieldValues[id] = (fileFieldValues[id] || []).filter((_, fileIndex) => fileIndex !== index);
+            renderImageFiles(id, grid);
+          });
           grid.append(thumb);
-        }
+        });
       }
       function renderImageField(field, prop, label, help, required, wide) {
         const wrap = document.createElement("div");
         wrap.className = `field ${wide ? "wide" : ""}`;
         wrap.innerHTML = `<div class="label-row"><span>${escapeHtml(label)}${required ? ' <b class="required">*</b>' : ""}</span></div>`;
         const multi = isMultiImageField(prop);
+        const copy = imageUploadText(multi);
         const zone = document.createElement("label");
         zone.className = "dropzone";
-        zone.innerHTML = `<strong>${multi ? "Drop images here or click to upload" : "Drop one image here or click to upload"}</strong><span>${multi ? "Supports multiple reference images. Images are sent as base64, not external URLs." : "Image is sent as base64, not an external URL."}</span>`;
+        zone.innerHTML = `<strong>${escapeHtml(copy.title)}</strong><span>${escapeHtml(copy.detail)}</span>`;
         const input = document.createElement("input");
         input.type = "file";
         input.name = field.id;
@@ -685,8 +738,10 @@
         grid.className = "thumb-grid";
         async function addFiles(files) {
           const incoming = [...files].filter((file) => file.type.startsWith("image/"));
+          if (!incoming.length) return;
           const encoded = await Promise.all(incoming.map(fileToDataUrl));
           fileFieldValues[field.id] = multi ? [...(fileFieldValues[field.id] || []), ...encoded].slice(0, 12) : encoded.slice(0, 1);
+          input.value = "";
           renderImageFiles(field.id, grid);
         }
         input.addEventListener("change", () => addFiles(input.files || []));
