@@ -1,0 +1,25 @@
+GPT Image Prompt Engineer v5.5
+
+Command: scripts/verify.sh
+Result: PASS
+Tests: 41/41
+
+Coverage highlights:
+- auto decision trace
+- deliverable profiles and final review
+- product and packaging reference-image fidelity
+- locked user parameters
+- reference preflight for real product/place grounding
+- product/place factual reference grounding
+- social/story hooks and safe zones
+- presentation slide readability defaults
+- storyboard continuity reinforcement
+- unsafe text-prompt repair before return
+- edit validation
+- localization
+- model-free render contract
+- render request parameters
+- safety and quality checks
+- schema contract
+- deterministic review-module orchestration
+- UI schema completeness, option coverage, help text, and textarea adapter normalization

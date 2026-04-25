@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Smart Skill Runner</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef3f8;
+        --ink: #111827;
+        --muted: #667085;
+        --line: #d7e0ea;
+        --card: rgba(255, 255, 255, 0.9);
+        --panel: #f8fafc;
+        --navy: #102033;
+        --blue: #1864d8;
+        --cyan: #0e9db5;
+        --rose: #c2416b;
+        --green: #167256;
+        --amber: #a15c00;
+        --shadow: 0 22px 60px rgba(16, 32, 51, 0.14);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 16% 8%, rgba(24, 100, 216, 0.15), transparent 28%),
+          radial-gradient(circle at 88% 12%, rgba(14, 157, 181, 0.13), transparent 30%),
+          linear-gradient(180deg, #f7fbff, var(--bg));
+      }
+      button, input, select, textarea { font: inherit; }
+      button { cursor: pointer; }
+      .app { width: min(1560px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0; }
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 520px);
+        gap: 18px;
+        align-items: end;
+        margin-bottom: 18px;
+      }
+      .eyebrow { margin: 0 0 6px; color: var(--blue); font-size: .78rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { margin-bottom: 8px; font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 1.02; }
+      .subtitle { max-width: 820px; margin: 0; color: var(--muted); line-height: 1.5; }
+      .top-controls {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 10px;
+        align-items: end;
+      }
+      .selector-label { display: grid; gap: 6px; }
+      .selector-label span { color: var(--muted); font-size: .82rem; font-weight: 800; }
+      .status {
+        min-width: 112px;
+        min-height: 42px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--muted);
+        font-weight: 900;
+      }
+      .status.ok { color: var(--green); border-color: rgba(22, 114, 86, .34); }
+      .status.warn { color: var(--amber); border-color: rgba(161, 92, 0, .34); }
+      .icon-btn {
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--ink);
+        padding: 9px 12px;
+        font-weight: 900;
+      }
+      .lang-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        min-width: 120px;
+        padding: 4px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+      }
+      .lang-toggle button { min-height: 34px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 900; }
+      .lang-toggle button.active { background: var(--navy); color: white; }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(420px, .95fr) minmax(460px, 1.05fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .card {
+        border: 1px solid rgba(215, 224, 234, .88);
+        border-radius: 8px;
+        background: var(--card);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+      .controls, .output { padding: 18px; }
+      .section {
+        border: 1px solid rgba(215, 224, 234, .9);
+        border-radius: 8px;
+        background: rgba(248, 250, 252, .92);
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+      .section.static { padding: 14px; }
+      .section > summary {
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+      }
+      .section > summary::-webkit-details-marker { display: none; }
+      .section-title { margin: 0 0 4px; font-size: 1rem; }
+      .section-desc { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+      .badge { align-self: start; border-radius: 999px; padding: 5px 9px; background: rgba(24, 100, 216, .1); color: var(--blue); font-size: .76rem; font-weight: 900; }
+      .body { padding: 0 14px 14px; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .field { display: grid; gap: 6px; min-width: 0; }
+      .wide { grid-column: 1 / -1; }
+      .label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .label-row span:first-child { font-size: .86rem; font-weight: 850; }
+      .required { color: var(--rose); }
+      .help { color: var(--muted); font-size: .78rem; line-height: 1.35; }
+      input, select, textarea {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        color: var(--ink);
+        padding: 10px 11px;
+        outline: none;
+      }
+      textarea { min-height: 88px; resize: vertical; }
+      input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24, 100, 216, .13); }
+      .checkbox { display: flex; align-items: center; gap: 9px; min-height: 42px; }
+      .checkbox input { width: 18px; height: 18px; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+      .btn { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 9px 13px; font-weight: 900; }
+      .btn.primary { flex: 1; color: white; background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+      .btn.secondary { background: #eef4fb; border-color: var(--line); color: var(--ink); }
+      .btn:disabled { opacity: .55; cursor: not-allowed; }
+      .output-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+      .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+      .tab { min-height: 40px; border: 1px solid var(--line); border-radius: 8px; background: #eef4fb; color: var(--ink); font-weight: 900; }
+      .tab.active { border-color: rgba(24, 100, 216, .5); background: #e3efff; color: var(--blue); }
+      .pane { display: none; }
+      .pane.active { display: block; }
+      pre {
+        margin: 0;
+        min-height: 520px;
+        max-height: 700px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border-radius: 8px;
+        background: #101826;
+        color: #f4f7fb;
+        padding: 15px;
+        line-height: 1.58;
+        font-size: .93rem;
+      }
+      .review-grid { display: grid; gap: 10px; }
+      .review-item { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 12px; }
+      .review-item p, .review-item li { color: var(--muted); line-height: 1.45; }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+        padding: 18px;
+        background: rgba(15, 23, 42, .42);
+        backdrop-filter: blur(10px);
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal {
+        width: min(980px, 100%);
+        max-height: min(860px, calc(100vh - 36px));
+        overflow: auto;
+        border: 1px solid rgba(215, 224, 234, .95);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .98);
+        box-shadow: 0 28px 80px rgba(15, 23, 42, .28);
+      }
+      .modal-head, .modal-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .modal-foot { border-top: 1px solid var(--line); border-bottom: 0; }
+      .modal-body { padding: 16px; }
+      .provider-grid, .fallback-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .provider-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--panel);
+      }
+      .quick-guide {
+        border: 1px solid rgba(14, 165, 233, .22);
+        border-radius: 8px;
+        padding: 14px;
+        background: linear-gradient(135deg, rgba(14, 165, 233, .08), rgba(16, 185, 129, .08));
+        margin-bottom: 14px;
+      }
+      .quick-guide h3 { margin: 0 0 8px; font-size: 1rem; }
+      .quick-guide ol { margin: 0; padding-left: 20px; color: var(--text); line-height: 1.55; }
+      .quick-guide li + li { margin-top: 6px; }
+      .quick-guide a { color: var(--blue); font-weight: 800; text-decoration: none; }
+      .quick-guide a:hover { text-decoration: underline; }
+      .test-results {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .test-row {
+        display: grid;
+        grid-template-columns: 42px 92px 1fr 1.1fr;
+        gap: 8px;
+        align-items: start;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        padding: 10px;
+        font-size: .84rem;
+      }
+      .test-row.ok { border-color: rgba(22, 114, 86, .34); background: rgba(22, 114, 86, .06); }
+      .test-row.fail { border-color: rgba(194, 65, 107, .3); background: rgba(194, 65, 107, .06); }
+      .test-row strong { color: var(--ink); }
+      .test-row span { color: var(--muted); overflow-wrap: anywhere; }
+      .fallback-row {
+        display: grid;
+        grid-template-columns: 52px minmax(120px, .7fr) minmax(190px, 1fr) minmax(170px, 1fr);
+        gap: 10px;
+        align-items: end;
+      }
+      .rank {
+        display: grid;
+        place-items: center;
+        min-height: 40px;
+        border-radius: 8px;
+        background: #e3efff;
+        color: var(--blue);
+        font-weight: 950;
+      }
+      .secret-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+      .small-note {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: .78rem;
+        line-height: 1.4;
+      }
+      @media (max-width: 1100px) {
+        .topbar, .layout { grid-template-columns: 1fr; }
+        .top-controls { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 760px) {
+        .app { width: min(100% - 20px, 1560px); padding: 10px 0; }
+        .top-controls, .grid, .fallback-row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">Dynamic local skill runtime</p>
+          <h1 id="appTitle">Smart Skill Runner</h1>
+          <p class="subtitle" id="appDescription">Loading available skills...</p>
+        </div>
+        <div class="top-controls">
+          <label class="selector-label">
+            <span id="skillLabel">Skill</span>
+            <select id="skillSelect"></select>
+          </label>
+          <div class="lang-toggle" aria-label="Language">
+            <button type="button" id="langEn" class="active">EN</button>
+            <button type="button" id="langTh">TH</button>
+          </div>
+          <button class="icon-btn" type="button" id="configBtn" data-i18n="config">Config</button>
+          <div class="status" id="status">Loading</div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <section class="card controls">
+          <form id="skillForm">
+            <div id="formRoot"></div>
+            <div class="actions">
+              <button class="btn primary" type="submit" id="runBtn" data-i18n="run">Run Skill</button>
+              <button class="btn secondary" type="button" id="resetBtn" data-i18n="reset">Reset</button>
+              <button class="btn secondary" type="button" id="sampleBtn" data-i18n="sample">Thai Cats Sample</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card output">
+          <div class="output-head">
+            <h2 id="outputTitle">Output</h2>
+            <div class="actions" style="margin-top:0">
+              <button class="btn secondary" type="button" id="copyBtn" data-i18n="copy">Copy</button>
+              <button class="btn secondary" type="button" id="downloadBtn" data-i18n="download">Download JSON</button>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" type="button" data-tab="prompt">Prompt</button>
+            <button class="tab" type="button" data-tab="json">JSON</button>
+            <button class="tab" type="button" data-tab="review">Review</button>
+          </div>
+          <div class="pane active" id="promptPane"><pre id="promptOutput">Loading...</pre></div>
+          <div class="pane" id="jsonPane"><pre id="jsonOutput">{}</pre></div>
+          <div class="pane" id="reviewPane"><div class="review-grid" id="reviewOutput"></div></div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal-backdrop" id="configModal" aria-hidden="true">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="configTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow" data-i18n="configEyebrow">LLM provider setup</p>
+            <h2 id="configTitle">API Keys & Model Fallback</h2>
+          </div>
+          <button class="btn secondary" type="button" id="closeConfigBtn">Close</button>
+        </div>
+        <div class="modal-body">
+          <div class="quick-guide">
+            <h3>คู่มือฉบับย่อ: สมัครและนำ API key มาใส่</h3>
+            <ol>
+              <li><strong>NVIDIA NIM:</strong> ไปที่ <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a> แล้ว Sign in ด้วยบัญชี NVIDIA จากนั้นกดสร้าง API key แล้วคัดลอกมาใส่ช่อง NVIDIA NIM ด้านล่าง</li>
+              <li><strong>OpenRouter:</strong> ไปที่ <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a> แล้ว Sign in/Sign up จากนั้นกด Create key แล้วคัดลอกมาใส่ช่อง OpenRouter ด้านล่าง</li>
+              <li>API key มักแสดงให้คัดลอกเพียงครั้งเดียว ให้เก็บไว้ในที่ปลอดภัย และในแอปนี้ช่อง key จะถูกซ่อนเป็นรหัสผ่านพร้อมปุ่ม Show/Hide</li>
+              <li>หลังใส่ key ให้เลือก fallback model ลำดับ 1-4 แล้วกด Save Config ค่า config จะถูกเก็บใน browser นี้เท่านั้น ไม่สร้างไฟล์ config และไม่ใช้ database</li>
+            </ol>
+          </div>
+          <div class="provider-grid">
+            <article class="provider-card">
+              <h3>NVIDIA NIM</h3>
+              <label class="field">
+                <span>API Key</span>
+                <div class="secret-row">
+                  <input id="nvidiaKey" type="password" autocomplete="off" placeholder="nvapi-...">
+                  <button class="btn secondary" type="button" data-toggle-secret="nvidiaKey">Show</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Base URL</span>
+                <input id="nvidiaBaseUrl" value="https://integrate.api.nvidia.com/v1">
+              </label>
+              <p class="small-note">Key is masked in the UI and saved locally in this browser only.</p>
+            </article>
+            <article class="provider-card">
+              <h3>OpenRouter</h3>
+              <label class="field">
+                <span>API Key</span>
+                <div class="secret-row">
+                  <input id="openrouterKey" type="password" autocomplete="off" placeholder="sk-or-...">
+                  <button class="btn secondary" type="button" data-toggle-secret="openrouterKey">Show</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Base URL</span>
+                <input id="openrouterBaseUrl" value="https://openrouter.ai/api/v1">
+              </label>
+              <p class="small-note">Free model availability can change. Custom model names are supported.</p>
+            </article>
+          </div>
+
+          <div class="section static" style="margin-top:14px">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title" id="fallbackTitle">Fallback order</h3>
+                <p class="section-desc" id="fallbackDesc">Choose primary and backup LLMs. The app can try 1, then 2, 3, and 4 when a model is unavailable.</p>
+              </div>
+              <span class="badge">1-4</span>
+            </div>
+            <div class="fallback-grid" id="fallbackRows"></div>
+            <div class="test-results" id="testConfigResults" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <span class="small-note" id="configSavedNote">Stored in this browser only. No config file and no database are used.</span>
+          <div class="actions" style="margin-top:0">
+            <button class="btn secondary" type="button" id="clearConfigBtn">Clear</button>
+            <button class="btn secondary" type="button" id="testConfigBtn">Test LLM</button>
+            <button class="btn primary" type="button" id="saveConfigBtn">Save Config</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const form = document.querySelector("#skillForm");
+      const formRoot = document.querySelector("#formRoot");
+      const statusEl = document.querySelector("#status");
+      const promptOutput = document.querySelector("#promptOutput");
+      const jsonOutput = document.querySelector("#jsonOutput");
+      const reviewOutput = document.querySelector("#reviewOutput");
+      const appTitle = document.querySelector("#appTitle");
+      const appDescription = document.querySelector("#appDescription");
+      const skillSelect = document.querySelector("#skillSelect");
+      const runBtn = document.querySelector("#runBtn");
+      const configModal = document.querySelector("#configModal");
+      const fallbackRows = document.querySelector("#fallbackRows");
+      const testConfigResults = document.querySelector("#testConfigResults");
+
+      const uiText = {
+        en: { eyebrow:"Dynamic local skill runtime", skill:"Skill", config:"Config", run:"Run Skill", reset:"Reset", sample:"Thai Cats Sample", copy:"Copy", download:"Download JSON", output:"Output", ready:"Ready", loading:"Loading", running:"Running", completed:"Completed", needsInput:"Needs input", noRuntime:"This skill has no local Python runtime. Configure an LLM key to run it through OpenRouter or NVIDIA.", extrasTitle:"Schema Extras", extrasDesc:"Fields present in input.schema but missing from ui.schema. Added automatically.", promptEmpty:"Choose a skill, fill required fields, then run.", coverage:"Effective UI coverage", configEyebrow:"LLM provider setup" },
+        th: { eyebrow:"รันสกิลในเครื่องแบบไดนามิก", skill:"สกิล", config:"ตั้งค่า", run:"รันสกิล", reset:"รีเซ็ต", sample:"ตัวอย่างแมวไทย", copy:"คัดลอก", download:"ดาวน์โหลด JSON", output:"ผลลัพธ์", ready:"พร้อม", loading:"กำลังโหลด", running:"กำลังรัน", completed:"เสร็จแล้ว", needsInput:"ต้องกรอกข้อมูล", noRuntime:"สกิลนี้ยังไม่มี Python runtime ในโปรเจกต์ แก้ค่า UI ได้ แต่ยังรันไม่ได้", extrasTitle:"ตัวเลือกจาก Schema เพิ่มเติม", extrasDesc:"ฟิลด์ที่มีใน input.schema แต่ไม่มีใน ui.schema ถูกเพิ่มให้อัตโนมัติ", promptEmpty:"เลือกสกิล กรอกข้อมูลที่จำเป็น แล้วกดรัน", coverage:"ความครอบคลุม UI ที่ใช้งานได้", configEyebrow:"ตั้งค่า LLM Provider" }
+      };
+      const providerModels = {
+        nvidia: [
+          { id:"deepseek-ai/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"NIM supported" },
+          { id:"openai/gpt-oss-120b", label:"GPT-OSS 120B", tier:"NIM supported" },
+          { id:"openai/gpt-oss-20b", label:"GPT-OSS 20B", tier:"NIM supported" },
+          { id:"deepseek-ai/deepseek-r1", label:"DeepSeek R1", tier:"NIM supported" },
+          { id:"deepseek-ai/deepseek-coder-v2-lite-instruct", label:"DeepSeek Coder V2 Lite", tier:"NIM supported" },
+          { id:"meta/llama3-8b-instruct", label:"Llama 3 8B Instruct", tier:"NIM supported" },
+          { id:"meta/llama3-70b-instruct", label:"Llama 3 70B Instruct", tier:"NIM supported" }
+        ],
+        openrouter: [
+          { id:"openrouter/free", label:"OpenRouter Free Router", tier:"free" },
+          { id:"deepseek/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"paid" },
+          { id:"nvidia/nemotron-3-super-120b-a12b:free", label:"NVIDIA Nemotron 3 Super 120B", tier:"free" },
+          { id:"openai/gpt-oss-120b:free", label:"GPT-OSS 120B", tier:"free" },
+          { id:"openai/gpt-oss-20b:free", label:"GPT-OSS 20B", tier:"free" },
+          { id:"minimax/minimax-m2.5:free", label:"MiniMax M2.5", tier:"free" },
+          { id:"z-ai/glm-4.5-air:free", label:"GLM 4.5 Air", tier:"free" },
+          { id:"google/gemma-4-31b-it:free", label:"Gemma 4 31B", tier:"free" },
+          { id:"qwen/qwen3-coder-480b-a35b-instruct:free", label:"Qwen3 Coder 480B", tier:"free" }
+        ]
+      };
+      const defaultConfig = {
+        providers: {
+          nvidia: { apiKey:"", baseUrl:"https://integrate.api.nvidia.com/v1" },
+          openrouter: { apiKey:"", baseUrl:"https://openrouter.ai/api/v1" }
+        },
+        fallback: [
+          { provider:"openrouter", model:"openrouter/free", customModel:"" },
+          { provider:"openrouter", model:"openai/gpt-oss-120b:free", customModel:"" },
+          { provider:"openrouter", model:"nvidia/nemotron-3-super-120b-a12b:free", customModel:"" },
+          { provider:"openrouter", model:"openai/gpt-oss-20b:free", customModel:"" }
+        ]
+      };
+
+      const arrayFields = new Set(["modifiers","avoid","panel_descriptions","verified_reference_facts","reference_sources"]);
+      let language = localStorage.getItem("uiLanguage") || "en";
+      let skills = [];
+      let selectedSkillId = localStorage.getItem("selectedSkillId") || "";
+      let schemaState = null;
+      let currentBundle = null;
+      let llmConfig = loadConfig();
+
+      const t = (key) => uiText[language][key] || uiText.en[key] || key;
+      const escapeHtml = (text) => String(text).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+
+      function setStatus(text, type="") {
+        statusEl.textContent = text;
+        statusEl.className = `status ${type}`.trim();
+      }
+      function loadConfig() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("llmConfig") || "{}");
+          const normalizedFallback = Array.isArray(saved.fallback)
+            ? saved.fallback.map((item) => {
+                if (item?.provider !== "nvidia") return item;
+                const valid = providerModels.nvidia.some((model) => model.id === item.model);
+                return valid || item.model === "__custom__" ? item : { ...item, model:"openai/gpt-oss-120b" };
+              })
+            : [];
+          return {
+            providers: {
+              nvidia: { ...defaultConfig.providers.nvidia, ...(saved.providers?.nvidia || {}) },
+              openrouter: { ...defaultConfig.providers.openrouter, ...(saved.providers?.openrouter || {}) }
+            },
+            fallback: Array.from({ length: 4 }, (_, index) => ({
+              ...defaultConfig.fallback[index],
+              ...(normalizedFallback[index] || {})
+            }))
+          };
+        }
+        catch { return structuredClone(defaultConfig); }
+      }
+      function saveConfig() {
+        localStorage.setItem("llmConfig", JSON.stringify(llmConfig));
+      }
+      function hasConfiguredLlm() {
+        return (llmConfig.fallback || []).some((item) => {
+          const provider = item.provider;
+          const model = item.model === "__custom__" ? item.customModel : item.model;
+          return provider && model && llmConfig.providers?.[provider]?.apiKey && llmConfig.providers?.[provider]?.baseUrl;
+        });
+      }
+      function renderConfig() {
+        document.querySelector("#nvidiaKey").value = llmConfig.providers.nvidia.apiKey || "";
+        document.querySelector("#nvidiaBaseUrl").value = llmConfig.providers.nvidia.baseUrl || defaultConfig.providers.nvidia.baseUrl;
+        document.querySelector("#openrouterKey").value = llmConfig.providers.openrouter.apiKey || "";
+        document.querySelector("#openrouterBaseUrl").value = llmConfig.providers.openrouter.baseUrl || defaultConfig.providers.openrouter.baseUrl;
+        fallbackRows.innerHTML = "";
+        for (let index = 0; index < 4; index += 1) {
+          const item = llmConfig.fallback[index] || defaultConfig.fallback[index];
+          const row = document.createElement("div");
+          row.className = "fallback-row";
+          row.innerHTML = `
+            <div class="rank">${index + 1}</div>
+            <label class="field"><span>Provider</span><select data-config-provider="${index}"><option value="openrouter">OpenRouter</option><option value="nvidia">NVIDIA</option></select></label>
+            <label class="field"><span>Model</span><select data-config-model="${index}"></select></label>
+            <label class="field"><span>Custom model</span><input data-config-custom="${index}" placeholder="provider/model-name"></label>
+          `;
+          fallbackRows.append(row);
+          row.querySelector(`[data-config-provider="${index}"]`).value = item.provider;
+          fillModelSelect(index, item.provider, item.model);
+          row.querySelector(`[data-config-custom="${index}"]`).value = item.customModel || "";
+        }
+      }
+      function fillModelSelect(index, provider, selected) {
+        const select = fallbackRows.querySelector(`[data-config-model="${index}"]`);
+        select.innerHTML = "";
+        for (const model of providerModels[provider] || []) {
+          const option = document.createElement("option");
+          option.value = model.id;
+          option.textContent = `${model.label} (${model.id}) - ${model.tier}`;
+          select.append(option);
+        }
+        const custom = document.createElement("option");
+        custom.value = "__custom__";
+        custom.textContent = "Custom model";
+        select.append(custom);
+        select.value = [...select.options].some((opt) => opt.value === selected) ? selected : "__custom__";
+      }
+      function readConfigFromModal() {
+        llmConfig.providers.nvidia.apiKey = document.querySelector("#nvidiaKey").value.trim();
+        llmConfig.providers.nvidia.baseUrl = document.querySelector("#nvidiaBaseUrl").value.trim() || defaultConfig.providers.nvidia.baseUrl;
+        llmConfig.providers.openrouter.apiKey = document.querySelector("#openrouterKey").value.trim();
+        llmConfig.providers.openrouter.baseUrl = document.querySelector("#openrouterBaseUrl").value.trim() || defaultConfig.providers.openrouter.baseUrl;
+        llmConfig.fallback = [];
+        for (let index = 0; index < 4; index += 1) {
+          llmConfig.fallback.push({
+            provider: fallbackRows.querySelector(`[data-config-provider="${index}"]`).value,
+            model: fallbackRows.querySelector(`[data-config-model="${index}"]`).value,
+            customModel: fallbackRows.querySelector(`[data-config-custom="${index}"]`).value.trim()
+          });
+        }
+      }
+      function closeConfig() {
+        configModal.classList.remove("open");
+        configModal.setAttribute("aria-hidden", "true");
+      }
+      function openConfig() {
+        renderConfig();
+        testConfigResults.innerHTML = "";
+        configModal.classList.add("open");
+        configModal.setAttribute("aria-hidden", "false");
+      }
+      function renderLlmTestResults(results) {
+        testConfigResults.innerHTML = "";
+        for (const item of results || []) {
+          const row = document.createElement("div");
+          row.className = `test-row ${item.ok ? "ok" : "fail"}`;
+          row.innerHTML = `
+            <strong>#${escapeHtml(item.rank || "-")}</strong>
+            <strong>${item.ok ? "OK" : item.skipped ? "SKIP" : "FAIL"}</strong>
+            <span>${escapeHtml(item.provider || "")}<br>${escapeHtml(item.model || "")}</span>
+            <span>${escapeHtml(item.preview || item.error || "")}</span>
+          `;
+          testConfigResults.append(row);
+        }
+      }
+      function localText(item, base) {
+        if (!item) return "";
+        return language === "th" ? item[`${base}Th`] || item[base] || "" : item[base] || item[`${base}Th`] || "";
+      }
+      function inputProp(id) { return schemaState?.inputSchema?.properties?.[id] || {}; }
+      function fieldDefault(field) {
+        const prop = inputProp(field.id);
+        if (field.default !== undefined) return field.default;
+        if (prop.default !== undefined) return prop.default;
+        if (field.type === "boolean" || prop.type === "boolean") return false;
+        return "";
+      }
+      function makeFieldFromProp(id, prop=inputProp(id), ui={}) {
+        const propType = Array.isArray(prop.type) ? prop.type.find((x) => x !== "null") : prop.type;
+        const widget = ui["ui:widget"];
+        return {
+          id,
+          type: prop.enum ? "select" : widget === "textarea" ? "textarea" : propType === "boolean" ? "boolean" : propType === "integer" || propType === "number" ? "number" : propType === "array" || propType === "object" ? "json" : "input",
+          label: ui["ui:title"] || prop.title || id.replaceAll("_", " "),
+          labelTh: ui["ui:title"] || prop.title || id.replaceAll("_", " "),
+          helpText: ui["ui:help"] || prop.description || "",
+          helpTextTh: ui["ui:help"] || prop.description || "",
+          default: prop.default,
+          min: prop.minimum,
+          max: prop.maximum,
+          step: propType === "number" ? "any" : 1,
+          rows: ui["ui:options"]?.rows,
+          options: prop.enum ? prop.enum.map((value) => ({ value, label: value, labelTh: value })) : undefined
+        };
+      }
+      function uiFieldIds() {
+        return new Set((schemaState.uiSchema.sections || []).flatMap((section) => (section.fields || []).map((field) => field.id)));
+      }
+      function fieldById(id) {
+        for (const section of schemaSections()) {
+          const field = (section.fields || []).find((item) => item.id === id);
+          if (field) return field;
+        }
+        return makeFieldFromProp(id);
+      }
+      function fallbackSections() {
+        const props = schemaState.inputSchema.properties || {};
+        const ui = schemaState.uiSchema || {};
+        const order = ui["ui:order"] || Object.keys(props);
+        const ordered = [...order.filter((id) => props[id]), ...Object.keys(props).filter((id) => !order.includes(id))];
+        const basic = ordered.filter((id) => (schemaState.inputSchema.required || []).includes(id)).map((id) => makeFieldFromProp(id, props[id], ui[id] || {}));
+        const optional = ordered.filter((id) => !(schemaState.inputSchema.required || []).includes(id)).map((id) => makeFieldFromProp(id, props[id], ui[id] || {}));
+        return [
+          { id:"required", title:"Required", titleTh:"ข้อมูลจำเป็น", description:"Required fields from input.schema", descriptionTh:"ฟิลด์ที่จำเป็นจาก input.schema", fields: basic, collapsed:false, pinned:true },
+          { id:"optional", title:"Options", titleTh:"ตัวเลือก", description:"Optional fields from input.schema", descriptionTh:"ฟิลด์เพิ่มเติมจาก input.schema", fields: optional, collapsed:false }
+        ];
+      }
+      function schemaSections() {
+        if (!schemaState?.uiSchema?.sections) return fallbackSections();
+        const uiSet = uiFieldIds();
+        const extras = (schemaState.coverage.missingUi || []).map((id) => makeFieldFromProp(id));
+        const sections = (schemaState.uiSchema.sections || []).map((section, index) => ({...section, pinned:index===0 && section.collapsible === false}));
+        if (extras.length) sections.push({ id:"schema_extras", title:t("extrasTitle"), titleTh:t("extrasTitle"), description:t("extrasDesc"), descriptionTh:t("extrasDesc"), fields:extras, collapsed:true });
+        return sections;
+      }
+      function renderField(field) {
+        const prop = inputProp(field.id);
+        const label = localText(field, "label") || field.id;
+        const help = localText(field, "helpText") || prop.description || "";
+        const placeholder = localText(field, "placeholder");
+        const required = (schemaState.inputSchema.required || []).includes(field.id) || field.required;
+        const type = field.type || (prop.enum ? "select" : prop.type);
+        const wide = ["textarea","json","images"].includes(type) || arrayFields.has(field.id) || field.id === "topic";
+        const def = fieldDefault(field);
+
+        if (type === "boolean") {
+          const wrap = document.createElement("label");
+          wrap.className = "checkbox";
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = field.id;
+          input.checked = Boolean(def);
+          const span = document.createElement("span");
+          span.textContent = label;
+          wrap.append(input, span);
+          return wrap;
+        }
+
+        const wrap = document.createElement("label");
+        wrap.className = `field ${wide ? "wide" : ""}`;
+        wrap.innerHTML = `<div class="label-row"><span>${escapeHtml(label)}${required ? ' <b class="required">*</b>' : ""}</span></div>`;
+        let control;
+        if (type === "select" || field.options || prop.enum) {
+          control = document.createElement("select");
+          for (const opt of field.options || (prop.enum || []).map((value) => ({value,label:value,labelTh:value}))) {
+            const item = document.createElement("option");
+            item.value = opt.value;
+            item.textContent = language === "th" ? opt.labelTh || opt.label || opt.value : opt.label || opt.value;
+            control.append(item);
+          }
+          control.value = def ?? "";
+        } else if (type === "textarea" || arrayFields.has(field.id)) {
+          control = document.createElement("textarea");
+          control.rows = field.rows || (arrayFields.has(field.id) ? 3 : 2);
+          control.placeholder = placeholder || (arrayFields.has(field.id) ? "One item per line" : "");
+          control.value = Array.isArray(def) ? def.join("\n") : def || "";
+        } else if (type === "json" || type === "images") {
+          control = document.createElement("textarea");
+          control.rows = field.rows || 4;
+          control.placeholder = placeholder || "JSON value";
+          control.value = def === undefined || def === null || def === "" ? "" : JSON.stringify(def, null, 2);
+        } else {
+          control = document.createElement("input");
+          control.type = type === "number" ? "number" : "text";
+          if (field.min !== undefined || prop.minimum !== undefined) control.min = field.min ?? prop.minimum;
+          if (field.max !== undefined || prop.maximum !== undefined) control.max = field.max ?? prop.maximum;
+          if (field.step !== undefined) control.step = field.step;
+          control.placeholder = placeholder || "";
+          if (def !== null && def !== undefined) control.value = def;
+        }
+        control.name = field.id;
+        if (required) control.required = true;
+        wrap.append(control);
+        if (help) {
+          const helpEl = document.createElement("div");
+          helpEl.className = "help";
+          helpEl.textContent = help;
+          wrap.append(helpEl);
+        }
+        return wrap;
+      }
+      function renderForm(preserve=true) {
+        const previous = preserve ? buildPayload(false) : {};
+        const skill = schemaState.skill || {};
+        appTitle.textContent = language === "th" ? skill.titleTh || skill.title : skill.title || selectedSkillId;
+        appDescription.textContent = language === "th" ? skill.descriptionTh || skill.description : skill.description || "";
+        document.querySelector("#skillLabel").textContent = t("skill");
+        document.querySelector("#outputTitle").textContent = t("output");
+        document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
+        document.querySelector("#langEn").classList.toggle("active", language === "en");
+        document.querySelector("#langTh").classList.toggle("active", language === "th");
+        runBtn.disabled = false;
+
+        formRoot.innerHTML = "";
+        for (const section of schemaSections()) {
+          const pinned = section.pinned;
+          const node = pinned ? document.createElement("section") : document.createElement("details");
+          node.className = `section ${pinned ? "static" : ""}`;
+          if (!pinned && section.collapsed === false) node.open = true;
+          const title = localText(section, "title") || section.title || section.id;
+          const desc = localText(section, "description") || section.description || "";
+          const fields = section.fields || [];
+          if (pinned) {
+            node.innerHTML = `<div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2><p class="section-desc">${escapeHtml(desc)}</p></div><span class="badge">${fields.length}</span></div>`;
+            const grid = document.createElement("div");
+            grid.className = "grid";
+            fields.forEach((field) => grid.append(renderField(field)));
+            node.append(grid);
+          } else {
+            node.innerHTML = `<summary><div><h2 class="section-title">${escapeHtml(title)}</h2><p class="section-desc">${escapeHtml(desc)}</p></div><span class="badge">${fields.length}</span></summary>`;
+            const body = document.createElement("div");
+            body.className = "body grid";
+            fields.forEach((field) => body.append(renderField(field)));
+            node.append(body);
+          }
+          formRoot.append(node);
+        }
+        restorePayload(previous);
+        renderCoverage();
+        if (!skill.hasRuntime && !hasConfiguredLlm()) promptOutput.textContent = t("noRuntime");
+      }
+      function restorePayload(payload) {
+        for (const [key, val] of Object.entries(payload || {})) {
+          const field = form.elements[key];
+          if (!field) continue;
+          if (field.type === "checkbox") field.checked = Boolean(val);
+          else if (Array.isArray(val)) field.value = val.join("\n");
+          else if (typeof val === "object" && val !== null) field.value = JSON.stringify(val, null, 2);
+          else field.value = val;
+        }
+      }
+      function parseField(id, raw, prop) {
+        if (arrayFields.has(id)) return String(raw || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+        const type = Array.isArray(prop.type) ? prop.type.find((x) => x !== "null") : prop.type;
+        if (type === "integer" || type === "number") return raw === "" || raw === undefined ? null : Number(raw);
+        if (type === "boolean") return Boolean(raw);
+        if (type === "array" || type === "object") {
+          if (!raw) return type === "array" ? [] : null;
+          try { return JSON.parse(raw); } catch { return raw; }
+        }
+        return raw;
+      }
+      function fieldValue(name) {
+        const field = form.elements[name];
+        if (!field) return undefined;
+        if (field.type === "checkbox") return field.checked;
+        return String(field.value || "").trim();
+      }
+      function buildPayload(skipEmpty=true) {
+        if (!schemaState) return {};
+        const payload = {};
+        const props = schemaState.inputSchema.properties || {};
+        for (const id of Object.keys(props)) {
+          const field = form.elements[id];
+          if (!field) continue;
+          const raw = fieldValue(id);
+          const val = parseField(id, raw, props[id]);
+          const def = fieldDefault(fieldById(id));
+          const empty = val === "" || val === null || val === undefined || (Array.isArray(val) && val.length === 0);
+          const sameDefault = JSON.stringify(val) === JSON.stringify(def);
+          if (skipEmpty && !(schemaState.inputSchema.required || []).includes(id) && (empty || sameDefault || (val === "auto" && def === "auto"))) continue;
+          payload[id] = val;
+        }
+        return payload;
+      }
+      async function postJson(url, payload) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 165000);
+        try {
+          const response = await fetch(url, { method:"POST", signal:controller.signal, headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.error || "Request failed");
+          return data;
+        } catch (err) {
+          if (err.name === "AbortError") throw new Error("Request timed out. Check the selected LLM model, API key, or fallback order.");
+          throw err;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      function runtimeOutput(result) {
+        if (typeof result.output === "string") { try { return JSON.parse(result.output); } catch { return result; } }
+        return result.output && typeof result.output === "object" ? result.output : result;
+      }
+      function parseMaybeJsonText(value) {
+        if (typeof value !== "string") return value;
+        const raw = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+        if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+          try {
+            const unquoted = JSON.parse(raw);
+            if (typeof unquoted === "string" && unquoted !== raw) return parseMaybeJsonText(unquoted);
+          } catch {}
+        }
+        if (!raw.startsWith("{") && !raw.startsWith("[")) return value;
+        try { return JSON.parse(raw); } catch { return value; }
+      }
+      function decodePromptText(value) {
+        let text = String(value || "");
+        for (let index = 0; index < 2; index += 1) {
+          if (!/\\[nrt"]/.test(text)) break;
+          text = text.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\t/g, "\t").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+        }
+        return text.trim();
+      }
+      function nestedPromptText(value) {
+        const parsed = parseMaybeJsonText(value);
+        if (typeof parsed === "string") return decodePromptText(parsed);
+        if (!parsed || typeof parsed !== "object") return "";
+        const output = parsed.output && typeof parsed.output === "object" ? parsed.output : parsed;
+        const direct = output.prompt || output.final_prompt || output.video_prompt || output.article || output.storyboard || output.script || output.summary;
+        if (typeof direct === "string" && direct.trim()) return decodePromptText(direct);
+        if (Array.isArray(output.scenes)) return output.scenes.map((scene, index) => typeof scene === "string" ? `ฉากที่ ${index + 1}: ${scene}` : `${scene.title || scene.scene || `ฉากที่ ${index + 1}`}: ${[scene.prompt, scene.description, scene.action, scene.dialogue, scene.camera].filter(Boolean).join(" ")}`).join("\n");
+        if (Array.isArray(output.video_prompts)) return output.video_prompts.map(decodePromptText).join("\n\n");
+        if (Array.isArray(output.prompts)) return output.prompts.map(decodePromptText).join("\n\n");
+        return "";
+      }
+      function cleanPromptText(value) {
+        let text = nestedPromptText(value) || decodePromptText(value);
+        text = nestedPromptText(text) || text;
+        return decodePromptText(text)
+          .replace(/^\s*["']?-\s*Input Check:\s*/i, "")
+          .replace(/^\s*Input Check:\s*/i, "")
+          .replace(/^\s*dialogueLanguage:\s*.*$/gim, "")
+          .replace(/^\s*style:\s*.*$/gim, "")
+          .replace(/^\s*User Order:\s*/gim, "")
+          .replace(/^\s*REFERENCE NOTES:\s*/gim, "ข้อมูลอ้างอิง:")
+          .replace(/^\s*FULL STORYBOARD\s*\(.*?\):\s*/gim, "Storyboard:")
+          .replace(/^\s*VIDEO PROMPTS:\s*/gim, "Video Prompts:")
+          .replace(/\bScene\s+(\d+)\s*:/gi, "\nฉากที่ $1:")
+          .replace(/\bSpeaker:\s*/gi, "ผู้พูด: ")
+          .replace(/\bDialogue:\s*/gi, "บทพูด: ")
+          .replace(/\bAction:\s*/gi, "แอ็กชัน: ")
+          .replace(/\bCamera:\s*/gi, "กล้อง: ")
+          .replace(/\bLighting:\s*/gi, "แสง: ")
+          .replace(/\bBackground:\s*/gi, "ฉากหลัง: ")
+          .replace(/[ \t]+\n/g, "\n")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      }
+      function extractPrompt(result) {
+        if (typeof result.output === "string") { try { const parsed = JSON.parse(result.output); return parsed.prompts?.detailed || parsed.prompts?.structured || parsed.prompts?.short || parsed.prompt || result.output; } catch { return result.output; } }
+        const output = runtimeOutput(result);
+        const value = output.prompts?.detailed || output.prompts?.structured || output.prompts?.short || output.prompt || output.article || result.prompt || result.article;
+        if (value && typeof value === "object") return cleanPromptText(value.prompt || value.detailed || value.structured || value.short || JSON.stringify(value));
+        return cleanPromptText(value || JSON.stringify(result));
+      }
+      async function runSkill() {
+        const payload = buildPayload();
+        const missing = (schemaState.inputSchema.required || []).filter((id) => payload[id] === undefined || payload[id] === "" || payload[id] === null);
+        if (missing.length) {
+          setStatus(t("needsInput"), "warn");
+          promptOutput.textContent = `Missing required field(s): ${missing.join(", ")}`;
+          return;
+        }
+        setStatus(t("running"), "warn");
+        runBtn.disabled = true;
+        promptOutput.textContent = "Running selected skill...";
+        jsonOutput.textContent = "{}";
+        try {
+          const result = await postJson("/api/run-skill", { skillId:selectedSkillId, params:payload, llmConfig });
+          currentBundle = result;
+          promptOutput.textContent = extractPrompt(result);
+          jsonOutput.textContent = JSON.stringify(result, null, 2);
+          renderReview(result);
+          setStatus(t("completed"), "ok");
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+          jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
+        } finally {
+          runBtn.disabled = false;
+        }
+      }
+      function renderCoverage() {
+        const c = schemaState.coverage;
+        reviewOutput.innerHTML = `<article class="review-item"><h3>${escapeHtml(t("coverage"))}</h3><p>${c.effectiveFieldCount}/${c.inputFieldCount} fields</p><p>ui.schema fields: ${c.uiFieldCount}; added from input.schema: ${c.missingUi.length}</p><p>${escapeHtml(c.missingUi.join(", ") || "No missing fields")}</p></article>`;
+      }
+      function renderReview(bundle) {
+        const output = runtimeOutput(bundle);
+        const warnings = output.warnings?.length ? output.warnings : ["No runtime warnings."];
+        reviewOutput.innerHTML = `<article class="review-item"><h3>Final Review</h3><p>Status: ${escapeHtml(output.final_review?.status || "n/a")}</p><p>Approved: ${escapeHtml(String(output.final_review?.approved ?? "n/a"))}</p></article><article class="review-item"><h3>Quality</h3><p>Score: ${escapeHtml(String(output.prompt_quality?.score ?? "n/a"))}</p></article><article class="review-item"><h3>Safety</h3><p>Status: ${escapeHtml(output.safety_review?.status || "n/a")}</p><p>Risk: ${escapeHtml(output.safety_review?.risk_level || "n/a")}</p></article><article class="review-item"><h3>Warnings</h3><ul>${warnings.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></article>`;
+      }
+      async function loadSkills() {
+        const data = await fetch("/api/skills").then((r) => r.json());
+        skills = data.skills || [];
+        if (!skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = data.defaultSkillId || skills[0]?.id || "";
+        skillSelect.innerHTML = "";
+        for (const skill of skills) {
+          const option = document.createElement("option");
+          option.value = skill.id;
+          option.textContent = `${language === "th" ? skill.titleTh || skill.title : skill.title}${skill.hasRuntime ? "" : " (LLM runtime)"}`;
+          skillSelect.append(option);
+        }
+        skillSelect.value = selectedSkillId;
+      }
+      async function loadSchema(preserve=false) {
+        setStatus(t("loading"), "warn");
+        schemaState = await fetch(`/api/ui-schema?skill=${encodeURIComponent(selectedSkillId)}`).then((r) => r.json());
+        renderForm(preserve);
+        promptOutput.textContent = schemaState.skill.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime");
+        jsonOutput.textContent = "{}";
+        setStatus(t("ready"), "ok");
+      }
+      async function refreshSkillList() {
+        const before = selectedSkillId;
+        const known = skills.map((skill) => skill.id).join("|");
+        await loadSkills();
+        const next = skills.map((skill) => skill.id).join("|");
+        if (selectedSkillId !== before) await loadSchema(true);
+        else if (known !== next) setStatus(t("ready"), "ok");
+      }
+      function resetForm() { currentBundle = null; renderForm(false); promptOutput.textContent = schemaState.skill.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime"); jsonOutput.textContent = "{}"; setStatus(t("ready"), "ok"); }
+      function thaiCatsSample() {
+        if (selectedSkillId !== "gpt-image-prompt-engineer") return;
+        resetForm();
+        restorePayload({ topic:"Thai cats of several breeds together in a warm traditional Thai atmosphere: Wichien Maat, Korat, Khao Manee, Suphalak, and Konja cats sitting and walking gracefully in a teak Thai house courtyard with Thai textiles, pottery, banana leaves, jasmine flowers, warm evening light, and elegant cultural details", target_language:"th", render_size:"1024x1536", aspect_ratio:"9:16", image_style:"realistic", deliverable_type:"poster", quality:"high", scene_background_mode:"contextual", camera_angle:"eye_level", shot_framing:"wide_shot", composition_rule:"rule_of_thirds", lighting_preset:"golden_hour", background_description:"traditional Thai teak house courtyard, Thai textile accents, ceramic water jars, banana leaves, jasmine flowers, warm golden evening light, peaceful Thai cultural atmosphere", modifiers:["multiple distinct Thai cat breeds clearly visible","authentic Thai atmosphere","warm cinematic realism","natural cat anatomy and fur detail","balanced vertical composition for 9:16","soft depth and cultural details without clutter"], avoid:["cartoon look","deformed cats","extra legs","warped faces","incorrect anatomy","crowded background","random text","watermark"] });
+        runSkill();
+      }
+      function setLanguage(next) {
+        language = next;
+        localStorage.setItem("uiLanguage", language);
+        loadSkills().then(() => renderForm(true));
+        promptOutput.textContent = currentBundle ? extractPrompt(currentBundle) : (schemaState?.skill?.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime"));
+        setStatus(t("ready"), "ok");
+      }
+      form.addEventListener("submit", (event) => { event.preventDefault(); runSkill(); });
+      skillSelect.addEventListener("change", async () => { selectedSkillId = skillSelect.value; localStorage.setItem("selectedSkillId", selectedSkillId); currentBundle = null; await loadSchema(false); });
+      document.querySelector("#resetBtn").addEventListener("click", resetForm);
+      document.querySelector("#sampleBtn").addEventListener("click", thaiCatsSample);
+      document.querySelector("#langEn").addEventListener("click", () => setLanguage("en"));
+      document.querySelector("#langTh").addEventListener("click", () => setLanguage("th"));
+      document.querySelector("#copyBtn").addEventListener("click", async () => { const pre = document.querySelector(".pane.active pre"); await navigator.clipboard.writeText(pre?.textContent || promptOutput.textContent); setStatus("Copied", "ok"); });
+      document.querySelector("#downloadBtn").addEventListener("click", () => { const blob = new Blob([jsonOutput.textContent], {type:"application/json"}); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${selectedSkillId || "skill"}-output.json`; link.click(); URL.revokeObjectURL(url); });
+      document.querySelector("#configBtn").addEventListener("click", openConfig);
+      document.querySelector("#closeConfigBtn").addEventListener("click", closeConfig);
+      configModal.addEventListener("click", (event) => { if (event.target === configModal) closeConfig(); });
+      document.querySelector("#saveConfigBtn").addEventListener("click", () => {
+        readConfigFromModal();
+        saveConfig();
+        closeConfig();
+        if (!currentBundle) promptOutput.textContent = t("promptEmpty");
+        setStatus("Config saved", "ok");
+      });
+      document.querySelector("#clearConfigBtn").addEventListener("click", () => {
+        llmConfig = structuredClone(defaultConfig);
+        localStorage.removeItem("llmConfig");
+        renderConfig();
+        testConfigResults.innerHTML = "";
+        setStatus("Config cleared", "ok");
+      });
+      document.querySelector("#testConfigBtn").addEventListener("click", async () => {
+        const button = document.querySelector("#testConfigBtn");
+        readConfigFromModal();
+        setStatus("Testing LLM", "warn");
+        button.disabled = true;
+        testConfigResults.innerHTML = `<div class="test-row"><strong>...</strong><strong>TEST</strong><span>Checking all configured fallback rows</span><span>Please wait</span></div>`;
+        try {
+          const response = await fetch("/api/test-llm", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ llmConfig }) });
+          const result = await response.json().catch(() => ({}));
+          if (result.results) renderLlmTestResults(result.results);
+          if (!response.ok && !result.results) throw new Error(result.error || "LLM test failed");
+          jsonOutput.textContent = JSON.stringify(result, null, 2);
+          const ok = (result.results || []).filter((item) => item.ok);
+          const failed = (result.results || []).filter((item) => !item.ok);
+          promptOutput.textContent = [
+            ok.length ? `Usable fallback(s): ${ok.map((item) => `${item.rank}. ${item.provider}/${item.model}`).join(", ")}` : "No usable fallback found.",
+            failed.length ? `Failed: ${failed.map((item) => `${item.rank}. ${item.provider}/${item.model}: ${item.error}`).join("; ")}` : ""
+          ].filter(Boolean).join("\n");
+          setStatus(ok.length ? "LLM OK" : "Error", ok.length ? "ok" : "warn");
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+          testConfigResults.innerHTML = `<div class="test-row fail"><strong>!</strong><strong>FAIL</strong><span>Test request</span><span>${escapeHtml(err.message)}</span></div>`;
+          jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
+        } finally {
+          button.disabled = false;
+        }
+      });
+      document.querySelectorAll("[data-toggle-secret]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const input = document.querySelector(`#${button.dataset.toggleSecret}`);
+          const hidden = input.type === "password";
+          input.type = hidden ? "text" : "password";
+          button.textContent = hidden ? "Hide" : "Show";
+        });
+      });
+      fallbackRows.addEventListener("change", (event) => {
+        const providerSelect = event.target.closest("[data-config-provider]");
+        if (!providerSelect) return;
+        const index = providerSelect.dataset.configProvider;
+        const firstModel = providerModels[providerSelect.value]?.[0]?.id || "__custom__";
+        fillModelSelect(index, providerSelect.value, firstModel);
+      });
+      for (const tab of document.querySelectorAll(".tab")) tab.addEventListener("click", () => { document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active")); document.querySelectorAll(".pane").forEach((x) => x.classList.remove("active")); tab.classList.add("active"); document.querySelector(`#${tab.dataset.tab}Pane`).classList.add("active"); });
+
+      (async function init() {
+        setStatus(t("loading"), "warn");
+        await loadSkills();
+        await loadSchema(false);
+        setInterval(() => refreshSkillList().catch(() => {}), 8000);
+      })().catch((err) => { setStatus("Error", "warn"); promptOutput.textContent = err.message; });
+    </script>
+  </body>
+</html>
