@@ -1,0 +1,10 @@
+{
+  "name": "deep-plan",
+  "description": "AI-assisted deep planning with research, interview, iterative self-review, and TDD approach (repository-agnostic)",
+  "version": "1.0.0",
+  "author": {
+    "name": "Skill Pack Maintainers"
+  },
+  "license": "MIT",
+  "keywords": ["planning", "tdd", "architecture", "self-review", "autonomous"]
+}

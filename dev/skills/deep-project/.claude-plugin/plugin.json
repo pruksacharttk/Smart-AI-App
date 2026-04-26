@@ -1,0 +1,10 @@
+{
+  "name": "deep-project",
+  "description": "Split project requirements into well-scoped units for /deep-plan (repository-agnostic)",
+  "version": "1.0.0",
+  "author": {
+    "name": "Skill Pack Maintainers"
+  },
+  "license": "MIT",
+  "keywords": ["planning", "decomposition", "project-management", "autonomous"]
+}

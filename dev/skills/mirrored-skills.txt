@@ -1,0 +1,10 @@
+create-image-prompt
+cybersecurity
+deep-implement
+deep-plan
+deep-plan-quick
+deep-project
+orchestra
+programming-advisor
+sub-agents
+visual-ui-enhancement
