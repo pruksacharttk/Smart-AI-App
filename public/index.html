@@ -324,13 +324,183 @@
         font-size: .78rem;
         line-height: 1.4;
       }
+      /* Premium white-mode refresh. Kept as CSS-only overrides so app behavior and API calls remain unchanged. */
+      :root {
+        --bg: #edf3f8;
+        --ink: #101828;
+        --muted: #667085;
+        --line: #d8e2ef;
+        --card: rgba(255, 255, 255, .94);
+        --panel: #f7f9fc;
+        --navy: #0c1b2e;
+        --blue: #1d5fd6;
+        --cyan: #0c9ca8;
+        --rose: #c4375d;
+        --green: #097a5a;
+        --amber: #a05a00;
+        --text: #101828;
+        --focus: 0 0 0 4px rgba(29, 95, 214, .18);
+        --shadow: 0 24px 70px rgba(16, 24, 40, .12);
+        --shadow-soft: 0 12px 30px rgba(16, 24, 40, .07);
+        --radius: 14px;
+      }
+      body {
+        background:
+          linear-gradient(115deg, rgba(29, 95, 214, .12), transparent 34%),
+          linear-gradient(245deg, rgba(12, 156, 168, .12), transparent 32%),
+          linear-gradient(180deg, #fbfdff 0%, #eef4f8 100%);
+        text-rendering: optimizeLegibility;
+        overflow-x: hidden;
+      }
+      html { overflow-x: hidden; }
+      .app, .topbar, .topbar > *, .top-controls, .layout, .card, .section, .output, .controls { min-width: 0; }
+      h1, h2, h3, .subtitle, .section-title, .section-desc { overflow-wrap: anywhere; }
+      .app { width: min(1680px, calc(100% - 40px)); padding: 22px 0 32px; }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        align-items: center;
+        padding: 14px 0 16px;
+        background: linear-gradient(180deg, rgba(251, 253, 255, .96), rgba(251, 253, 255, .78));
+        backdrop-filter: blur(18px);
+      }
+      .eyebrow { letter-spacing: .12em; color: #175cd3; }
+      h1 { letter-spacing: 0; font-weight: 900; }
+      .subtitle { font-size: 1rem; }
+      .top-controls {
+        justify-self: end;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid rgba(216, 226, 239, .92);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, .72);
+        box-shadow: var(--shadow-soft);
+      }
+      .selector-label span { color: #475467; }
+      .status {
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+      }
+      .status.ok { background: #f0fdf7; }
+      .status.warn { background: #fffbeb; }
+      body.is-loading .card { opacity: .82; }
+      body.is-loading .status::before,
+      body.is-running .status::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        margin-right: 8px;
+        display: inline-block;
+        border-radius: 999px;
+        background: currentColor;
+        animation: pulse-dot 1s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%, 100% { opacity: .35; transform: scale(.84); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+      .layout { grid-template-columns: minmax(420px, .9fr) minmax(520px, 1.1fr); gap: 22px; }
+      .card {
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, .9);
+        box-shadow: var(--shadow);
+      }
+      .controls, .output { padding: 22px; }
+      .section {
+        border-color: rgba(216, 226, 239, .92);
+        border-radius: 12px;
+        background: rgba(248, 250, 252, .86);
+      }
+      .section > summary, .section.static { padding: 16px; }
+      .section[open] { background: rgba(255, 255, 255, .98); box-shadow: var(--shadow-soft); }
+      .section > summary { cursor: pointer; }
+      .section > summary:hover { background: rgba(29, 95, 214, .035); }
+      .section-title { font-weight: 900; letter-spacing: 0; }
+      .badge { background: #e9f2ff; }
+      .grid { gap: 14px; }
+      input, select, textarea {
+        min-height: 46px;
+        border-radius: 12px;
+        background: #ffffff;
+        transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .16s ease;
+      }
+      textarea { min-height: 108px; }
+      input:hover, select:hover, textarea:hover { border-color: #b9c8dc; }
+      input:focus, select:focus, textarea:focus { box-shadow: var(--focus); }
+      button:focus-visible, summary:focus-visible, .dropzone:focus-within { outline: none; box-shadow: var(--focus); }
+      .icon-btn, .btn, .tab {
+        border-radius: 12px;
+        transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+      }
+      .icon-btn:hover, .btn:hover, .tab:hover { transform: translateY(-1px); box-shadow: var(--shadow-soft); }
+      .btn.primary {
+        background: linear-gradient(135deg, #175cd3 0%, #0c9ca8 100%);
+        box-shadow: 0 12px 26px rgba(29, 95, 214, .18);
+      }
+      .btn.secondary, .icon-btn, .tab {
+        background: #f3f7fc;
+        border-color: #d8e2ef;
+      }
+      .btn:disabled, button:disabled {
+        cursor: not-allowed;
+        opacity: .6;
+        transform: none;
+        box-shadow: none;
+      }
+      .lang-toggle {
+        border-radius: 12px;
+        background: #eef4fb;
+      }
+      .lang-toggle button { border-radius: 9px; }
+      .lang-toggle button.active { background: #0c1b2e; }
+      .output { position: sticky; top: 116px; }
+      .output-head h2 { margin-bottom: 0; }
+      .llm-status {
+        border-radius: 12px;
+        background: #f8fbff;
+        min-height: 42px;
+      }
+      pre {
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 12px;
+        background: #0f1726;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .dropzone {
+        min-height: 148px;
+        border-radius: 12px;
+        background: #f5f9ff;
+      }
+      .modal { border-radius: 16px; }
+      .quick-guide, .provider-card, .review-item, .test-row, .rank { border-radius: 12px; }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+      }
       @media (max-width: 1100px) {
         .topbar, .layout { grid-template-columns: 1fr; }
         .top-controls { grid-template-columns: 1fr 1fr; }
+        .top-controls { justify-self: stretch; }
+        .output { position: static; }
       }
       @media (max-width: 760px) {
-        .app { width: min(100% - 20px, 1560px); padding: 10px 0; }
-        .top-controls, .grid, .fallback-row { grid-template-columns: 1fr; }
+        .app { width: calc(100vw - 16px); max-width: calc(100vw - 16px); padding: 8px 0 18px; }
+        .topbar, .layout, .card, .section, .field, input, select, textarea { width: 100%; max-width: 100%; }
+        .layout { display: block; }
+        .card + .card { margin-top: 16px; }
+        .controls, .output { overflow: hidden; }
+        .topbar { position: static; padding-top: 8px; }
+        h1 { font-size: 1.42rem; line-height: 1.12; max-width: calc(100vw - 20px); }
+        .subtitle { font-size: .92rem; max-width: 320px; }
+        .top-controls, .grid, .fallback-row, .provider-grid, .test-row { grid-template-columns: 1fr; }
+        .controls, .output, .modal-body { padding: 14px; }
+        .output-head { align-items: stretch; flex-direction: column; }
+        .tabs { grid-template-columns: 1fr; }
+        pre { min-height: 320px; max-height: 520px; font-size: .86rem; }
+        .modal-backdrop { padding: 8px; align-items: stretch; }
+        .modal { max-height: calc(100vh - 16px); }
+        .modal-head, .modal-foot { align-items: stretch; flex-direction: column; }
       }
     </style>
   </head>
@@ -352,16 +522,16 @@
             <button type="button" id="langTh">TH</button>
           </div>
           <button class="icon-btn" type="button" id="configBtn" data-i18n="config">Config</button>
-          <div class="status" id="status">Loading</div>
+          <div class="status" id="status" role="status" aria-live="polite">Loading</div>
         </div>
       </header>
 
       <div class="layout">
         <section class="card controls">
-          <form id="skillForm">
+          <form id="skillForm" novalidate>
             <div id="formRoot"></div>
             <div class="actions">
-              <button class="btn primary" type="submit" id="runBtn" data-i18n="run">Run Skill</button>
+              <button class="btn primary" type="submit" id="runBtn" data-i18n="run" disabled>Run Skill</button>
               <button class="btn secondary" type="button" id="resetBtn" data-i18n="reset">Reset</button>
               <button class="btn secondary" type="button" id="sampleBtn" data-i18n="sample">Thai Cats Sample</button>
             </div>
@@ -381,7 +551,7 @@
             <button class="tab" type="button" data-tab="json">JSON</button>
             <button class="tab" type="button" data-tab="review">Review</button>
           </div>
-          <div class="llm-status" id="llmStatus">LLM: not run yet</div>
+          <div class="llm-status" id="llmStatus" role="status" aria-live="polite">LLM: not run yet</div>
           <div class="pane active" id="promptPane"><pre id="promptOutput">Loading...</pre></div>
           <div class="pane" id="jsonPane"><pre id="jsonOutput">{}</pre></div>
           <div class="pane" id="reviewPane"><div class="review-grid" id="reviewOutput"></div></div>
@@ -484,6 +654,29 @@
         en: { eyebrow:"Dynamic local skill runtime", skill:"Skill", config:"Config", run:"Run Skill", reset:"Reset", sample:"Thai Cats Sample", copy:"Copy", download:"Download JSON", output:"Output", ready:"Ready", loading:"Loading", running:"Running", completed:"Completed", needsInput:"Needs input", noRuntime:"This skill has no local Python runtime. Configure an LLM key to run it through OpenRouter or NVIDIA.", extrasTitle:"Schema Extras", extrasDesc:"Fields present in input.schema but missing from ui.schema. Added automatically.", promptEmpty:"Choose a skill, fill required fields, then run.", coverage:"Effective UI coverage", configEyebrow:"LLM provider setup" },
         th: { eyebrow:"รันสกิลในเครื่องแบบไดนามิก", skill:"สกิล", config:"ตั้งค่า", run:"รันสกิล", reset:"รีเซ็ต", sample:"ตัวอย่างแมวไทย", copy:"คัดลอก", download:"ดาวน์โหลด JSON", output:"ผลลัพธ์", ready:"พร้อม", loading:"กำลังโหลด", running:"กำลังรัน", completed:"เสร็จแล้ว", needsInput:"ต้องกรอกข้อมูล", noRuntime:"สกิลนี้ยังไม่มี Python runtime ในโปรเจกต์ แก้ค่า UI ได้ แต่ยังรันไม่ได้", extrasTitle:"ตัวเลือกจาก Schema เพิ่มเติม", extrasDesc:"ฟิลด์ที่มีใน input.schema แต่ไม่มีใน ui.schema ถูกเพิ่มให้อัตโนมัติ", promptEmpty:"เลือกสกิล กรอกข้อมูลที่จำเป็น แล้วกดรัน", coverage:"ความครอบคลุม UI ที่ใช้งานได้", configEyebrow:"ตั้งค่า LLM Provider" }
       };
+      uiText.th = {
+        eyebrow:"รันสกิลในเครื่องแบบไดนามิก",
+        skill:"สกิล",
+        config:"ตั้งค่า",
+        run:"รันสกิล",
+        reset:"รีเซ็ต",
+        sample:"ตัวอย่างแมวไทย",
+        copy:"คัดลอก",
+        download:"ดาวน์โหลด JSON",
+        output:"ผลลัพธ์",
+        ready:"พร้อม",
+        loading:"กำลังโหลด",
+        running:"กำลังรัน",
+        completed:"เสร็จแล้ว",
+        needsInput:"ต้องกรอกข้อมูล",
+        noRuntime:"สกิลนี้ไม่มี Python runtime ในเครื่อง โปรดตั้งค่า LLM เพื่อรันผ่าน OpenRouter หรือ NVIDIA",
+        extrasTitle:"ตัวเลือกจาก Schema เพิ่มเติม",
+        extrasDesc:"ฟิลด์ที่มีใน input.schema แต่ไม่มีใน ui.schema ถูกเพิ่มให้อัตโนมัติ",
+        promptEmpty:"เลือกสกิล กรอกข้อมูลที่จำเป็น แล้วกดรัน",
+        coverage:"ความครอบคลุม UI ที่ใช้งานได้",
+        configEyebrow:"ตั้งค่า LLM Provider"
+      };
+
       const providerModels = {
         nvidia: [
           { id:"deepseek-ai/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"NIM supported" },
@@ -530,10 +723,35 @@
 
       const t = (key) => uiText[language][key] || uiText.en[key] || key;
       const escapeHtml = (text) => String(text).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+      function renderQuickGuide() {
+        const guide = document.querySelector(".quick-guide");
+        if (!guide) return;
+        if (language === "th") {
+          guide.innerHTML = `
+            <h3>คู่มือฉบับย่อ: สมัครและนำ API key มาใส่</h3>
+            <ol>
+              <li><strong>NVIDIA NIM:</strong> ไปที่ <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a> จากนั้น sign in, สร้าง API key และนำมาวางในช่อง NVIDIA</li>
+              <li><strong>OpenRouter:</strong> ไปที่ <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a> จากนั้น sign in, สร้าง key และนำมาวางในช่อง OpenRouter</li>
+              <li>ระบบจะซ่อน key ด้วย password field และเก็บเฉพาะใน local storage ของ browser นี้</li>
+              <li>เลือก fallback model ตามลำดับ 1-4 แล้วกด Save Config ระบบจะลอง model ถัดไปเมื่อ model ก่อนหน้าใช้ไม่ได้</li>
+            </ol>`;
+          return;
+        }
+        guide.innerHTML = `
+          <h3>Quick guide: create and paste API keys</h3>
+          <ol>
+            <li><strong>NVIDIA NIM:</strong> open <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a>, sign in, create an API key, then paste it into the NVIDIA field.</li>
+            <li><strong>OpenRouter:</strong> open <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a>, sign in, create a key, then paste it into the OpenRouter field.</li>
+            <li>Keys are masked by default and stored only in this browser's local storage. Use Show/Hide only when needed.</li>
+            <li>Choose fallback models in order 1-4, then save. The app tries the next model when the previous one is unavailable.</li>
+          </ol>`;
+      }
 
       function setStatus(text, type="") {
         statusEl.textContent = text;
         statusEl.className = `status ${type}`.trim();
+        document.body.classList.toggle("is-loading", text === t("loading"));
+        document.body.classList.toggle("is-running", text === t("running") || text === "Testing LLM");
       }
       function setLlmStatus(text) {
         llmStatus.innerHTML = text;
@@ -572,6 +790,7 @@
         });
       }
       function renderConfig() {
+        renderQuickGuide();
         document.querySelector("#nvidiaKey").value = llmConfig.providers.nvidia.apiKey || "";
         document.querySelector("#nvidiaBaseUrl").value = llmConfig.providers.nvidia.baseUrl || defaultConfig.providers.nvidia.baseUrl;
         document.querySelector("#openrouterKey").value = llmConfig.providers.openrouter.apiKey || "";
@@ -1178,6 +1397,7 @@
       function setLanguage(next) {
         language = next;
         localStorage.setItem("uiLanguage", language);
+        renderQuickGuide();
         loadSkills().then(() => renderForm(true));
         promptOutput.textContent = currentBundle ? extractPrompt(currentBundle) : (schemaState?.skill?.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime"));
         setStatus(t("ready"), "ok");
@@ -1255,6 +1475,14 @@
       (async function init() {
         setStatus(t("loading"), "warn");
         await loadSkills();
+        if (!skills.length) {
+          runBtn.disabled = true;
+          setStatus(language === "th" ? "ไม่มีสกิล" : "No skills", "warn");
+          promptOutput.textContent = language === "th" ? "ยังไม่พบสกิลในโฟลเดอร์ skills/" : "No skills were found in the skills/ folder.";
+          jsonOutput.textContent = "{}";
+          renderQuickGuide();
+          return;
+        }
         await loadSchema(false);
         setInterval(() => refreshSkillList().catch(() => {}), 8000);
       })().catch((err) => { setStatus("Error", "warn"); promptOutput.textContent = err.message; });

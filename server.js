@@ -9,7 +9,8 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
 const skillsDir = join(__dirname, "skills");
 const defaultSkillId = "gpt-image-prompt-engineer";
-const port = Number(process.env.PORT || 4173);
+const preferredPort = Number(process.env.PORT || 4173);
+const maxPortAttempts = Number(process.env.PORT ? 1 : 20);
 const llmRequestTimeoutMs = Number(process.env.LLM_TIMEOUT_MS || 35000);
 const rateBuckets = new Map();
 const rateLimits = {
@@ -793,7 +794,7 @@ async function serveStatic(req, res) {
   }
 }
 
-createServer(async (req, res) => {
+const requestHandler = async (req, res) => {
   try {
     if (!checkRateLimit(req, res)) return;
     if (req.method === "POST" && req.url === "/api/run-skill") {
@@ -824,6 +825,33 @@ createServer(async (req, res) => {
   } catch (error) {
     sendJson(res, 500, { error: error.message || "Unexpected server error" });
   }
-}).listen(port, () => {
-  console.log(`Single-file skill runner available at http://localhost:${port}`);
-});
+};
+
+function listen(port, attemptsLeft = maxPortAttempts) {
+  const server = createServer(requestHandler);
+
+  server.once("error", (error) => {
+    if (error.code === "EADDRINUSE" && attemptsLeft > 1) {
+      const nextPort = port + 1;
+      console.warn(`Port ${port} is already in use. Trying ${nextPort}...`);
+      server.close();
+      listen(nextPort, attemptsLeft - 1);
+      return;
+    }
+
+    if (error.code === "EADDRINUSE") {
+      console.error(`Port ${port} is already in use. Stop the existing server or set PORT to another value.`);
+      process.exitCode = 1;
+      return;
+    }
+
+    console.error(error);
+    process.exitCode = 1;
+  });
+
+  server.listen(port, () => {
+    console.log(`Single-file skill runner available at http://localhost:${port}`);
+  });
+}
+
+listen(preferredPort);
