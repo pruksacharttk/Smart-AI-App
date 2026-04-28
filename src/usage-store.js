@@ -1,8 +1,10 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const defaultDbPath = join(process.cwd(), "data", "smart-ai-app.sqlite");
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const defaultDbPath = resolve(moduleDir, "..", "data", "smart-ai-app.sqlite");
 
 function normalizeTimestamp(value = new Date()) {
   if (value instanceof Date) return value.toISOString();

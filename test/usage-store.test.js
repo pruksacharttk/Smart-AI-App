@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { createUsageStore } from "../src/usage-store.js";
 
 function withStore(fn) {
@@ -59,4 +61,22 @@ test("recordSuccess rejects empty provider or model", () => {
     assert.throws(() => store.recordSuccess("", "model"), /provider is required/);
     assert.throws(() => store.recordSuccess("provider", ""), /model is required/);
   });
+});
+
+test("default database path is stable when imported from another cwd", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "smart-ai-cwd-"));
+  try {
+    const script = `
+      import { createUsageStore } from ${JSON.stringify(pathToFileURL(resolve("src/usage-store.js")).href)};
+      console.log(createUsageStore().dbPath);
+    `;
+    const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+      cwd: tempDir,
+      encoding: "utf8"
+    }).trim();
+
+    assert.equal(output, resolve("data/smart-ai-app.sqlite"));
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });

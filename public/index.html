@@ -1648,6 +1648,9 @@
           renderReview(result);
           const last = result.lastSuccessfulLlm || result.llm;
           if (last) setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>${last.fallbackRank ? ` (fallback #${escapeHtml(last.fallbackRank)})` : ""}`);
+          if (last && result.usageRecorded === false) {
+            setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>, but usage was not recorded. Restart the server and try again.`);
+          }
           markUsageDashboardStale();
           setStatus(t("completed"), "ok");
         } catch (err) {

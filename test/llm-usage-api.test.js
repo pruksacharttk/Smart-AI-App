@@ -92,3 +92,19 @@ test("recordSuccessfulLlmUsage swallows store failures", () => {
 
   assert.equal(ok, false);
 });
+
+test("recordSuccessfulLlmUsage can record fallback target when result omits llm", () => {
+  const calls = [];
+  const ok = recordSuccessfulLlmUsage(
+    { success: true },
+    { provider: "openrouter", model: "qwen/qwen3-vl-32b-instruct" },
+    {
+      recordSuccess(provider, model) {
+        calls.push({ provider, model });
+      }
+    }
+  );
+
+  assert.equal(ok, true);
+  assert.deepEqual(calls, [{ provider: "openrouter", model: "qwen/qwen3-vl-32b-instruct" }]);
+});

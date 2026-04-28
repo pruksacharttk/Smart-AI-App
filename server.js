@@ -639,7 +639,9 @@ async function handleTestLlm(req, res) {
       continue;
     }
     try {
-      results.push(await testChatCompletion(target));
+      const result = await testChatCompletion(target);
+      recordSuccessfulLlmUsage({ llm: { provider: result.provider, model: result.model } }, target);
+      results.push(result);
     } catch (error) {
       results.push({
         ok: false,
@@ -693,9 +695,9 @@ async function runLlmSkill(info, params, llmConfig, onStatus = null) {
     try {
       onStatus?.({ phase:"calling", rank:target.index, provider:target.provider, model:target.model });
       const result = await postChatCompletion(target, info, params);
-      recordSuccessfulLlmUsage(result, target);
+      const usageRecorded = recordSuccessfulLlmUsage(result, target);
       onStatus?.({ phase:"success", rank:target.index, provider:target.provider, model:result.llm?.model || target.model });
-      return { ...result, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model:result.llm?.model || target.model, fallbackRank:target.index } };
+      return { ...result, usageRecorded, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model:result.llm?.model || target.model, fallbackRank:target.index } };
     } catch (error) {
       onStatus?.({ phase:"failed", rank:target.index, provider:target.provider, model:target.model, error:error.message || "LLM request failed" });
       errors.push({
