@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Smart Skill Runner</title>
+    <title>Smart AI App</title>
     <style>
       :root {
         color-scheme: light;
@@ -139,6 +139,14 @@
       }
       .app-page { display: none; min-width: 0; }
       .app-page.active { display: block; }
+      .page-header {
+        margin-bottom: 16px;
+        border: 1px solid rgba(215, 224, 234, .88);
+        border-radius: 8px;
+        background: var(--card);
+        box-shadow: var(--shadow-soft, 0 12px 30px rgba(16, 24, 40, .07));
+        padding: 18px;
+      }
       .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -593,9 +601,8 @@
     <main class="app">
       <header class="topbar">
         <div>
-          <p class="eyebrow" data-i18n="eyebrow">Dynamic local skill runtime</p>
-          <h1 id="appTitle">Smart Skill Runner</h1>
-          <p class="subtitle" id="appDescription">Loading available skills...</p>
+          <h1 id="appTitle">Smart AI App</h1>
+          <p class="subtitle" id="appDescription">Dashboard and skill runtime for AI workflows.</p>
         </div>
         <div class="top-controls">
           <label class="selector-label">
@@ -643,6 +650,11 @@
           </section>
 
           <section class="app-page" id="runPage">
+            <section class="page-header" aria-labelledby="skillPageTitle">
+              <p class="eyebrow" data-i18n="eyebrow">Dynamic local skill runtime</p>
+              <h1 id="skillPageTitle">Run Skill</h1>
+              <p class="subtitle" id="skillPageDescription">Choose a skill, fill required fields, then run.</p>
+            </section>
             <div class="layout">
               <section class="card controls">
                 <form id="skillForm" novalidate>
@@ -777,6 +789,8 @@
       const llmStatus = document.querySelector("#llmStatus");
       const appTitle = document.querySelector("#appTitle");
       const appDescription = document.querySelector("#appDescription");
+      const skillPageTitle = document.querySelector("#skillPageTitle");
+      const skillPageDescription = document.querySelector("#skillPageDescription");
       const skillSelect = document.querySelector("#skillSelect");
       const runBtn = document.querySelector("#runBtn");
       const runBtnTop = document.querySelector("#runBtnTop");
@@ -798,11 +812,12 @@
       const refreshUsageBtn = document.querySelector("#refreshUsageBtn");
 
       const uiText = {
-        en: { eyebrow:"Dynamic local skill runtime", dashboard:"Dashboard", runSkillMenu:"Run Skill", skill:"Skill", config:"Config", run:"Run Skill", reset:"Reset", sample:"Thai Cats Sample", copy:"Copy", download:"Download JSON", output:"Output", ready:"Ready", loading:"Loading", running:"Running", completed:"Completed", needsInput:"Needs input", noRuntime:"This skill has no local Python runtime. Configure an LLM key to run it through OpenRouter or NVIDIA.", extrasTitle:"Schema Extras", extrasDesc:"Fields present in input.schema but missing from ui.schema. Added automatically.", promptEmpty:"Choose a skill, fill required fields, then run.", coverage:"Effective UI coverage", configEyebrow:"LLM provider setup" },
-        th: { eyebrow:"รันสกิลในเครื่องแบบไดนามิก", dashboard:"แดชบอร์ด", runSkillMenu:"รันสกิล", skill:"สกิล", config:"ตั้งค่า", run:"รันสกิล", reset:"รีเซ็ต", sample:"ตัวอย่างแมวไทย", copy:"คัดลอก", download:"ดาวน์โหลด JSON", output:"ผลลัพธ์", ready:"พร้อม", loading:"กำลังโหลด", running:"กำลังรัน", completed:"เสร็จแล้ว", needsInput:"ต้องกรอกข้อมูล", noRuntime:"สกิลนี้ยังไม่มี Python runtime ในโปรเจกต์ แก้ค่า UI ได้ แต่ยังรันไม่ได้", extrasTitle:"ตัวเลือกจาก Schema เพิ่มเติม", extrasDesc:"ฟิลด์ที่มีใน input.schema แต่ไม่มีใน ui.schema ถูกเพิ่มให้อัตโนมัติ", promptEmpty:"เลือกสกิล กรอกข้อมูลที่จำเป็น แล้วกดรัน", coverage:"ความครอบคลุม UI ที่ใช้งานได้", configEyebrow:"ตั้งค่า LLM Provider" }
+        en: { eyebrow:"Dynamic local skill runtime", appDesc:"Dashboard and skill runtime for AI workflows.", dashboard:"Dashboard", runSkillMenu:"Run Skill", skill:"Skill", config:"Config", run:"Run Skill", reset:"Reset", sample:"Thai Cats Sample", copy:"Copy", download:"Download JSON", output:"Output", ready:"Ready", loading:"Loading", running:"Running", completed:"Completed", needsInput:"Needs input", noRuntime:"This skill has no local Python runtime. Configure an LLM key to run it through OpenRouter or NVIDIA.", extrasTitle:"Schema Extras", extrasDesc:"Fields present in input.schema but missing from ui.schema. Added automatically.", promptEmpty:"Choose a skill, fill required fields, then run.", coverage:"Effective UI coverage", configEyebrow:"LLM provider setup" },
+        th: { eyebrow:"รันสกิลในเครื่องแบบไดนามิก", appDesc:"แดชบอร์ดและระบบรันสกิลสำหรับงาน AI", dashboard:"แดชบอร์ด", runSkillMenu:"รันสกิล", skill:"สกิล", config:"ตั้งค่า", run:"รันสกิล", reset:"รีเซ็ต", sample:"ตัวอย่างแมวไทย", copy:"คัดลอก", download:"ดาวน์โหลด JSON", output:"ผลลัพธ์", ready:"พร้อม", loading:"กำลังโหลด", running:"กำลังรัน", completed:"เสร็จแล้ว", needsInput:"ต้องกรอกข้อมูล", noRuntime:"สกิลนี้ยังไม่มี Python runtime ในโปรเจกต์ แก้ค่า UI ได้ แต่ยังรันไม่ได้", extrasTitle:"ตัวเลือกจาก Schema เพิ่มเติม", extrasDesc:"ฟิลด์ที่มีใน input.schema แต่ไม่มีใน ui.schema ถูกเพิ่มให้อัตโนมัติ", promptEmpty:"เลือกสกิล กรอกข้อมูลที่จำเป็น แล้วกดรัน", coverage:"ความครอบคลุม UI ที่ใช้งานได้", configEyebrow:"ตั้งค่า LLM Provider" }
       };
       uiText.th = {
         eyebrow:"รันสกิลในเครื่องแบบไดนามิก",
+        appDesc:"แดชบอร์ดและระบบรันสกิลสำหรับงาน AI",
         dashboard:"แดชบอร์ด",
         runSkillMenu:"รันสกิล",
         skill:"สกิล",
@@ -932,6 +947,8 @@
         configModal.remove();
       }
       function renderDashboardLabels() {
+        appTitle.textContent = "Smart AI App";
+        appDescription.textContent = t("appDesc");
         dashboardTitle.textContent = language === "th" ? "แดชบอร์ด" : "Dashboard";
         dashboardDesc.textContent = language === "th"
           ? "สรุปจำนวนการเรียกใช้งาน LLM ที่สำเร็จ แยกตาม provider และ model"
@@ -1405,8 +1422,10 @@
       function renderForm(preserve=true) {
         const previous = preserve ? buildPayload(false) : {};
         const skill = schemaState.skill || {};
-        appTitle.textContent = language === "th" ? skill.titleTh || skill.title : skill.title || selectedSkillId;
-        appDescription.textContent = language === "th" ? skill.descriptionTh || skill.description : skill.description || "";
+        appTitle.textContent = "Smart AI App";
+        appDescription.textContent = t("appDesc");
+        skillPageTitle.textContent = language === "th" ? skill.titleTh || skill.title : skill.title || selectedSkillId;
+        skillPageDescription.textContent = language === "th" ? skill.descriptionTh || skill.description : skill.description || "";
         document.querySelector("#skillLabel").textContent = t("skill");
         document.querySelector("#outputTitle").textContent = t("output");
         document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
