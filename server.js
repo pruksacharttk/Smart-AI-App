@@ -4,7 +4,9 @@ import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createUsageStore } from "./src/usage-store.js";
 
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
 const skillsDir = join(__dirname, "skills");
@@ -18,6 +20,8 @@ const rateLimits = {
   "/api/run-skill-stream": { limit: 12, windowMs: 60_000 },
   "/api/test-llm": { limit: 8, windowMs: 60_000 }
 };
+let usageStore = null;
+let usageStoreInitError = null;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -32,6 +36,35 @@ function sendJson(res, status, body) {
 function sendSse(res, event, data) {
   res.write(`event: ${event}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+export function configureUsageStoreForTests(store) {
+  usageStore = store;
+  usageStoreInitError = null;
+}
+
+function initializeUsageStore() {
+  try {
+    usageStore = createUsageStore().init();
+    usageStoreInitError = null;
+  } catch (error) {
+    usageStore = null;
+    usageStoreInitError = error;
+    console.error(`Unable to initialize usage store: ${error.message}`);
+  }
+}
+
+export function recordSuccessfulLlmUsage(result, target, store = usageStore) {
+  if (!store) return false;
+  const provider = result?.llm?.provider || target?.provider;
+  const model = result?.llm?.model || target?.model;
+  try {
+    store.recordSuccess(provider, model, new Date());
+    return true;
+  } catch (error) {
+    console.warn(`Unable to record LLM usage for ${provider || "(missing)"}/${model || "(missing)"}: ${error.message}`);
+    return false;
+  }
 }
 
 function clientIp(req) {
@@ -620,6 +653,21 @@ async function handleTestLlm(req, res) {
   sendJson(res, results.some((item) => item.ok) ? 200 : 400, { results });
 }
 
+async function handleLlmUsage(_req, res) {
+  if (!usageStore) {
+    sendJson(res, 500, {
+      error: usageStoreInitError ? "Usage database is unavailable." : "Usage database is not initialized."
+    });
+    return;
+  }
+  try {
+    sendJson(res, 200, { rows: usageStore.listUsage() });
+  } catch (error) {
+    console.error(`Unable to read LLM usage: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to read LLM usage." });
+  }
+}
+
 async function runLlmSkill(info, params, llmConfig, onStatus = null) {
   const targets = configuredFallbacks(llmConfig);
   if (!targets.length) {
@@ -645,6 +693,7 @@ async function runLlmSkill(info, params, llmConfig, onStatus = null) {
     try {
       onStatus?.({ phase:"calling", rank:target.index, provider:target.provider, model:target.model });
       const result = await postChatCompletion(target, info, params);
+      recordSuccessfulLlmUsage(result, target);
       onStatus?.({ phase:"success", rank:target.index, provider:target.provider, model:result.llm?.model || target.model });
       return { ...result, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model:result.llm?.model || target.model, fallbackRank:target.index } };
     } catch (error) {
@@ -838,7 +887,7 @@ async function serveStatic(req, res) {
   }
 }
 
-const requestHandler = async (req, res) => {
+export const requestHandler = async (req, res) => {
   try {
     if (!checkRateLimit(req, res)) return;
     if (req.method === "POST" && req.url === "/api/run-skill") {
@@ -851,6 +900,10 @@ const requestHandler = async (req, res) => {
     }
     if (req.method === "POST" && req.url === "/api/test-llm") {
       await handleTestLlm(req, res);
+      return;
+    }
+    if (req.method === "GET" && req.url === "/api/llm-usage") {
+      await handleLlmUsage(req, res);
       return;
     }
     if (req.method === "GET" && req.url === "/api/skills") {
@@ -898,4 +951,7 @@ function listen(port, attemptsLeft = maxPortAttempts) {
   });
 }
 
-listen(preferredPort);
+if (process.argv[1] && normalize(process.argv[1]) === normalize(__filename)) {
+  initializeUsageStore();
+  listen(preferredPort);
+}

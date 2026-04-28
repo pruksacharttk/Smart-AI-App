@@ -1,0 +1,36 @@
+{
+  "plugin_root": "D:\\Smart AI Hub\\Projects\\Smart AI App\\dev\\skills\\deep-implement",
+  "sections_dir": "D:\\Smart AI Hub\\Projects\\Smart AI App\\specs\\001-dashboard-with-mainmenu\\sections",
+  "target_dir": "D:\\Smart AI Hub\\Projects\\Smart AI App",
+  "state_dir": "D:\\Smart AI Hub\\Projects\\Smart AI App\\specs\\001-dashboard-with-mainmenu\\implementation",
+  "git_root": "D:\\Smart AI Hub\\Projects\\Smart AI App",
+  "commit_style": "simple",
+  "test_command": "npm test",
+  "sections": [
+    "section-01-usage-store",
+    "section-02-backend-api",
+    "section-03-app-shell",
+    "section-04-dashboard-page",
+    "section-05-run-skill-page",
+    "section-06-config-page",
+    "section-07-security-verification"
+  ],
+  "sections_state": {
+    "section-01-usage-store": "completed",
+    "section-02-backend-api": "completed",
+    "section-03-app-shell": "completed",
+    "section-04-dashboard-page": "completed",
+    "section-05-run-skill-page": "completed",
+    "section-06-config-page": "completed",
+    "section-07-security-verification": "completed"
+  },
+  "pre_commit": {
+    "present": false,
+    "type": "none",
+    "config_file": null,
+    "native_hook": null,
+    "may_modify_files": false,
+    "detected_formatters": []
+  },
+  "created_at": "2026-04-28T09:11:28.253972+00:00"
+}
