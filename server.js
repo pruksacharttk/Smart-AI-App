@@ -177,6 +177,35 @@ function collectImages(value, path = []) {
   return images;
 }
 
+function modelSupportsImageInput(target) {
+  const provider = String(target?.provider || "").toLowerCase();
+  const model = String(target?.model || "").toLowerCase();
+  if (!model) return false;
+  return /(?:^|\/)(?:gpt-4o|gpt-4\.1|gpt-5|gemini|claude|pixtral|llava|qwen[\w.-]*vl|qwen3\.5|molmo|mistral-small-3\.2|llama-3\.2.*vision)/i.test(model);
+}
+
+const recommendedImageInputModels = [
+  "qwen/qwen3-vl-32b-instruct",
+  "qwen/qwen3-vl-8b-instruct",
+  "qwen/qwen3-vl-235b-a22b-instruct",
+  "qwen/qwen3.5-35b-a3b",
+  "qwen/qwen3.5-plus-02-15",
+  "qwen/qwen3.5-397b-a17b"
+];
+
+function imageInputGuidance(targets = []) {
+  const configured = targets.length
+    ? ` Current configured fallbacks: ${targets.map((target) => `${target.index}. ${target.provider}/${target.model}`).join("; ")}.`
+    : "";
+  return [
+    "Image input is enabled for this run because one or more uploaded images were included.",
+    "The selected fallback model is text-only and cannot read image_url/base64 image attachments.",
+    `Choose a vision-capable model instead, for example: ${recommendedImageInputModels.join(", ")}.`,
+    "Alternatively, remove the uploaded image(s) before running a text-only model.",
+    configured
+  ].join(" ");
+}
+
 function paramsWithoutImageData(value) {
   if (isImagePayload(value)) {
     return { type:"image", name:value.name, mimeType:value.mimeType, size:value.size, note:"Image data sent as base64 multimodal attachment." };
@@ -596,8 +625,23 @@ async function runLlmSkill(info, params, llmConfig, onStatus = null) {
   if (!targets.length) {
     throw new Error("No usable LLM config found. Open Config, add an API key, and choose at least one fallback model.");
   }
+  const imageCount = collectImages(params).length;
+  if (imageCount && !targets.some(modelSupportsImageInput)) {
+    throw new Error(imageInputGuidance(targets));
+  }
   const errors = [];
   for (const target of targets) {
+    if (imageCount && !modelSupportsImageInput(target)) {
+      const error = imageInputGuidance([target]);
+      onStatus?.({ phase:"failed", rank:target.index, provider:target.provider, model:target.model, error });
+      errors.push({
+        rank: target.index,
+        provider: target.provider,
+        model: target.model,
+        error
+      });
+      continue;
+    }
     try {
       onStatus?.({ phase:"calling", rank:target.index, provider:target.provider, model:target.model });
       const result = await postChatCompletion(target, info, params);

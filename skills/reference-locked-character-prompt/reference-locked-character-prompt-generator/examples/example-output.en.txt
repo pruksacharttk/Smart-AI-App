@@ -1,0 +1,5 @@
+Create a professional ultra-realistic character breakdown sheet of the same exact character from reference image @img1, shown with strong visual consistency across all views. Use @img1 as the single source of truth for facial identity, face structure, eye shape, nose shape, lips, skin tone, hairstyle, hair color, body proportions, outfit, clothing details, accessories, shoes, color palette, and overall appearance.
+
+Do not redesign the character. Do not change the face, hairstyle, body type, outfit, accessories, or color palette. If any detail is partially unclear, infer it conservatively from the reference image and keep it consistent across all panels.
+
+Include: 1 full-body front view, 1 full-body side view, 1 full-body back view, 3 facial expression close-ups, 6 full-body pose variations, detail callouts, color palette swatches sampled from @img1, and small design-note labels. Layout: clean professional character presentation sheet on a white or light gray background.

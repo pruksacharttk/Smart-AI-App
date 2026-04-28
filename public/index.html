@@ -198,6 +198,11 @@
       }
       .thumb-remove:hover { background: #fee2e2; border-color: #fecaca; }
       .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+      .actions.top-actions {
+        margin: 0 0 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
       .btn { min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 9px 13px; font-weight: 900; }
       .btn.primary { flex: 1; color: white; background: linear-gradient(135deg, var(--blue), var(--cyan)); }
       .btn.secondary { background: #eef4fb; border-color: var(--line); color: var(--ink); }
@@ -225,6 +230,18 @@
       .review-grid { display: grid; gap: 10px; }
       .review-item { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 12px; }
       .review-item p, .review-item li { color: var(--muted); line-height: 1.45; }
+      .model-hint {
+        margin-top: 12px;
+        border: 1px solid rgba(29, 95, 214, .22);
+        border-radius: 12px;
+        background: #f5f9ff;
+        padding: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .model-hint strong { display: block; color: var(--ink); margin-bottom: 6px; }
+      .model-hint ul { margin: 8px 0 0; padding-left: 20px; }
+      .model-hint li { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink); }
       .modal-backdrop {
         position: fixed;
         inset: 0;
@@ -529,6 +546,11 @@
       <div class="layout">
         <section class="card controls">
           <form id="skillForm" novalidate>
+            <div class="actions top-actions">
+              <button class="btn primary" type="button" id="runBtnTop" data-i18n="run" disabled>Run Skill</button>
+              <button class="btn secondary" type="button" id="resetBtnTop" data-i18n="reset">Reset</button>
+              <button class="btn secondary" type="button" id="sampleBtnTop" data-i18n="sample">Thai Cats Sample</button>
+            </div>
             <div id="formRoot"></div>
             <div class="actions">
               <button class="btn primary" type="submit" id="runBtn" data-i18n="run" disabled>Run Skill</button>
@@ -552,7 +574,10 @@
             <button class="tab" type="button" data-tab="review">Review</button>
           </div>
           <div class="llm-status" id="llmStatus" role="status" aria-live="polite">LLM: not run yet</div>
-          <div class="pane active" id="promptPane"><pre id="promptOutput">Loading...</pre></div>
+          <div class="pane active" id="promptPane">
+            <pre id="promptOutput">Loading...</pre>
+            <aside class="model-hint" id="imageModelHint"></aside>
+          </div>
           <div class="pane" id="jsonPane"><pre id="jsonOutput">{}</pre></div>
           <div class="pane" id="reviewPane"><div class="review-grid" id="reviewOutput"></div></div>
         </section>
@@ -639,6 +664,7 @@
       const formRoot = document.querySelector("#formRoot");
       const statusEl = document.querySelector("#status");
       const promptOutput = document.querySelector("#promptOutput");
+      const imageModelHint = document.querySelector("#imageModelHint");
       const jsonOutput = document.querySelector("#jsonOutput");
       const reviewOutput = document.querySelector("#reviewOutput");
       const llmStatus = document.querySelector("#llmStatus");
@@ -646,6 +672,7 @@
       const appDescription = document.querySelector("#appDescription");
       const skillSelect = document.querySelector("#skillSelect");
       const runBtn = document.querySelector("#runBtn");
+      const runBtnTop = document.querySelector("#runBtnTop");
       const configModal = document.querySelector("#configModal");
       const fallbackRows = document.querySelector("#fallbackRows");
       const testConfigResults = document.querySelector("#testConfigResults");
@@ -679,24 +706,33 @@
 
       const providerModels = {
         nvidia: [
-          { id:"deepseek-ai/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"NIM supported" },
-          { id:"openai/gpt-oss-120b", label:"GPT-OSS 120B", tier:"NIM supported" },
-          { id:"openai/gpt-oss-20b", label:"GPT-OSS 20B", tier:"NIM supported" },
-          { id:"deepseek-ai/deepseek-r1", label:"DeepSeek R1", tier:"NIM supported" },
-          { id:"deepseek-ai/deepseek-coder-v2-lite-instruct", label:"DeepSeek Coder V2 Lite", tier:"NIM supported" },
-          { id:"meta/llama3-8b-instruct", label:"Llama 3 8B Instruct", tier:"NIM supported" },
-          { id:"meta/llama3-70b-instruct", label:"Llama 3 70B Instruct", tier:"NIM supported" }
+          { id:"deepseek-ai/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"NIM supported", imageInput:false },
+          { id:"openai/gpt-oss-120b", label:"GPT-OSS 120B", tier:"NIM supported", imageInput:false },
+          { id:"openai/gpt-oss-20b", label:"GPT-OSS 20B", tier:"NIM supported", imageInput:false },
+          { id:"deepseek-ai/deepseek-r1", label:"DeepSeek R1", tier:"NIM supported", imageInput:false },
+          { id:"deepseek-ai/deepseek-coder-v2-lite-instruct", label:"DeepSeek Coder V2 Lite", tier:"NIM supported", imageInput:false },
+          { id:"meta/llama3-8b-instruct", label:"Llama 3 8B Instruct", tier:"NIM supported", imageInput:false },
+          { id:"meta/llama3-70b-instruct", label:"Llama 3 70B Instruct", tier:"NIM supported", imageInput:false }
         ],
         openrouter: [
-          { id:"openrouter/free", label:"OpenRouter Free Router", tier:"free" },
-          { id:"deepseek/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"paid" },
-          { id:"nvidia/nemotron-3-super-120b-a12b:free", label:"NVIDIA Nemotron 3 Super 120B", tier:"free" },
-          { id:"openai/gpt-oss-120b:free", label:"GPT-OSS 120B", tier:"free" },
-          { id:"openai/gpt-oss-20b:free", label:"GPT-OSS 20B", tier:"free" },
-          { id:"minimax/minimax-m2.5:free", label:"MiniMax M2.5", tier:"free" },
-          { id:"z-ai/glm-4.5-air:free", label:"GLM 4.5 Air", tier:"free" },
-          { id:"google/gemma-4-31b-it:free", label:"Gemma 4 31B", tier:"free" },
-          { id:"qwen/qwen3-coder-480b-a35b-instruct:free", label:"Qwen3 Coder 480B", tier:"free" }
+          { id:"qwen/qwen3-vl-32b-instruct", label:"Qwen3 VL 32B Instruct", tier:"Chinese vision, paid", imageInput:true },
+          { id:"qwen/qwen3-vl-8b-instruct", label:"Qwen3 VL 8B Instruct", tier:"Chinese vision, paid", imageInput:true },
+          { id:"qwen/qwen3-vl-235b-a22b-instruct", label:"Qwen3 VL 235B A22B Instruct", tier:"Chinese vision, paid", imageInput:true },
+          { id:"qwen/qwen3.5-35b-a3b", label:"Qwen3.5 35B A3B", tier:"Chinese vision, paid", imageInput:true },
+          { id:"qwen/qwen3.5-plus-02-15", label:"Qwen3.5 Plus 2026-02-15", tier:"Chinese vision, paid", imageInput:true },
+          { id:"qwen/qwen3.5-397b-a17b", label:"Qwen3.5 397B A17B", tier:"Chinese vision, paid", imageInput:true },
+          { id:"google/gemini-2.5-flash", label:"Gemini 2.5 Flash", tier:"vision, paid", imageInput:true },
+          { id:"anthropic/claude-sonnet-4.5", label:"Claude Sonnet 4.5", tier:"vision, paid", imageInput:true },
+          { id:"openai/gpt-4o-mini", label:"GPT-4o Mini", tier:"vision, paid", imageInput:true },
+          { id:"openrouter/free", label:"OpenRouter Free Router", tier:"free, not recommended for uploaded images", imageInput:false },
+          { id:"deepseek/deepseek-v4-flash", label:"DeepSeek V4 Flash", tier:"paid, text only", imageInput:false },
+          { id:"nvidia/nemotron-3-super-120b-a12b:free", label:"NVIDIA Nemotron 3 Super 120B", tier:"free, text only", imageInput:false },
+          { id:"openai/gpt-oss-120b:free", label:"GPT-OSS 120B", tier:"free, text only", imageInput:false },
+          { id:"openai/gpt-oss-20b:free", label:"GPT-OSS 20B", tier:"free, text only", imageInput:false },
+          { id:"minimax/minimax-m2.5:free", label:"MiniMax M2.5", tier:"free, text only", imageInput:false },
+          { id:"z-ai/glm-4.5-air:free", label:"GLM 4.5 Air", tier:"free, text only", imageInput:false },
+          { id:"google/gemma-4-31b-it:free", label:"Gemma 4 31B", tier:"free, text only", imageInput:false },
+          { id:"qwen/qwen3-coder-480b-a35b-instruct:free", label:"Qwen3 Coder 480B", tier:"free, text only", imageInput:false }
         ]
       };
       const defaultConfig = {
@@ -705,14 +741,15 @@
           openrouter: { apiKey:"", baseUrl:"https://openrouter.ai/api/v1" }
         },
         fallback: [
-          { provider:"openrouter", model:"openrouter/free", customModel:"" },
-          { provider:"openrouter", model:"openai/gpt-oss-120b:free", customModel:"" },
-          { provider:"openrouter", model:"nvidia/nemotron-3-super-120b-a12b:free", customModel:"" },
-          { provider:"openrouter", model:"openai/gpt-oss-20b:free", customModel:"" }
+          { provider:"openrouter", model:"qwen/qwen3-vl-32b-instruct", customModel:"" },
+          { provider:"openrouter", model:"qwen/qwen3-vl-8b-instruct", customModel:"" },
+          { provider:"openrouter", model:"qwen/qwen3-vl-235b-a22b-instruct", customModel:"" },
+          { provider:"openrouter", model:"qwen/qwen3.5-35b-a3b", customModel:"" }
         ]
       };
 
-      const arrayFields = new Set(["modifiers","avoid","panel_descriptions","verified_reference_facts","reference_sources"]);
+      const arrayFields = new Set(["modifiers","avoid","panel_descriptions","verified_reference_facts","reference_sources","negative_constraints"]);
+      const imageModelRecommendations = ["qwen/qwen3-vl-32b-instruct", "qwen/qwen3-vl-8b-instruct", "qwen/qwen3-vl-235b-a22b-instruct", "qwen/qwen3.5-35b-a3b", "qwen/qwen3.5-plus-02-15", "qwen/qwen3.5-397b-a17b"];
       let language = localStorage.getItem("uiLanguage") || "en";
       let skills = [];
       let selectedSkillId = localStorage.getItem("selectedSkillId") || "";
@@ -753,8 +790,28 @@
         document.body.classList.toggle("is-loading", text === t("loading"));
         document.body.classList.toggle("is-running", text === t("running") || text === "Testing LLM");
       }
+      function setRunButtonsDisabled(disabled) {
+        runBtn.disabled = disabled;
+        runBtnTop.disabled = disabled;
+      }
       function setLlmStatus(text) {
         llmStatus.innerHTML = text;
+      }
+      function renderImageModelHint() {
+        if (!imageModelHint) return;
+        if (language === "th") {
+          imageModelHint.innerHTML = `
+            <strong>หากมีการแนบภาพ ต้องใช้โมเดลที่รองรับการอ่านภาพ</strong>
+            <span>โมเดล text-only เช่น GPT-OSS หรือ DeepSeek บางรุ่นจะไม่สามารถอ่านภาพแนบได้ และ openrouter/free อาจเลือก provider ที่ไม่พร้อมใช้งาน แนะนำให้เลือก fallback เป็น Qwen vision model เหล่านี้:</span>
+            <ul>${imageModelRecommendations.map((model) => `<li>${escapeHtml(model)}</li>`).join("")}</ul>
+          `;
+          return;
+        }
+        imageModelHint.innerHTML = `
+          <strong>If you attach images, use a model that supports image input</strong>
+          <span>Text-only models such as some GPT-OSS or DeepSeek models cannot read uploaded image attachments, and openrouter/free may route to an unavailable image provider. Recommended Qwen vision fallback models:</span>
+          <ul>${imageModelRecommendations.map((model) => `<li>${escapeHtml(model)}</li>`).join("")}</ul>
+        `;
       }
       function loadConfig() {
         try {
@@ -818,7 +875,7 @@
         for (const model of providerModels[provider] || []) {
           const option = document.createElement("option");
           option.value = model.id;
-          option.textContent = `${model.label} (${model.id}) - ${model.tier}`;
+          option.textContent = `${model.label} (${model.id}) - ${model.tier}${model.imageInput ? " - supports images" : ""}`;
           select.append(option);
         }
         const custom = document.createElement("option");
@@ -1122,7 +1179,8 @@
         document.querySelectorAll("[data-i18n]").forEach((el) => el.textContent = t(el.dataset.i18n));
         document.querySelector("#langEn").classList.toggle("active", language === "en");
         document.querySelector("#langTh").classList.toggle("active", language === "th");
-        runBtn.disabled = false;
+        renderImageModelHint();
+        setRunButtonsDisabled(false);
 
         formRoot.innerHTML = "";
         for (const section of schemaSections()) {
@@ -1320,7 +1378,7 @@
           return;
         }
         setStatus(t("running"), "warn");
-        runBtn.disabled = true;
+        setRunButtonsDisabled(true);
         promptOutput.textContent = "Running selected skill...";
         jsonOutput.textContent = "{}";
         setLlmStatus("LLM: preparing request...");
@@ -1344,7 +1402,7 @@
           promptOutput.textContent = err.message;
           jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
         } finally {
-          runBtn.disabled = false;
+          setRunButtonsDisabled(false);
         }
       }
       function renderCoverage() {
@@ -1398,14 +1456,18 @@
         language = next;
         localStorage.setItem("uiLanguage", language);
         renderQuickGuide();
+        renderImageModelHint();
         loadSkills().then(() => renderForm(true));
         promptOutput.textContent = currentBundle ? extractPrompt(currentBundle) : (schemaState?.skill?.hasRuntime || hasConfiguredLlm() ? t("promptEmpty") : t("noRuntime"));
         setStatus(t("ready"), "ok");
       }
       form.addEventListener("submit", (event) => { event.preventDefault(); runSkill(); });
       skillSelect.addEventListener("change", async () => { selectedSkillId = skillSelect.value; localStorage.setItem("selectedSkillId", selectedSkillId); currentBundle = null; await loadSchema(false); });
+      document.querySelector("#runBtnTop").addEventListener("click", runSkill);
       document.querySelector("#resetBtn").addEventListener("click", resetForm);
+      document.querySelector("#resetBtnTop").addEventListener("click", resetForm);
       document.querySelector("#sampleBtn").addEventListener("click", thaiCatsSample);
+      document.querySelector("#sampleBtnTop").addEventListener("click", thaiCatsSample);
       document.querySelector("#langEn").addEventListener("click", () => setLanguage("en"));
       document.querySelector("#langTh").addEventListener("click", () => setLanguage("th"));
       document.querySelector("#copyBtn").addEventListener("click", async () => { const pre = document.querySelector(".pane.active pre"); await navigator.clipboard.writeText(pre?.textContent || promptOutput.textContent); setStatus("Copied", "ok"); });
@@ -1476,7 +1538,7 @@
         setStatus(t("loading"), "warn");
         await loadSkills();
         if (!skills.length) {
-          runBtn.disabled = true;
+          setRunButtonsDisabled(true);
           setStatus(language === "th" ? "ไม่มีสกิล" : "No skills", "warn");
           promptOutput.textContent = language === "th" ? "ยังไม่พบสกิลในโฟลเดอร์ skills/" : "No skills were found in the skills/ folder.";
           jsonOutput.textContent = "{}";

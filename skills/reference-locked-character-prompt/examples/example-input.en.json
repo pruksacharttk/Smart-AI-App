@@ -1,0 +1,75 @@
+{
+  "reference_images": [
+    {
+      "image_ref": "@img1",
+      "role": "primary_identity",
+      "priority": 5,
+      "notes": "Use this as the single source of truth for the character identity, face, body proportions, outfit, accessories, shoes, color palette, and overall appearance."
+    }
+  ],
+  "target_model": "gpt_image_2",
+  "output_language": "en",
+  "task_type": "character_breakdown_sheet",
+  "character_mode": "single_character_from_primary_reference",
+  "style_family": "ultra_realistic",
+  "realism_level": "realistic",
+  "consistency_strength": "maximum_reference_lock",
+  "prompt_detail_level": "ultra_detailed",
+  "conflict_priority": "reference_image_over_text",
+  "sheet_options": {
+    "layout": "film_game_preproduction_sheet",
+    "background": "light_gray",
+    "include_front_side_back_views": true,
+    "include_expression_closeups": true,
+    "expressions": ["neutral", "slight_smile", "serious"],
+    "include_pose_variations": true,
+    "pose_variations": [
+      "standing naturally",
+      "walking",
+      "arms crossed",
+      "waving",
+      "sitting casually",
+      "dynamic action pose"
+    ],
+    "include_detail_callouts": true,
+    "detail_callouts": [
+      "face_identity",
+      "hairstyle",
+      "outfit",
+      "accessories",
+      "shoes",
+      "unique_features",
+      "color_palette"
+    ],
+    "include_color_palette_swatches": true,
+    "include_design_notes_labels": true,
+    "include_negative_requirements": true
+  },
+  "character_preservation": {
+    "preserve_face_identity": true,
+    "preserve_face_structure": true,
+    "preserve_eye_shape": true,
+    "preserve_nose_shape": true,
+    "preserve_lips": true,
+    "preserve_skin_tone": true,
+    "preserve_hairstyle": true,
+    "preserve_hair_color": true,
+    "preserve_body_proportions": true,
+    "preserve_outfit": true,
+    "preserve_clothing_details": true,
+    "preserve_accessories": true,
+    "preserve_shoes": true,
+    "preserve_color_palette": true,
+    "preserve_unique_features": true,
+    "conservative_inference_for_unclear_details": true
+  },
+  "negative_constraints": [
+    "Do not redesign the character.",
+    "Do not change the hairstyle, outfit, accessories, face, body type, or color palette.",
+    "No cartoon stylization.",
+    "No duplicated pose.",
+    "No extra characters.",
+    "No invented accessories or costume changes."
+  ],
+  "custom_instructions": "Create a professional realistic character breakdown sheet with strong visual consistency across every panel."
+}

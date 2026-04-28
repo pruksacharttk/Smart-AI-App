@@ -1,0 +1,75 @@
+{
+  "reference_images": [
+    {
+      "image_ref": "@img1",
+      "role": "primary_identity",
+      "priority": 5,
+      "notes": "ใช้ภาพนี้เป็นแหล่งอ้างอิงหลักหนึ่งเดียวสำหรับตัวตน ใบหน้า สัดส่วนร่างกาย เสื้อผ้า เครื่องประดับ รองเท้า โทนสี และภาพรวมของตัวละคร"
+    }
+  ],
+  "target_model": "gpt_image_2",
+  "output_language": "th",
+  "task_type": "character_breakdown_sheet",
+  "character_mode": "single_character_from_primary_reference",
+  "style_family": "ultra_realistic",
+  "realism_level": "realistic",
+  "consistency_strength": "maximum_reference_lock",
+  "prompt_detail_level": "ultra_detailed",
+  "conflict_priority": "reference_image_over_text",
+  "sheet_options": {
+    "layout": "film_game_preproduction_sheet",
+    "background": "light_gray",
+    "include_front_side_back_views": true,
+    "include_expression_closeups": true,
+    "expressions": ["neutral", "slight_smile", "serious"],
+    "include_pose_variations": true,
+    "pose_variations": [
+      "ยืนอย่างเป็นธรรมชาติ",
+      "กำลังเดิน",
+      "กอดอก",
+      "โบกมือ",
+      "นั่งแบบสบาย ๆ",
+      "ท่าแอ็กชันแบบไดนามิก"
+    ],
+    "include_detail_callouts": true,
+    "detail_callouts": [
+      "face_identity",
+      "hairstyle",
+      "outfit",
+      "accessories",
+      "shoes",
+      "unique_features",
+      "color_palette"
+    ],
+    "include_color_palette_swatches": true,
+    "include_design_notes_labels": true,
+    "include_negative_requirements": true
+  },
+  "character_preservation": {
+    "preserve_face_identity": true,
+    "preserve_face_structure": true,
+    "preserve_eye_shape": true,
+    "preserve_nose_shape": true,
+    "preserve_lips": true,
+    "preserve_skin_tone": true,
+    "preserve_hairstyle": true,
+    "preserve_hair_color": true,
+    "preserve_body_proportions": true,
+    "preserve_outfit": true,
+    "preserve_clothing_details": true,
+    "preserve_accessories": true,
+    "preserve_shoes": true,
+    "preserve_color_palette": true,
+    "preserve_unique_features": true,
+    "conservative_inference_for_unclear_details": true
+  },
+  "negative_constraints": [
+    "ห้ามออกแบบตัวละครใหม่",
+    "ห้ามเปลี่ยนทรงผม ชุด เครื่องประดับ ใบหน้า รูปร่าง หรือโทนสี",
+    "ห้ามทำเป็นการ์ตูน",
+    "ห้ามใช้ท่าซ้ำ",
+    "ห้ามเพิ่มตัวละครอื่น",
+    "ห้ามแต่งเติมเครื่องประดับหรือชุดใหม่ที่ไม่มีในภาพอ้างอิง"
+  ],
+  "custom_instructions": "สร้างพรอมต์สำหรับ character breakdown sheet แนวเหมือนจริงระดับมืออาชีพ โดยคงความสอดคล้องของตัวละครในทุกพาเนลให้สูงที่สุด"
+}

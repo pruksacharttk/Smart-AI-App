@@ -1,0 +1,169 @@
+{
+  "uiSchemaVersion": "1.0.0",
+  "title": "Reference-Locked Character Prompt Generator UI",
+  "titleTh": "Reference-Locked Character Prompt Generator",
+  "description": "Attach 1-5 reference images and generate a plain-text character prompt. Most options can stay on auto.",
+  "descriptionTh": "แนบภาพอ้างอิง 1-5 ภาพเพื่อสร้างพรอมต์ตัวละครแบบล็อกตัวตน ค่าเกือบทั้งหมดปล่อยเป็น auto ได้",
+  "sections": [
+    {
+      "id": "reference",
+      "title": "1. Reference images",
+      "titleTh": "1. ภาพอ้างอิง",
+      "description": "Upload 1-5 images. Use the clearest identity image first.",
+      "descriptionTh": "อัปโหลดภาพ 1-5 ภาพ โดยวางภาพที่เห็นตัวตนชัดที่สุดเป็นภาพแรก",
+      "collapsible": false,
+      "fields": [
+        {
+          "id": "reference_images",
+          "type": "imageUpload",
+          "label": "Reference images",
+          "labelTh": "ภาพอ้างอิง",
+          "helpText": "Required. Upload the character reference images. The app sends them as base64 image attachments.",
+          "helpTextTh": "จำเป็นต้องใส่ อัปโหลดภาพอ้างอิงตัวละคร ระบบจะส่งเป็นภาพแนบแบบ base64"
+        }
+      ]
+    },
+    {
+      "id": "output_setup",
+      "title": "2. Output setup",
+      "titleTh": "2. ตั้งค่าผลลัพธ์",
+      "description": "Leave these on auto if you are not sure.",
+      "descriptionTh": "ถ้าไม่แน่ใจให้ปล่อยเป็น auto ได้",
+      "collapsed": false,
+      "fields": [
+        {
+          "id": "target_model",
+          "type": "select",
+          "label": "Target model",
+          "labelTh": "โมเดลปลายทาง",
+          "helpText": "Use auto unless you know which image model will receive the final prompt.",
+          "helpTextTh": "ใช้ auto ได้ หากยังไม่รู้ว่าจะนำพรอมต์ไปใช้กับโมเดลภาพตัวใด"
+        },
+        {
+          "id": "output_language",
+          "type": "select",
+          "label": "Output language",
+          "labelTh": "ภาษาผลลัพธ์",
+          "helpText": "Use auto to follow your input language.",
+          "helpTextTh": "ใช้ auto เพื่อให้ระบบเลือกตามภาษาที่กรอก"
+        },
+        {
+          "id": "task_type",
+          "type": "select",
+          "label": "Prompt type",
+          "labelTh": "ประเภทพรอมต์",
+          "helpText": "Use auto for a balanced character sheet prompt.",
+          "helpTextTh": "ใช้ auto เพื่อสร้างพรอมต์ character sheet แบบสมดุล"
+        },
+        {
+          "id": "character_mode",
+          "type": "select",
+          "label": "Character mode",
+          "labelTh": "โหมดตัวละคร",
+          "helpText": "Use auto when uploading one main character or several supporting references.",
+          "helpTextTh": "ใช้ auto เมื่อมีตัวละครหลักหนึ่งตัวหรือมีภาพอ้างอิงหลายมุม"
+        }
+      ]
+    },
+    {
+      "id": "style_consistency",
+      "title": "3. Style and consistency",
+      "titleTh": "3. สไตล์และความคงตัว",
+      "description": "Auto keeps the prompt aligned with the uploaded references.",
+      "descriptionTh": "ค่า auto จะให้พรอมต์ยึดตามภาพอ้างอิงเป็นหลัก",
+      "collapsed": false,
+      "fields": [
+        {
+          "id": "style_family",
+          "type": "select",
+          "label": "Style family",
+          "labelTh": "สไตล์ภาพ",
+          "helpText": "Use auto to infer the style from the reference images.",
+          "helpTextTh": "ใช้ auto เพื่อให้ระบบอ่านสไตล์จากภาพอ้างอิง"
+        },
+        {
+          "id": "realism_level",
+          "type": "select",
+          "label": "Realism level",
+          "labelTh": "ระดับความสมจริง",
+          "helpText": "Use auto to preserve the look of the references.",
+          "helpTextTh": "ใช้ auto เพื่อคงลักษณะตามภาพอ้างอิง"
+        },
+        {
+          "id": "consistency_strength",
+          "type": "select",
+          "label": "Reference consistency",
+          "labelTh": "ความเข้มของการล็อกตัวตน",
+          "helpText": "Use auto for a strong identity lock without over-constraining the prompt.",
+          "helpTextTh": "ใช้ auto เพื่อคงตัวตนให้ชัดโดยไม่จำกัดพรอมต์มากเกินไป"
+        },
+        {
+          "id": "prompt_detail_level",
+          "type": "select",
+          "label": "Prompt detail level",
+          "labelTh": "ระดับรายละเอียดพรอมต์",
+          "helpText": "Use auto for a detailed but readable prompt.",
+          "helpTextTh": "ใช้ auto เพื่อให้พรอมต์ละเอียดและอ่านง่าย"
+        },
+        {
+          "id": "conflict_priority",
+          "type": "select",
+          "label": "Conflict priority",
+          "labelTh": "ลำดับความสำคัญเมื่อข้อมูลขัดกัน",
+          "helpText": "Use auto to prefer the reference image when text and image conflict.",
+          "helpTextTh": "ใช้ auto เพื่อให้ภาพอ้างอิงสำคัญกว่าเมื่อข้อความขัดกับภาพ"
+        }
+      ]
+    },
+    {
+      "id": "advanced_defaults",
+      "title": "4. Advanced defaults",
+      "titleTh": "4. ค่าอัตโนมัติขั้นสูง",
+      "description": "These fields are prefilled. You can run without editing them.",
+      "descriptionTh": "ช่องเหล่านี้ใส่ค่าเริ่มต้นไว้แล้ว สามารถรันได้โดยไม่ต้องแก้",
+      "collapsed": false,
+      "fields": [
+        {
+          "id": "sheet_options",
+          "type": "json",
+          "label": "Sheet options",
+          "labelTh": "ตัวเลือก character sheet",
+          "rows": 10,
+          "placeholder": "Auto-filled JSON",
+          "helpText": "Controls sheet layout, expressions, poses, callouts, color swatches, and notes. Leave as-is for automatic balanced defaults.",
+          "helpTextTh": "ควบคุม layout, สีพื้นหลัง, สีหน้า, ท่าทาง, callout, swatch สี และ note ต่าง ๆ ปล่อยค่าเดิมได้"
+        },
+        {
+          "id": "character_preservation",
+          "type": "json",
+          "label": "Character preservation",
+          "labelTh": "รายละเอียดที่ต้องคงไว้",
+          "rows": 10,
+          "placeholder": "Auto-filled JSON",
+          "helpText": "Locks visible identity details such as face, hair, outfit, accessories, body proportions, and color palette.",
+          "helpTextTh": "ล็อกตัวตนที่มองเห็น เช่น ใบหน้า ผม ชุด เครื่องประดับ สัดส่วน และโทนสี"
+        },
+        {
+          "id": "negative_constraints",
+          "type": "textarea",
+          "label": "Negative constraints",
+          "labelTh": "ข้อห้ามเพิ่มเติม",
+          "rows": 3,
+          "placeholder": "auto",
+          "helpText": "One item per line. Keep auto if you want the skill to choose standard constraints.",
+          "helpTextTh": "กรอกหนึ่งข้อห้ามต่อหนึ่งบรรทัด หรือปล่อย auto เพื่อให้ระบบเลือกข้อห้ามมาตรฐาน"
+        },
+        {
+          "id": "custom_instructions",
+          "type": "textarea",
+          "label": "Custom instructions",
+          "labelTh": "คำสั่งเพิ่มเติม",
+          "rows": 4,
+          "placeholder": "auto",
+          "helpText": "Use auto when you do not need extra instructions.",
+          "helpTextTh": "ใช้ auto หากไม่มีคำสั่งพิเศษเพิ่มเติม"
+        }
+      ]
+    }
+  ]
+}

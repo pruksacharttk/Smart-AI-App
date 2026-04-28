@@ -1,0 +1,5 @@
+สร้าง character breakdown sheet แนว ultra-realistic ของตัวละครเดียวกันจากภาพอ้างอิง @img1 โดยให้ทุกมุมมองและทุกท่าทางมีความสอดคล้องของตัวละครสูงที่สุด ใช้ @img1 เป็นแหล่งอ้างอิงหลักและเป็น single source of truth สำหรับใบหน้า โครงหน้า ดวงตา จมูก ริมฝีปาก สีผิว ทรงผม สีผม สัดส่วนร่างกาย เสื้อผ้า เครื่องประดับ รองเท้า โทนสี และภาพรวมของตัวละคร
+
+ห้ามออกแบบตัวละครใหม่ ห้ามเปลี่ยนใบหน้า ทรงผม รูปร่าง ชุด เครื่องประดับ หรือโทนสี หากมีรายละเอียดบางส่วนไม่ชัดเจน ให้คาดเดาอย่างระมัดระวังจากภาพอ้างอิงและคงรายละเอียดนั้นให้เหมือนกันทุกพาเนล
+
+Include: 1 full-body front view, 1 full-body side view, 1 full-body back view, 3 facial expression close-ups, 6 full-body pose variations, detail callouts, color palette swatches sampled from @img1, and small design-note labels. Layout: clean professional character presentation sheet on a white or light gray background.

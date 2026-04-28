@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/reference-locked-character-prompt-generator/output.schema.json",
+  "title": "Reference-Locked Character Prompt Generator Output",
+  "description": "Output schema for the skill. The skill returns the final image-generation prompt as raw plain text only. It must not return a JSON object, Markdown code block, explanatory wrapper, or image.",
+  "type": "string",
+  "minLength": 1
+}

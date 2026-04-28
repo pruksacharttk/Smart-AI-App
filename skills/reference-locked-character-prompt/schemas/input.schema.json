@@ -1,0 +1,469 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/reference-locked-character-prompt-generator/input.schema.json",
+  "title": "Reference-Locked Character Prompt Generator Input",
+  "description": "Input schema for generating a plain-text image prompt from 1 to 5 attached reference images. The generated prompt is optimized for character identity preservation and character sheet workflows for image models such as GPT Image 2 or Nano Banana. This skill never generates images.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reference_images",
+    "target_model",
+    "output_language",
+    "task_type",
+    "character_mode",
+    "style_family",
+    "realism_level",
+    "consistency_strength",
+    "prompt_detail_level",
+    "conflict_priority",
+    "sheet_options",
+    "character_preservation",
+    "negative_constraints",
+    "custom_instructions"
+  ],
+  "properties": {
+    "reference_images": {
+      "type": "array",
+      "description": "The attached reference images to use. Provide between 1 and 5 images. Use stable IDs such as @img1, @img2, @img3, @img4, and @img5.",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "image_ref",
+          "role",
+          "priority",
+          "notes"
+        ],
+        "properties": {
+          "image_ref": {
+            "type": "string",
+            "description": "Reference token for the attached image. Keep this exact token in the generated prompt.",
+            "pattern": "^@img[1-5]$"
+          },
+          "role": {
+            "type": "string",
+            "description": "How this image should be used when generating the prompt.",
+            "enum": [
+              "primary_identity",
+              "secondary_identity_consistency",
+              "face_detail",
+              "hair_detail",
+              "outfit_detail",
+              "accessory_detail",
+              "body_proportion_detail",
+              "pose_style",
+              "color_reference",
+              "environment_style",
+              "general_reference"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Priority from 1 to 5. Higher means stronger authority when references conflict.",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional human guidance about what this image contributes. Use an empty string if not needed.",
+            "maxLength": 1200
+          }
+        }
+      }
+    },
+    "target_model": {
+      "type": "string",
+      "description": "The image model or prompt style to optimize for. This skill still returns a plain text prompt only.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "gpt_image_2",
+        "nano_banana",
+        "general_image_model"
+      ]
+    },
+    "output_language": {
+      "type": "string",
+      "description": "Language of the generated prompt. Image reference tokens such as @img1 must remain unchanged.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "th",
+        "en",
+        "ja",
+        "ko",
+        "zh",
+        "es",
+        "fr",
+        "de",
+        "pt",
+        "id",
+        "vi",
+        "ar",
+        "hi"
+      ]
+    },
+    "task_type": {
+      "type": "string",
+      "description": "The kind of image prompt to produce.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "character_breakdown_sheet",
+        "character_turnaround_sheet",
+        "expression_sheet",
+        "pose_variation_sheet",
+        "single_character_prompt",
+        "full_production_reference_sheet",
+        "prompt_variations"
+      ]
+    },
+    "character_mode": {
+      "type": "string",
+      "description": "How to interpret multiple images.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "single_character_from_primary_reference",
+        "single_character_merge_references",
+        "multi_character_sheet"
+      ]
+    },
+    "style_family": {
+      "type": "string",
+      "description": "Requested visual style. Use auto to let the skill match the attached references and user goal.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "ultra_realistic",
+        "photorealistic",
+        "realistic_character_sheet",
+        "cinematic_realism",
+        "anime",
+        "manga",
+        "cartoon",
+        "3d_animation",
+        "comic_book",
+        "stylized_illustration",
+        "chibi",
+        "game_concept_art",
+        "watercolor",
+        "pixel_art",
+        "claymation",
+        "vector",
+        "flat_illustration"
+      ]
+    },
+    "realism_level": {
+      "type": "string",
+      "description": "Controls how realistic or stylized the generated prompt should be.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "realistic",
+        "semi_realistic",
+        "stylized",
+        "cartoon"
+      ]
+    },
+    "consistency_strength": {
+      "type": "string",
+      "description": "How strongly the prompt should lock the character to the reference images.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "standard",
+        "strong",
+        "maximum_reference_lock"
+      ]
+    },
+    "prompt_detail_level": {
+      "type": "string",
+      "description": "How detailed the generated prompt should be.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "concise",
+        "balanced",
+        "detailed",
+        "ultra_detailed"
+      ]
+    },
+    "conflict_priority": {
+      "type": "string",
+      "description": "Which source wins if text instructions conflict with reference image appearance.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "reference_image_over_text",
+        "text_over_reference",
+        "balanced_reference_first"
+      ]
+    },
+    "sheet_options": {
+      "type": "object",
+      "description": "Controls which elements appear in the character sheet prompt.",
+      "default": {
+        "layout": "auto",
+        "background": "auto",
+        "include_front_side_back_views": true,
+        "include_expression_closeups": true,
+        "expressions": [
+          "neutral",
+          "slight_smile",
+          "serious"
+        ],
+        "include_pose_variations": true,
+        "pose_variations": [
+          "standing naturally",
+          "walking",
+          "arms crossed",
+          "sitting casually"
+        ],
+        "include_detail_callouts": true,
+        "detail_callouts": [
+          "face_identity",
+          "hairstyle",
+          "outfit",
+          "accessories",
+          "unique_features",
+          "color_palette"
+        ],
+        "include_color_palette_swatches": true,
+        "include_design_notes_labels": true,
+        "include_negative_requirements": true
+      },
+      "additionalProperties": false,
+      "required": [
+        "layout",
+        "background",
+        "include_front_side_back_views",
+        "include_expression_closeups",
+        "expressions",
+        "include_pose_variations",
+        "pose_variations",
+        "include_detail_callouts",
+        "detail_callouts",
+        "include_color_palette_swatches",
+        "include_design_notes_labels",
+        "include_negative_requirements"
+      ],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "clean_character_sheet",
+            "studio_contact_sheet",
+            "art_director_grid",
+            "film_game_preproduction_sheet",
+            "manga_model_sheet",
+            "cinematic_keyart_reference"
+          ]
+        },
+        "background": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "white",
+            "light_gray",
+            "studio_neutral",
+            "transparent",
+            "simple_environment"
+          ]
+        },
+        "include_front_side_back_views": {
+          "type": "boolean"
+        },
+        "include_expression_closeups": {
+          "type": "boolean"
+        },
+        "expressions": {
+          "type": "array",
+          "description": "Expression close-ups to request.",
+          "minItems": 0,
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "enum": [
+              "neutral",
+              "slight_smile",
+              "serious",
+              "happy",
+              "sad",
+              "angry",
+              "surprised",
+              "confused",
+              "determined",
+              "scared"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "include_pose_variations": {
+          "type": "boolean"
+        },
+        "pose_variations": {
+          "type": "array",
+          "description": "Full-body pose variations to include. These can be localized by the skill in the output language.",
+          "minItems": 0,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "include_detail_callouts": {
+          "type": "boolean"
+        },
+        "detail_callouts": {
+          "type": "array",
+          "description": "Visual details to isolate in close-up callouts.",
+          "minItems": 0,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "enum": [
+              "face_identity",
+              "eyes",
+              "nose",
+              "lips",
+              "skin_tone",
+              "hairstyle",
+              "hair_color",
+              "outfit",
+              "fabric_materials",
+              "accessories",
+              "shoes",
+              "unique_features",
+              "silhouette",
+              "color_palette"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "include_color_palette_swatches": {
+          "type": "boolean"
+        },
+        "include_design_notes_labels": {
+          "type": "boolean"
+        },
+        "include_negative_requirements": {
+          "type": "boolean"
+        }
+      }
+    },
+    "character_preservation": {
+      "type": "object",
+      "description": "Visual elements that must be preserved from the references.",
+      "default": {
+        "preserve_face_identity": true,
+        "preserve_face_structure": true,
+        "preserve_eye_shape": true,
+        "preserve_nose_shape": true,
+        "preserve_lips": true,
+        "preserve_skin_tone": true,
+        "preserve_hairstyle": true,
+        "preserve_hair_color": true,
+        "preserve_body_proportions": true,
+        "preserve_outfit": true,
+        "preserve_clothing_details": true,
+        "preserve_accessories": true,
+        "preserve_shoes": true,
+        "preserve_color_palette": true,
+        "preserve_unique_features": true,
+        "conservative_inference_for_unclear_details": true
+      },
+      "additionalProperties": false,
+      "required": [
+        "preserve_face_identity",
+        "preserve_face_structure",
+        "preserve_eye_shape",
+        "preserve_nose_shape",
+        "preserve_lips",
+        "preserve_skin_tone",
+        "preserve_hairstyle",
+        "preserve_hair_color",
+        "preserve_body_proportions",
+        "preserve_outfit",
+        "preserve_clothing_details",
+        "preserve_accessories",
+        "preserve_shoes",
+        "preserve_color_palette",
+        "preserve_unique_features",
+        "conservative_inference_for_unclear_details"
+      ],
+      "properties": {
+        "preserve_face_identity": {
+          "type": "boolean"
+        },
+        "preserve_face_structure": {
+          "type": "boolean"
+        },
+        "preserve_eye_shape": {
+          "type": "boolean"
+        },
+        "preserve_nose_shape": {
+          "type": "boolean"
+        },
+        "preserve_lips": {
+          "type": "boolean"
+        },
+        "preserve_skin_tone": {
+          "type": "boolean"
+        },
+        "preserve_hairstyle": {
+          "type": "boolean"
+        },
+        "preserve_hair_color": {
+          "type": "boolean"
+        },
+        "preserve_body_proportions": {
+          "type": "boolean"
+        },
+        "preserve_outfit": {
+          "type": "boolean"
+        },
+        "preserve_clothing_details": {
+          "type": "boolean"
+        },
+        "preserve_accessories": {
+          "type": "boolean"
+        },
+        "preserve_shoes": {
+          "type": "boolean"
+        },
+        "preserve_color_palette": {
+          "type": "boolean"
+        },
+        "preserve_unique_features": {
+          "type": "boolean"
+        },
+        "conservative_inference_for_unclear_details": {
+          "type": "boolean"
+        }
+      }
+    },
+    "negative_constraints": {
+      "type": "array",
+      "description": "Additional negative requirements to include in the final prompt.",
+      "default": [
+        "auto"
+      ],
+      "minItems": 0,
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "custom_instructions": {
+      "type": "string",
+      "description": "Extra instructions to blend into the prompt. Use an empty string if not needed.",
+      "default": "auto",
+      "maxLength": 4000
+    }
+  }
+}

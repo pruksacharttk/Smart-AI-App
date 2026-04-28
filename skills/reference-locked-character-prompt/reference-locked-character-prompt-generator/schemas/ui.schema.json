@@ -1,0 +1,204 @@
+{
+  "uiSchemaVersion": "1.0.0",
+  "title": "Reference-Locked Character Prompt Generator UI",
+  "description": "UI layout for a plain-text prompt generator that uses 1–5 attached reference images to create a reference-locked character prompt.",
+  "type": "VerticalLayout",
+  "elements": [
+    {
+      "type": "Group",
+      "label": "1. Reference images",
+      "description": "Attach 1–5 images. Mark the main identity image as primary_identity.",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/reference_images",
+          "options": {
+            "addButtonLabel": "Add reference image",
+            "removeButtonLabel": "Remove image",
+            "minItems": 1,
+            "maxItems": 5,
+            "itemLabelField": "image_ref"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "2. Output setup",
+      "elements": [
+        {
+          "type": "HorizontalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "scope": "#/properties/target_model",
+              "label": "Target model"
+            },
+            {
+              "type": "Control",
+              "scope": "#/properties/output_language",
+              "label": "Output language"
+            }
+          ]
+        },
+        {
+          "type": "HorizontalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "scope": "#/properties/task_type",
+              "label": "Prompt type"
+            },
+            {
+              "type": "Control",
+              "scope": "#/properties/character_mode",
+              "label": "Character mode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "3. Style and consistency",
+      "elements": [
+        {
+          "type": "HorizontalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "scope": "#/properties/style_family",
+              "label": "Style family"
+            },
+            {
+              "type": "Control",
+              "scope": "#/properties/realism_level",
+              "label": "Realism level"
+            }
+          ]
+        },
+        {
+          "type": "HorizontalLayout",
+          "elements": [
+            {
+              "type": "Control",
+              "scope": "#/properties/consistency_strength",
+              "label": "Reference consistency"
+            },
+            {
+              "type": "Control",
+              "scope": "#/properties/conflict_priority",
+              "label": "Conflict priority"
+            }
+          ]
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/prompt_detail_level",
+          "label": "Prompt detail level"
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "4. Sheet contents",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/layout",
+          "label": "Layout"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/background",
+          "label": "Background"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_front_side_back_views",
+          "label": "Include front/side/back views"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_expression_closeups",
+          "label": "Include expression close-ups"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/expressions",
+          "label": "Expressions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_pose_variations",
+          "label": "Include pose variations"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/pose_variations",
+          "label": "Pose variations"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_detail_callouts",
+          "label": "Include detail callouts"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/detail_callouts",
+          "label": "Detail callouts"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_color_palette_swatches",
+          "label": "Include color palette swatches"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_design_notes_labels",
+          "label": "Include design notes labels"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/sheet_options/properties/include_negative_requirements",
+          "label": "Include negative requirements"
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "5. Character preservation lock",
+      "description": "Choose which visible character details must remain locked to the reference images.",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/character_preservation",
+          "options": {
+            "format": "checkbox-grid"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "6. Extra constraints",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/negative_constraints",
+          "label": "Negative constraints"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/custom_instructions",
+          "label": "Custom instructions",
+          "options": {
+            "multi": true,
+            "rows": 8,
+            "placeholder": "Example: no cartoon stylization, keep the original outfit, produce a professional film/game pre-production sheet"
+          }
+        }
+      ]
+    }
+  ]
+}
