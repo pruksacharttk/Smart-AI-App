@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { configureUsageStoreForTests, recordSuccessfulLlmUsage, requestHandler } from "../server.js";
+import { configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, recordSuccessfulLlmUsage, requestHandler } from "../server.js";
 
 function listenWithHandler() {
   const server = createServer(requestHandler);
@@ -107,4 +107,59 @@ test("recordSuccessfulLlmUsage can record fallback target when result omits llm"
 
   assert.equal(ok, true);
   assert.deepEqual(calls, [{ provider: "openrouter", model: "qwen/qwen3-vl-32b-instruct" }]);
+});
+
+test("enrichReferenceLockedCharacterParams selects randomized action prompts", () => {
+  const params = enrichReferenceLockedCharacterParams(
+    { id: "reference-locked-character-prompt" },
+    {
+      action_category: "movement_dynamics",
+      action_selection_mode: "random",
+      action_count: 3,
+      movement_dynamics_actions: ["run forward", "jump mid-air", "spin gracefully", "dance"],
+      posing_eye_contact_actions: ["look at camera"],
+      emotional_actions: ["smile"],
+      interaction_actions: ["lean on rail"],
+      custom_action_prompts: []
+    }
+  );
+
+  assert.equal(params.selected_action_category, "movement_dynamics");
+  assert.equal(params.selected_action_prompts.length, 3);
+  assert.ok(params.selected_action_prompts.every((item) => ["run forward", "jump mid-air", "spin gracefully", "dance"].includes(item)));
+  assert.match(params.action_randomization_note, /selected_action_prompts/);
+});
+
+test("enrichReferenceLockedCharacterParams supports custom-only actions", () => {
+  const params = enrichReferenceLockedCharacterParams(
+    { id: "reference-locked-character-prompt" },
+    {
+      action_selection_mode: "custom_only",
+      action_count: 2,
+      custom_action_prompts: ["custom pose one", "custom pose two", "custom pose three"]
+    }
+  );
+
+  assert.equal(params.selected_action_prompts.length, 2);
+  assert.ok(params.selected_action_prompts.every((item) => item.startsWith("custom pose")));
+});
+
+test("enrichKpopChoreographyParams builds a reference-anchored choreography brief", () => {
+  const params = enrichKpopChoreographyParams(
+    { id: "reference-locked-character-prompt" },
+    {
+      task_type: "kpop_dance_sequence_sheet",
+      choreography_preset: "kpop_4x4_instruction_sheet",
+      choreography_frame_count: 16,
+      reference_images: [{ image_ref: "@img1", role: "primary_identity" }],
+      selected_action_prompts: ["step one", "step two"]
+    }
+  );
+
+  assert.equal(params.reference_identity_anchor, "@img1");
+  assert.equal(params.choreography_frame_count, 16);
+  assert.equal(params.choreography_grid_layout, "4x4_16_frames");
+  assert.deepEqual(params.selected_action_prompts, ["step one", "step two"]);
+  assert.match(params.choreography_sequence_brief, /K-pop dance-sequence instruction sheet/);
+  assert.match(params.choreography_sequence_brief, /@img1/);
 });

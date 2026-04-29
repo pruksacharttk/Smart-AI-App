@@ -19,7 +19,23 @@
     "sheet_options",
     "character_preservation",
     "negative_constraints",
-    "custom_instructions"
+    "custom_instructions",
+    "action_category",
+    "action_selection_mode",
+    "action_count",
+    "posing_eye_contact_actions",
+    "movement_dynamics_actions",
+    "emotional_actions",
+    "interaction_actions",
+    "custom_action_prompts",
+    "choreography_preset",
+    "choreography_grid_layout",
+    "choreography_frame_count",
+    "choreography_visual_style",
+    "choreography_wardrobe_mode",
+    "choreography_motion_indicators",
+    "choreography_panel_structure",
+    "choreography_restrictions"
   ],
   "properties": {
     "reference_images": {
@@ -116,6 +132,7 @@
         "expression_sheet",
         "pose_variation_sheet",
         "single_character_prompt",
+        "kpop_dance_sequence_sheet",
         "full_production_reference_sheet",
         "prompt_variations"
       ]
@@ -217,10 +234,12 @@
         ],
         "include_pose_variations": true,
         "pose_variations": [
-          "standing naturally",
-          "walking",
-          "arms crossed",
-          "sitting casually"
+          "standing naturally with clear identity lock",
+          "looking directly at the camera while walking forward",
+          "jumping mid-air with natural motion",
+          "serious determined action stance",
+          "dancing or spinning gracefully",
+          "interacting with the environment while preserving outfit and face identity"
         ],
         "include_detail_callouts": true,
         "detail_callouts": [
@@ -260,7 +279,8 @@
             "art_director_grid",
             "film_game_preproduction_sheet",
             "manga_model_sheet",
-            "cinematic_keyart_reference"
+            "cinematic_keyart_reference",
+            "kpop_choreography_diagram_sheet"
           ]
         },
         "background": {
@@ -464,6 +484,233 @@
       "description": "Extra instructions to blend into the prompt. Use an empty string if not needed.",
       "default": "auto",
       "maxLength": 4000
+    },
+    "action_category": {
+      "type": "string",
+      "title": "Action category",
+      "description": "Choose which action-pose category should drive the pose variations. Use mixed to combine all categories.",
+      "default": "mixed",
+      "enum": [
+        "auto",
+        "mixed",
+        "posing_eye_contact",
+        "movement_dynamics",
+        "emotional_actions",
+        "interactions"
+      ]
+    },
+    "action_selection_mode": {
+      "type": "string",
+      "title": "Action selection mode",
+      "description": "Use random to let the app choose action prompts from the selected category each run. Use custom_only to use only custom action prompts.",
+      "default": "random",
+      "enum": [
+        "auto",
+        "random",
+        "balanced",
+        "custom_only"
+      ]
+    },
+    "action_count": {
+      "type": "integer",
+      "title": "Number of random actions",
+      "description": "How many action prompts to select for the generated sheet.",
+      "default": 4,
+      "minimum": 1,
+      "maximum": 8
+    },
+    "posing_eye_contact_actions": {
+      "type": "array",
+      "title": "Posing & Eye Contact actions",
+      "description": "Pose and gaze options for direct eye contact, glances, standing poses, and camera-aware character presentation.",
+      "default": [
+        "looking directly at the camera while walking forward",
+        "three-quarter stance with confident eye contact",
+        "over-the-shoulder glance while turning back",
+        "standing in a relaxed pose with soft eye contact",
+        "chin slightly raised with a calm focused gaze",
+        "side profile pose with eyes looking toward the viewer"
+      ],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "movement_dynamics_actions": {
+      "type": "array",
+      "title": "Movement & Dynamics actions",
+      "description": "Motion-heavy action options such as running, jumping, spinning, lunging, dancing, and wind-swept movement.",
+      "default": [
+        "running toward the camera with natural motion",
+        "jumping mid-air with hair and clothing moving naturally",
+        "spinning gracefully with dynamic body flow",
+        "stepping forward with wind-swept motion",
+        "kicking or lunging in a controlled action pose",
+        "dancing with elegant full-body movement"
+      ],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "emotional_actions": {
+      "type": "array",
+      "title": "Emotional Actions",
+      "description": "Body-language actions that communicate mood, confidence, surprise, shyness, determination, or playfulness.",
+      "default": [
+        "smiling brightly with an open welcoming gesture",
+        "serious determined stance with clenched focus",
+        "surprised reaction pose with expressive hands",
+        "shy gentle pose with softened shoulders",
+        "confident heroic stance with strong posture",
+        "playful laughing pose with relaxed body language"
+      ],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "interaction_actions": {
+      "type": "array",
+      "title": "Interactions",
+      "description": "Actions where the character interacts with props, surfaces, light, wind, or the surrounding environment while preserving identity.",
+      "default": [
+        "leaning against a nearby wall or railing",
+        "holding a relevant prop without changing the outfit identity",
+        "reaching toward an object in the environment",
+        "walking through the environment while interacting with light and wind",
+        "resting one hand on a surface while keeping full body visible",
+        "using the environment as framing while preserving the character identity"
+      ],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "custom_action_prompts": {
+      "type": "array",
+      "title": "Custom action prompts",
+      "description": "Optional custom poses or actions. Leave empty to use the built-in randomized action pools.",
+      "default": [],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 220
+      }
+    },
+    "choreography_preset": {
+      "type": "string",
+      "title": "Choreography sheet preset",
+      "description": "Optional preset for a professional dance-sequence instruction sheet. Use kpop_4x4_instruction_sheet for a 16-frame K-pop choreography diagram based on the attached reference image.",
+      "default": "auto",
+      "enum": [
+        "auto",
+        "none",
+        "kpop_4x4_instruction_sheet"
+      ]
+    },
+    "choreography_grid_layout": {
+      "type": "string",
+      "title": "Choreography grid layout",
+      "description": "Panel grid for the choreography sequence sheet.",
+      "default": "4x4_16_frames",
+      "enum": [
+        "auto",
+        "4x4_16_frames",
+        "3x3_9_frames",
+        "2x4_8_frames",
+        "single_row_sequence"
+      ]
+    },
+    "choreography_frame_count": {
+      "type": "integer",
+      "title": "Choreography frame count",
+      "description": "Number of numbered dance-step frames to request. Use 16 for a 4x4 K-pop instruction sheet.",
+      "default": 16,
+      "minimum": 1,
+      "maximum": 16
+    },
+    "choreography_visual_style": {
+      "type": "string",
+      "title": "Choreography visual style",
+      "description": "Rendering and layout style for the dance instruction sheet.",
+      "default": "high_detail_3d_grayscale_instruction_sheet",
+      "enum": [
+        "auto",
+        "high_detail_3d_grayscale_instruction_sheet",
+        "clean_3d_concept_art_diagram",
+        "professional_choreography_manual",
+        "minimal_linework_instruction_sheet"
+      ]
+    },
+    "choreography_wardrobe_mode": {
+      "type": "string",
+      "title": "Choreography wardrobe mode",
+      "description": "How wardrobe should be handled while preserving the attached reference identity.",
+      "default": "reference_locked_with_kpop_performance_fit",
+      "enum": [
+        "auto",
+        "reference_locked",
+        "reference_locked_with_kpop_performance_fit",
+        "performance_ready_kpop_outfit"
+      ]
+    },
+    "choreography_motion_indicators": {
+      "type": "array",
+      "title": "Motion indicators",
+      "description": "Instructional overlays to show movement direction, rhythm, weight transfer, turns, and body isolation.",
+      "default": [
+        "curved arrows for flowing movement",
+        "straight arrows for directional steps",
+        "circular indicators for spins and turns",
+        "weight-transfer markers",
+        "body-isolation guide lines"
+      ],
+      "minItems": 0,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "choreography_panel_structure": {
+      "type": "string",
+      "title": "Panel structure",
+      "description": "What each choreography frame should contain.",
+      "default": "step number and short move name at top-left; full-body pose centered; 3-4 concise instruction lines at bottom-left; motion arrows and direction guides overlay each panel",
+      "maxLength": 1200
+    },
+    "choreography_restrictions": {
+      "type": "array",
+      "title": "Choreography restrictions",
+      "description": "Restrictions for the choreography sheet. These keep the output clean and locked to the attached reference character.",
+      "default": [
+        "use the attached reference image as the base character identity",
+        "same female dancer across every panel",
+        "preserve face likeness and body proportions from the reference image",
+        "clean white background",
+        "thin black panel dividers",
+        "no color",
+        "no background scene",
+        "no extra characters",
+        "no clutter",
+        "only dancer and instruction elements"
+      ],
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 220
+      }
     }
   }
 }

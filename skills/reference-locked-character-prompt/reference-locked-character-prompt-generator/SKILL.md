@@ -81,12 +81,34 @@ Use `target_model` to tune wording, while still returning only prompt text:
 
 Do not include API code or tool-call instructions.
 
+## Action pose randomization
+Use the action fields in the input to create varied pose panels while preserving the same character identity.
+
+- `action_category` selects the action pool: `posing_eye_contact`, `movement_dynamics`, `emotional_actions`, `interactions`, or `mixed`.
+- `action_selection_mode` controls how actions are chosen. When it is `random` or `auto`, use `selected_action_prompts` from the app as the action list for this run.
+- `selected_action_prompts` is the authoritative randomized list. Include those actions as pose variations or action panels.
+- If `custom_action_prompts` is provided, blend those into the action choices; if `custom_only`, use only custom actions.
+- Every action must preserve the same face, hairstyle, body proportions, outfit, accessories, shoes, silhouette, and color palette from the references.
+- Do not let dynamic movement cause identity drift, costume redesign, extra limbs, duplicated poses, or unrelated props.
+
+## K-pop choreography instruction sheet
+When `task_type` is `kpop_dance_sequence_sheet` or `choreography_preset` is `kpop_4x4_instruction_sheet`, generate a prompt for a professional dance-sequence instruction sheet.
+
+- Use `reference_identity_anchor` or the primary reference image, usually `@img1`, as the base dancer identity in every panel.
+- The same single female dancer must appear consistently across all frames with the same likeness, face structure, hairstyle, body proportions, silhouette, outfit identity, accessories, and shoes from the attached reference image.
+- Use a clean 4x4 grid for 16 frames when requested. Panels must be evenly sized, separated by thin black divider lines, and numbered clearly from 1 to 16.
+- Visual style: high-detail 3D grayscale rendering, professional choreography design manual, diagram-inspired layout, clean white background, soft studio lighting, strong contrast, polished concept-art clarity.
+- Each frame must contain: top-left step number plus a short dance move name, centered full-body pose capturing one precise choreography moment, bottom-left 3-4 concise instruction lines, and motion overlays.
+- Motion overlays should include curved arrows for flowing movement, straight arrows for directional steps, circular indicators for spins or turns, weight-transfer markers, and body-isolation guide lines.
+- Wardrobe may be performance-ready K-pop styling only when requested, but it must stay compatible with the reference identity and must not change the character's face, proportions, or core recognizable outfit traits unless the user explicitly allows it.
+- Restrictions: no color, no background scene, no additional characters, no clutter, no unrelated props, only the dancer and instructional elements.
+
 ## Prompt construction checklist
 The final prompt should include, when requested:
 1. Reference image source-of-truth rule.
 2. Character identity lock: face structure, eyes, nose, lips, skin tone, hairstyle, hair color, body proportions, outfit, accessories, shoes, silhouette, and overall appearance.
 3. Conservative inference rule for unclear details.
-4. Requested sheet content: front/side/back views, expression close-ups, pose variations, detail callouts, color palette swatches, design notes.
+4. Requested sheet content: front/side/back views, expression close-ups, randomized action pose variations from `selected_action_prompts`, choreography sequence panels when requested, detail callouts, color palette swatches, design notes.
 5. Style requirements.
 6. Layout requirements.
 7. Consistency requirements.
@@ -99,7 +121,7 @@ When `task_type` is `character_breakdown_sheet` and no custom list is given, inc
 - 1 full-body side view
 - 1 full-body back view
 - 3 facial expression close-ups: neutral, slight smile, serious
-- 6 full-body pose variations: standing naturally, walking, arms crossed, waving, sitting casually, dynamic action pose
+- 4-8 full-body randomized action pose variations selected from posing and eye contact, movement and dynamics, emotional actions, and interactions with objects or the environment
 - close-up detail callouts for outfit, accessories, shoes, hairstyle, and unique features
 - color palette swatches sampled from the reference images
 - small design notes labels

@@ -226,6 +226,116 @@ const recommendedImageInputModels = [
   "qwen/qwen3.5-397b-a17b"
 ];
 
+const referenceActionPools = {
+  posing_eye_contact: [
+    "looking directly at the camera while walking forward",
+    "three-quarter stance with confident eye contact",
+    "over-the-shoulder glance while turning back",
+    "standing in a relaxed pose with soft eye contact",
+    "chin slightly raised with a calm focused gaze",
+    "side profile pose with eyes looking toward the viewer"
+  ],
+  movement_dynamics: [
+    "running toward the camera with natural motion",
+    "jumping mid-air with hair and clothing moving naturally",
+    "spinning gracefully with dynamic body flow",
+    "stepping forward with wind-swept motion",
+    "kicking or lunging in a controlled action pose",
+    "dancing with elegant full-body movement"
+  ],
+  emotional_actions: [
+    "smiling brightly with an open welcoming gesture",
+    "serious determined stance with clenched focus",
+    "surprised reaction pose with expressive hands",
+    "shy gentle pose with softened shoulders",
+    "confident heroic stance with strong posture",
+    "playful laughing pose with relaxed body language"
+  ],
+  interactions: [
+    "leaning against a nearby wall or railing",
+    "holding a relevant prop without changing the outfit identity",
+    "reaching toward an object in the environment",
+    "walking through the environment while interacting with light and wind",
+    "resting one hand on a surface while keeping full body visible",
+    "using the environment as framing while preserving the character identity"
+  ]
+};
+
+function textArray(value, fallback = []) {
+  const source = Array.isArray(value) ? value : fallback;
+  return source.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function shuffled(values) {
+  const copy = [...values];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swap]] = [copy[swap], copy[index]];
+  }
+  return copy;
+}
+
+export function enrichReferenceLockedCharacterParams(info, params) {
+  if (info.id !== "reference-locked-character-prompt") return params;
+  const pools = {
+    posing_eye_contact: textArray(params.posing_eye_contact_actions, referenceActionPools.posing_eye_contact),
+    movement_dynamics: textArray(params.movement_dynamics_actions, referenceActionPools.movement_dynamics),
+    emotional_actions: textArray(params.emotional_actions, referenceActionPools.emotional_actions),
+    interactions: textArray(params.interaction_actions, referenceActionPools.interactions)
+  };
+  const custom = textArray(params.custom_action_prompts);
+  const category = String(params.action_category || "mixed");
+  const mode = String(params.action_selection_mode || "random");
+  const count = Math.max(1, Math.min(8, Number(params.action_count || 4)));
+  const categoryKeys = category === "mixed" || category === "auto" ? Object.keys(pools) : [category].filter((key) => pools[key]);
+  const pool = mode === "custom_only" ? custom : [...categoryKeys.flatMap((key) => pools[key]), ...custom];
+  const selected = (mode === "balanced")
+    ? categoryKeys.flatMap((key) => shuffled(pools[key]).slice(0, Math.max(1, Math.floor(count / Math.max(1, categoryKeys.length))))).slice(0, count)
+    : shuffled(pool).slice(0, count);
+  return {
+    ...params,
+    selected_action_prompts: selected.length ? selected : shuffled(Object.values(referenceActionPools).flat()).slice(0, count),
+    selected_action_category: category,
+    action_randomization_note: "Use selected_action_prompts as the actual pose/action variations for this run. Preserve character identity, outfit, face, hairstyle, accessories, and proportions in every action."
+  };
+}
+
+export function enrichKpopChoreographyParams(info, params) {
+  if (info.id !== "reference-locked-character-prompt") return params;
+  const preset = String(params.choreography_preset || "auto");
+  const taskType = String(params.task_type || "");
+  if (preset !== "kpop_4x4_instruction_sheet" && taskType !== "kpop_dance_sequence_sheet") return params;
+  const frameCount = Math.max(1, Math.min(16, Number(params.choreography_frame_count || 16)));
+  const referenceImages = Array.isArray(params.reference_images) ? params.reference_images : [];
+  const primary = referenceImages.find((image) => image?.role === "primary_identity") || referenceImages[0] || {};
+  const primaryRef = primary.image_ref || "@img1";
+  const selected = Array.isArray(params.selected_action_prompts) && params.selected_action_prompts.length
+    ? params.selected_action_prompts
+    : shuffled([
+        ...referenceActionPools.movement_dynamics,
+        ...referenceActionPools.posing_eye_contact,
+        ...referenceActionPools.emotional_actions
+      ]).slice(0, Math.min(8, frameCount));
+  return {
+    ...params,
+    task_type: "kpop_dance_sequence_sheet",
+    choreography_preset: "kpop_4x4_instruction_sheet",
+    choreography_grid_layout: params.choreography_grid_layout || "4x4_16_frames",
+    choreography_frame_count: frameCount,
+    selected_action_prompts: selected,
+    reference_identity_anchor: primaryRef,
+    choreography_sequence_brief: [
+      `Create a professional K-pop dance-sequence instruction sheet using ${primaryRef} as the base dancer identity.`,
+      `Use a 4x4 grid when frame_count is 16, with evenly sized panels and clear numbering from 1 to ${frameCount}.`,
+      "Each panel must show the same single female dancer with consistent face likeness, body proportions, hairstyle, outfit identity, accessories, and silhouette from the attached reference.",
+      "Each frame must include a short move name, a precise full-body choreography pose, 3-4 concise instruction lines, and motion overlays.",
+      "Use curved arrows for fluid movement, straight arrows for directional steps, circular indicators for turns/spins, weight-transfer markers, and body-isolation guide lines.",
+      "Use a clean white background, thin black panel dividers, soft studio lighting, strong grayscale contrast, high-detail 3D concept-art rendering, and no background scene.",
+      "Do not add color, extra characters, clutter, unrelated props, identity drift, face redesign, or body-proportion changes."
+    ].join(" ")
+  };
+}
+
 function imageInputGuidance(targets = []) {
   const configured = targets.length
     ? ` Current configured fallbacks: ${targets.map((target) => `${target.index}. ${target.provider}/${target.model}`).join("; ")}.`
@@ -785,9 +895,10 @@ async function executeRunSkill(body, onStatus = null) {
     error.status = 400;
     throw error;
   }
+  const enrichedParams = enrichKpopChoreographyParams(info, enrichReferenceLockedCharacterParams(info, params));
   return hasConfiguredLlm
-    ? await runLlmSkill(info, params, llmConfig, onStatus)
-    : await runPythonSkill(skillId, { params });
+    ? await runLlmSkill(info, enrichedParams, llmConfig, onStatus)
+    : await runPythonSkill(skillId, { params: enrichedParams });
 }
 
 async function handleRunSkillStream(req, res) {

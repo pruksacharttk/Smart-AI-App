@@ -885,7 +885,21 @@
         ]
       };
 
-      const arrayFields = new Set(["modifiers","avoid","panel_descriptions","verified_reference_facts","reference_sources","negative_constraints"]);
+      const arrayFields = new Set([
+        "modifiers",
+        "avoid",
+        "panel_descriptions",
+        "verified_reference_facts",
+        "reference_sources",
+        "negative_constraints",
+        "posing_eye_contact_actions",
+        "movement_dynamics_actions",
+        "emotional_actions",
+        "interaction_actions",
+        "custom_action_prompts",
+        "choreography_motion_indicators",
+        "choreography_restrictions"
+      ]);
       const imageModelRecommendations = ["qwen/qwen3-vl-32b-instruct", "qwen/qwen3-vl-8b-instruct", "qwen/qwen3-vl-235b-a22b-instruct", "qwen/qwen3.5-35b-a3b", "qwen/qwen3.5-plus-02-15", "qwen/qwen3.5-397b-a17b"];
       let language = localStorage.getItem("uiLanguage") || "en";
       let skills = [];

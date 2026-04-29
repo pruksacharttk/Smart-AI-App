@@ -101,6 +101,100 @@
     },
     {
       "type": "Group",
+      "label": "4. Action pose randomizer",
+      "description": "Select randomized action poses by category. These controls are passed into the prompt request.",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/action_category",
+          "label": "Action category"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/action_selection_mode",
+          "label": "Action selection mode"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/action_count",
+          "label": "Number of random actions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/posing_eye_contact_actions",
+          "label": "Posing & Eye Contact actions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/movement_dynamics_actions",
+          "label": "Movement & Dynamics actions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/emotional_actions",
+          "label": "Emotional Actions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/interaction_actions",
+          "label": "Interactions"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/custom_action_prompts",
+          "label": "Custom action prompts"
+        }
+      ]
+    },
+    {
+      "type": "Group",
+      "label": "5. K-pop choreography sheet",
+      "description": "Create a 4x4 numbered K-pop choreography instruction sheet using the attached reference as the base dancer.",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_preset",
+          "label": "Choreography sheet preset"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_grid_layout",
+          "label": "Choreography grid layout"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_frame_count",
+          "label": "Choreography frame count"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_visual_style",
+          "label": "Choreography visual style"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_wardrobe_mode",
+          "label": "Choreography wardrobe mode"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_motion_indicators",
+          "label": "Motion indicators"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_panel_structure",
+          "label": "Panel structure"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/choreography_restrictions",
+          "label": "Choreography restrictions"
+        }
+      ]
+    },
+    {
+      "type": "Group",
       "label": "4. Sheet contents",
       "elements": [
         {
