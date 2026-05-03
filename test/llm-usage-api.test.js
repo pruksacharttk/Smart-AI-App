@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { request } from "node:http";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { createUsageStore } from "../src/usage-store.js";
 import { configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, recordSuccessfulLlmUsage, requestHandler } from "../server.js";
 
 function listenWithHandler() {
@@ -11,6 +16,66 @@ function listenWithHandler() {
       const address = server.address();
       resolve({ server, url: `http://127.0.0.1:${address.port}` });
     });
+  });
+}
+
+function requestJson(url, { method = "GET", body = null } = {}) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : "";
+    const req = request(url, {
+      method,
+      headers: data ? {
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(data)
+      } : {}
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => {
+        const raw = Buffer.concat(chunks).toString("utf8");
+        resolve({
+          status: res.statusCode,
+          body: raw ? JSON.parse(raw) : {}
+        });
+      });
+    });
+    req.on("error", reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+function requestText(url, { method = "GET", body = null } = {}) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : "";
+    const req = request(url, {
+      method,
+      headers: data ? {
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(data)
+      } : {}
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => {
+        resolve({
+          status: res.statusCode,
+          headers: res.headers,
+          body: Buffer.concat(chunks).toString("utf8")
+        });
+      });
+    });
+    req.on("error", reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+function parseSseEvents(body) {
+  return body.trim().split(/\n\n+/).filter(Boolean).map((chunk) => {
+    const event = chunk.match(/^event: (.+)$/m)?.[1];
+    const rawData = chunk.match(/^data: (.+)$/m)?.[1] || "{}";
+    return { event, data: JSON.parse(rawData) };
   });
 }
 
@@ -32,6 +97,7 @@ test("GET /api/llm-usage returns usage rows without sensitive fields", async () 
     const response = await fetch(`${url}/api/llm-usage`);
     const body = await response.json();
     assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store, max-age=0");
     assert.deepEqual(body, {
       rows: [
         {
@@ -60,6 +126,172 @@ test("GET /api/llm-usage reports safe error when store is unavailable", async ()
     assert.match(body.error, /Usage database/);
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("POST /api/run-skill records usage visible through dashboard API", async () => {
+  const previousFetch = globalThis.fetch;
+  const tempDir = mkdtempSync(join(tmpdir(), "smart-ai-run-usage-"));
+  const store = createUsageStore({ dbPath: join(tempDir, "usage.sqlite") }).init();
+  configureUsageStoreForTests(store);
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    return new Response(JSON.stringify({
+      model: "provider/final-model",
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              success: true,
+              output: {
+                prompt: "A clean test prompt from the stubbed LLM.",
+                article: "",
+                summary: "",
+                metadata: {}
+              },
+              warnings: []
+            })
+          }
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  };
+
+  const { server, url } = await listenWithHandler();
+  try {
+    const run = await requestJson(`${url}/api/run-skill`, {
+      method: "POST",
+      body: {
+        skillId: "gpt-image-prompt-engineer",
+        params: { topic: "dashboard usage integration test" },
+        llmConfig: {
+          providers: {
+            openrouter: {
+              apiKey: "test-key",
+              baseUrl: "https://llm.test/v1"
+            }
+          },
+          fallback: [
+            {
+              provider: "openrouter",
+              model: "provider/requested-model",
+              customModel: ""
+            }
+          ]
+        }
+      }
+    });
+    assert.equal(run.status, 200);
+    assert.equal(run.body.usageRecorded, true);
+    assert.deepEqual(run.body.lastSuccessfulLlm, {
+      provider: "openrouter",
+      model: "provider/final-model",
+      fallbackRank: 1
+    });
+
+    const usage = await requestJson(`${url}/api/llm-usage`);
+    assert.equal(usage.status, 200);
+    assert.deepEqual(usage.body.rows, [
+      {
+        provider: "openrouter",
+        model: "provider/final-model",
+        usageCount: 1,
+        lastUsedAt: usage.body.rows[0].lastUsedAt
+      }
+    ]);
+    assert.match(usage.body.rows[0].lastUsedAt, /^\d{4}-\d{2}-\d{2}T/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    globalThis.fetch = previousFetch;
+    store.close();
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/run-skill-stream records usage visible through dashboard API", async () => {
+  const previousFetch = globalThis.fetch;
+  const tempDir = mkdtempSync(join(tmpdir(), "smart-ai-stream-usage-"));
+  const store = createUsageStore({ dbPath: join(tempDir, "usage.sqlite") }).init();
+  configureUsageStoreForTests(store);
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /\/chat\/completions$/);
+    return new Response(JSON.stringify({
+      model: "provider/stream-final-model",
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              success: true,
+              output: {
+                prompt: "A clean streaming test prompt from the stubbed LLM.",
+                article: "",
+                summary: "",
+                metadata: {}
+              },
+              warnings: []
+            })
+          }
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  };
+
+  const { server, url } = await listenWithHandler();
+  try {
+    const stream = await requestText(`${url}/api/run-skill-stream`, {
+      method: "POST",
+      body: {
+        skillId: "gpt-image-prompt-engineer",
+        params: { topic: "dashboard streaming usage integration test" },
+        llmConfig: {
+          providers: {
+            openrouter: {
+              apiKey: "test-key",
+              baseUrl: "https://llm.test/v1"
+            }
+          },
+          fallback: [
+            {
+              provider: "openrouter",
+              model: "provider/requested-model",
+              customModel: ""
+            }
+          ]
+        }
+      }
+    });
+    assert.equal(stream.status, 200);
+    assert.equal(stream.headers["content-type"], "text/event-stream; charset=utf-8");
+    const result = parseSseEvents(stream.body).find((item) => item.event === "result")?.data;
+    assert.equal(result.usageRecorded, true);
+    assert.deepEqual(result.lastSuccessfulLlm, {
+      provider: "openrouter",
+      model: "provider/stream-final-model",
+      fallbackRank: 1
+    });
+
+    const usage = await requestJson(`${url}/api/llm-usage`);
+    assert.equal(usage.status, 200);
+    assert.deepEqual(usage.body.rows, [
+      {
+        provider: "openrouter",
+        model: "provider/stream-final-model",
+        usageCount: 1,
+        lastUsedAt: usage.body.rows[0].lastUsedAt
+      }
+    ]);
+    assert.match(usage.body.rows[0].lastUsedAt, /^\d{4}-\d{2}-\d{2}T/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    globalThis.fetch = previousFetch;
+    store.close();
+    rmSync(tempDir, { recursive: true, force: true });
   }
 });
 

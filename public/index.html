@@ -910,6 +910,7 @@
       let fileFieldValues = {};
       let activePage = "dashboard";
       let usageDashboardStale = true;
+      let usageDashboardRequestId = 0;
 
       const t = (key) => uiText[language][key] || uiText.en[key] || key;
       const escapeHtml = (text) => String(text).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -1046,14 +1047,17 @@
         usageDashboardBody.append(table);
       }
       async function loadUsageDashboard() {
+        const requestId = ++usageDashboardRequestId;
         renderDashboardLabels();
         try {
-          const response = await fetch("/api/llm-usage");
+          const response = await fetch("/api/llm-usage", { cache: "no-store" });
           const data = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(data.error || "Dashboard request failed");
+          if (requestId !== usageDashboardRequestId) return;
           renderUsageDashboard(data.rows || []);
           usageDashboardStale = false;
         } catch (error) {
+          if (requestId !== usageDashboardRequestId) return;
           renderUsageDashboardError(error);
         }
       }

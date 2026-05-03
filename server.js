@@ -29,7 +29,10 @@ const mimeTypes = {
 };
 
 function sendJson(res, status, body) {
-  res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+  res.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store, max-age=0"
+  });
   res.end(JSON.stringify(body));
 }
 
