@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/thai-video-storyboard-prompt-skill/input.schema.json",
+  "title": "Video Storyboard Grok Prompt Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "shot_count",
+    "video_type",
+    "main_character",
+    "setting",
+    "story_bible",
+    "plot_summary"
+  ],
+  "properties": {
+    "shot_count": {
+      "type": "integer",
+      "title": "Number of Shots",
+      "description": "จำนวนคลิป/ช็อตที่ต้องการสร้าง ทุกช็อตจะถูกล็อกเป็น 10 วินาที ตัวอย่าง: 8, 10, 24",
+      "minimum": 1,
+      "maximum": 60,
+      "default": 10
+    },
+    "video_type": {
+      "type": "string",
+      "title": "Video Type",
+      "description": "เลือกรูปแบบงานวิดีโอหลัก ถ้าไม่แน่ใจให้ใช้ cinematic short film",
+      "enum": [
+        "cinematic short film",
+        "vertical social ad",
+        "music video",
+        "educational story",
+        "documentary scene",
+        "product commercial",
+        "fantasy trailer",
+        "character origin story",
+        "news-style explainer",
+        "travel montage"
+      ],
+      "default": "cinematic short film"
+    },
+    "genre": {
+      "type": "string",
+      "title": "Genre",
+      "description": "เลือกโทนอารมณ์/แนวเรื่อง เพื่อกำหนดจังหวะภาพและบทพูด",
+      "enum": [
+        "cinematic drama",
+        "fantasy adventure",
+        "romantic drama",
+        "thriller mystery",
+        "documentary realism",
+        "comedy slice of life",
+        "luxury commercial",
+        "emotional family story",
+        "sci-fi futurism",
+        "historical period drama"
+      ],
+      "default": "cinematic drama"
+    },
+    "main_character": {
+      "type": "string",
+      "title": "Main Character",
+      "description": "อธิบายตัวละครหลักแบบละเอียดเพื่อกันหน้าหลุด/ชุดหลุด ควรมีอายุ เพศ รูปร่าง ใบหน้า ผม เสื้อผ้า บุคลิก พร็อพ และสิ่งที่ห้ามเปลี่ยน ตัวอย่าง: หญิงไทยอายุ 28 ปี ผมบ๊อบสีดำ ใส่เสื้อเชิ้ตขาวกับแจ็กเก็ตน้ำเงิน มีสร้อยเงินเส้นเล็ก บุคลิกสุขุม สายตาจริงจัง ต้องคงใบหน้า ชุด และสร้อยเดิมทุกช็อต",
+      "minLength": 1
+    },
+    "setting": {
+      "type": "string",
+      "title": "Setting",
+      "description": "อธิบายสถานที่ เวลา สภาพอากาศ แสง สี และสิ่งแวดล้อมหลัก ตัวอย่าง: ร้านกาแฟไม้เก่าในเชียงใหม่หลังฝนตก ช่วงเย็น แสงทองผสมไฟวอร์มจากร้าน พื้นเปียกสะท้อนแสง มีเสียงรถเบา ๆ ด้านนอก",
+      "minLength": 1
+    },
+    "story_bible": {
+      "type": "string",
+      "title": "Story Bible",
+      "description": "ข้อมูล continuity ที่ต้องเหมือนกันทุก shot prompt แบบห้ามย่อหรือ rewrite ควรใส่ตัวละครหลัก โลกของเรื่อง ข้อห้าม ภาพจำ สีหลัก พร็อพสำคัญ และกฎเสียง ตัวอย่าง: ตัวละครชื่อมะลิ อายุ 28 ปี ใส่แจ็กเก็ตน้ำเงินและสร้อยเงินเสมอ ทุกฉากเกิดในเมืองหลังฝนตก ห้ามมีคนที่สองในเฟรม ห้ามมุมมองบุคคลที่หนึ่ง ใช้เสียงพูดไทยเท่านั้น",
+      "minLength": 20
+    },
+    "plot_summary": {
+      "type": "string",
+      "title": "Plot Summary",
+      "description": "สรุปเรื่องตั้งแต่ต้น กลาง จบ เพื่อให้ระบบแตกเป็นช็อตต่อเนื่อง ตัวอย่าง: มะลิกลับมาที่ร้านกาแฟเก่าเพื่อหาเทปเสียงของแม่ เธอพบเบาะแสในสมุดเมนู ตามเสียงเปียโนไปหลังร้าน และตัดสินใจเปิดจดหมายที่เปลี่ยนความเข้าใจเรื่องครอบครัว",
+      "minLength": 1
+    },
+    "style": {
+      "type": "string",
+      "title": "Visual Style",
+      "description": "เลือกสไตล์ภาพหลักที่จะใช้ตลอดเรื่อง",
+      "enum": [
+        "cinematic realistic, high detail, emotionally grounded",
+        "documentary realism, handheld natural light",
+        "luxury commercial, polished premium look",
+        "anime cinematic, expressive lighting",
+        "dark thriller, low-key contrast",
+        "warm slice-of-life, soft natural texture",
+        "fantasy epic, painterly cinematic detail",
+        "sci-fi neon realism, reflective surfaces",
+        "music video, stylized rhythmic cuts",
+        "travel film, natural landscape realism"
+      ],
+      "default": "cinematic realistic, high detail, emotionally grounded"
+    },
+    "lighting": {
+      "type": "string",
+      "title": "Lighting",
+      "description": "เลือกสภาพแสงหลัก ถ้าเรื่องมีหลายสถานที่ให้เลือกโทนที่สำคัญที่สุด",
+      "enum": [
+        "soft cinematic lighting with consistent color temperature",
+        "golden hour warm sunlight",
+        "blue hour city ambience",
+        "neon night lighting",
+        "low-key dramatic contrast",
+        "overcast soft daylight",
+        "warm interior practical lights",
+        "moonlit night with cool shadows",
+        "bright clean studio lighting",
+        "rainy reflective street light"
+      ],
+      "default": "soft cinematic lighting with consistent color temperature"
+    },
+    "camera_rules": {
+      "type": "string",
+      "title": "Camera Rules",
+      "description": "เลือกภาษากล้องหลัก ระบบยังจะสลับ shot type ให้หลากหลายภายในกฎนี้",
+      "enum": [
+        "use varied shot types; keep camera language consistent with the scene emotion",
+        "slow dolly and gentle tracking, no shaky camera",
+        "handheld documentary movement, natural framing",
+        "locked-off composed frames with slow push-ins",
+        "dynamic music-video cuts with motivated movement",
+        "wide establishing shots balanced with emotional close-ups",
+        "low-angle heroic framing with cinematic motion",
+        "intimate close-ups and over-the-shoulder dialogue coverage",
+        "aerial and wide travel montage language",
+        "macro detail inserts mixed with medium tracking shots"
+      ],
+      "default": "use varied shot types; keep camera language consistent with the scene emotion"
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "title": "Aspect Ratio",
+      "description": "เลือกสัดส่วนภาพตามแพลตฟอร์ม 9:16 เหมาะกับ TikTok/Reels, 16:9 เหมาะกับ YouTube",
+      "enum": ["16:9", "9:16", "1:1", "4:5", "21:9"],
+      "default": "16:9"
+    },
+    "music": {
+      "type": "string",
+      "title": "Music",
+      "description": "เลือกแนวดนตรีพื้นหลัง ระบบจะสั่งให้เสียงพูดชัดกว่าดนตรี",
+      "enum": [
+        "subtle cinematic underscore",
+        "soft piano with gentle strings",
+        "ambient electronic texture",
+        "warm acoustic guitar",
+        "minimal suspense pulse",
+        "epic orchestral build",
+        "lo-fi mellow beat",
+        "traditional Thai instrumental accent",
+        "uplifting commercial pop bed",
+        "no melody, only quiet atmospheric tone"
+      ],
+      "default": "subtle cinematic underscore"
+    },
+    "voice_tone": {
+      "type": "string",
+      "title": "Voice Tone",
+      "description": "เลือกโทนเสียงพูดไทย/voiceover ที่ต้องคงตลอดคลิป",
+      "enum": [
+        "natural Thai voice, clear emotion, not theatrical",
+        "warm Thai narrator, calm and intimate",
+        "confident Thai commercial voice",
+        "soft emotional Thai dialogue",
+        "urgent Thai thriller tone",
+        "playful Thai conversational tone",
+        "documentary Thai narration, clear and neutral",
+        "luxury Thai voiceover, refined and slow",
+        "youthful Thai social-video tone",
+        "minimal dialogue, mostly ambient voice moments"
+      ],
+      "default": "natural Thai voice, clear emotion, not theatrical"
+    },
+    "ambient": {
+      "type": "string",
+      "title": "Ambient Sound",
+      "description": "เลือกเสียงบรรยากาศหลักให้สัมพันธ์กับสถานที่",
+      "enum": [
+        "realistic ambience matching the setting",
+        "light rain, wet street reflections, distant traffic",
+        "quiet cafe room tone, cups, soft footsteps",
+        "forest wind, leaves, distant birds",
+        "ocean waves, wind, distant gulls",
+        "city night hum, traffic, neon buzz",
+        "temple bells, soft wind, distant footsteps",
+        "office room tone, keyboard taps, air conditioning",
+        "market crowd murmur, vendors, footsteps",
+        "silent tension bed with subtle room tone"
+      ],
+      "default": "realistic ambience matching the setting"
+    },
+    "forbidden_elements": {
+      "type": "array",
+      "title": "Forbidden Elements",
+      "description": "รายการสิ่งที่ห้ามเกิดใน prompt ใส่เป็น JSON array ตัวอย่าง: [\"phantom hands\", \"extra fingers\", \"English dialogue\", \"extra people\"]",
+      "items": { "type": "string" },
+      "default": [
+        "phantom hands",
+        "extra fingers",
+        "unwanted second person POV",
+        "English dialogue or English translation",
+        "character face drift",
+        "inconsistent clothing",
+        "unwanted extra people"
+      ]
+    },
+    "shot_outline": {
+      "type": "array",
+      "title": "Shot Outline",
+      "description": "ตัวเลือกขั้นสูง: ใส่แผนรายช็อตเป็น JSON array ถ้าเว้นว่าง ระบบจะสร้าง beat ให้เอง ตัวอย่าง: [{\"shot_number\":1,\"beat\":\"นางเอกเดินเข้าร้านกาแฟ\",\"shot_type\":\"wide establishing shot\",\"action\":\"กล้องแพนตามเธอเข้าประตู\",\"thai_dialogue\":\"ฉันกลับมาที่นี่อีกครั้ง (เสียงไทย)\",\"audio_notes\":\"เสียงฝนและกระดิ่งประตู\"}]",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "shot_number": { "type": "integer", "minimum": 1 },
+          "beat": { "type": "string" },
+          "shot_type": { "type": "string" },
+          "action": { "type": "string" },
+          "thai_dialogue": { "type": "string" },
+          "voiceover": { "type": "string" },
+          "audio_notes": { "type": "string" }
+        }
+      },
+      "default": []
+    }
+  }
+}

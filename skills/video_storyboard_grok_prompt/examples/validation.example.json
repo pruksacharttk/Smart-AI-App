@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "all_prompts_contain_identical_story_bible": true,
+  "all_shots_are_10_seconds": true,
+  "all_required_blocks_present": true,
+  "errors": []
+}

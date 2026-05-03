@@ -947,6 +947,13 @@
         runBtn.disabled = disabled;
         runBtnTop.disabled = disabled;
       }
+      function updateSampleButtons() {
+        const show = selectedSkillId === "gpt-image-prompt-engineer";
+        for (const id of ["sampleBtn", "sampleBtnTop"]) {
+          const button = document.querySelector(`#${id}`);
+          if (button) button.hidden = !show;
+        }
+      }
       function setLlmStatus(text) {
         llmStatus.innerHTML = text;
       }
@@ -1447,6 +1454,7 @@
         document.querySelector("#langTh").classList.toggle("active", language === "th");
         renderDashboardLabels();
         renderImageModelHint();
+        updateSampleButtons();
         setRunButtonsDisabled(false);
 
         formRoot.innerHTML = "";

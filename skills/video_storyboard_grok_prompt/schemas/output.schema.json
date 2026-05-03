@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/thai-video-storyboard-prompt-skill/output.schema.json",
+  "title": "Thai Video Storyboard Prompt Skill Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "shot_count",
+    "shot_duration_seconds",
+    "story_bible_hash",
+    "master_prompt_phase_1",
+    "master_prompt_phase_2",
+    "shot_prompts",
+    "validation"
+  ],
+  "properties": {
+    "shot_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "shot_duration_seconds": {
+      "type": "integer",
+      "const": 10
+    },
+    "story_bible_hash": {
+      "type": "string",
+      "description": "SHA-256 hash ของ Story Bible ที่ใช้เป็น canonical text"
+    },
+    "master_prompt_phase_1": {
+      "type": "string",
+      "description": "Prompt สำหรับสร้าง storyboard ก่อนตาม Phase 1"
+    },
+    "master_prompt_phase_2": {
+      "type": "string",
+      "description": "Prompt สำหรับ generate N clips ตาม Phase 2"
+    },
+    "shot_prompts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "shot_number",
+          "duration_seconds",
+          "shot_type",
+          "thai_dialogue",
+          "prompt",
+          "story_bible_hash",
+          "contains_story_bible"
+        ],
+        "properties": {
+          "shot_number": { "type": "integer", "minimum": 1 },
+          "duration_seconds": { "type": "integer", "const": 10 },
+          "shot_type": { "type": "string" },
+          "thai_dialogue": { "type": "string" },
+          "prompt": { "type": "string" },
+          "story_bible_hash": { "type": "string" },
+          "contains_story_bible": { "type": "boolean" }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "all_prompts_contain_identical_story_bible",
+        "all_shots_are_10_seconds",
+        "all_required_blocks_present",
+        "errors"
+      ],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "all_prompts_contain_identical_story_bible": { "type": "boolean" },
+        "all_shots_are_10_seconds": { "type": "boolean" },
+        "all_required_blocks_present": { "type": "boolean" },
+        "errors": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/thai-video-storyboard-prompt-skill/ui.schema.json",
+  "title": "Video Storyboard Grok Prompt",
+  "titleTh": "พรอมต์ Storyboard วิดีโอสำหรับ Grok",
+  "description": "Generate Thai long-form video storyboard prompts with fixed 10-second shots, Phase 1/Phase 2 prompt blocks, audio rules, character locks, and repeated Story Bible validation.",
+  "descriptionTh": "สร้างพรอมต์ storyboard วิดีโอภาษาไทยสำหรับ Grok พร้อม shot ละ 10 วินาที, Phase 1/Phase 2, กฎเสียง, character lock และตรวจ Story Bible ให้ตรงกันทุก shot",
+  "type": "object",
+  "ui:order": [
+    "shot_count",
+    "video_type",
+    "genre",
+    "main_character",
+    "setting",
+    "story_bible",
+    "plot_summary",
+    "style",
+    "lighting",
+    "camera_rules",
+    "aspect_ratio",
+    "music",
+    "voice_tone",
+    "ambient",
+    "forbidden_elements",
+    "shot_outline"
+  ],
+  "sections": [
+    {
+      "id": "core",
+      "title": "Core Story Setup",
+      "titleTh": "ข้อมูลหลักของเรื่อง",
+      "description": "Required fields. Choose the video shape, then describe the character, world, Story Bible, and plot.",
+      "descriptionTh": "ข้อมูลจำเป็น เลือกรูปแบบวิดีโอ แล้วอธิบายตัวละคร โลกของเรื่อง Story Bible และเส้นเรื่อง",
+      "collapsible": false,
+      "fields": [
+        {
+          "id": "shot_count",
+          "type": "number",
+          "label": "Number of Shots",
+          "labelTh": "จำนวนช็อต",
+          "helpText": "Every generated shot is exactly 10 seconds. Example: 10 shots = about 100 seconds total.",
+          "helpTextTh": "ทุกช็อตจะยาว 10 วินาทีเท่ากัน ตัวอย่าง: 10 ช็อต = ประมาณ 100 วินาที",
+          "min": 1,
+          "max": 60,
+          "step": 1
+        },
+        {
+          "id": "video_type",
+          "label": "Video Type",
+          "labelTh": "รูปแบบวิดีโอ",
+          "helpText": "Pick the closest production format. Use cinematic short film when you want a story-first sequence.",
+          "helpTextTh": "เลือกรูปแบบงานที่ใกล้ที่สุด ถ้าต้องการเล่าเรื่องเป็นหลักให้เลือก cinematic short film"
+        },
+        {
+          "id": "genre",
+          "label": "Genre",
+          "labelTh": "แนวเรื่อง",
+          "helpText": "This controls emotion, pacing, and dialogue style.",
+          "helpTextTh": "ใช้กำหนดอารมณ์ จังหวะภาพ และสไตล์บทพูด"
+        },
+        {
+          "id": "main_character",
+          "type": "textarea",
+          "label": "Main Character",
+          "labelTh": "ตัวละครหลัก",
+          "rows": 5,
+          "placeholder": "Example: Thai woman, 28, short black bob, white shirt, navy jacket, small silver necklace, calm but determined. Preserve face, outfit, necklace, age, and hairstyle in every shot.",
+          "placeholderTh": "ตัวอย่าง: หญิงไทยอายุ 28 ปี ผมบ๊อบสีดำ ใส่เสื้อเชิ้ตขาว แจ็กเก็ตน้ำเงิน สร้อยเงินเส้นเล็ก บุคลิกสุขุมแต่แน่วแน่ ต้องคงใบหน้า ชุด สร้อย อายุ และทรงผมเดิมทุกช็อต",
+          "helpText": "Describe age, face, body, hair, outfit, personality, props, and what must not change.",
+          "helpTextTh": "ใส่อายุ ใบหน้า รูปร่าง ผม เสื้อผ้า บุคลิก พร็อพ และสิ่งที่ห้ามเปลี่ยน"
+        },
+        {
+          "id": "setting",
+          "type": "textarea",
+          "label": "Setting",
+          "labelTh": "สถานที่และบรรยากาศ",
+          "rows": 4,
+          "placeholder": "Example: Old wooden cafe in Chiang Mai after rain, evening, warm shop lights, wet floor reflections, quiet street outside.",
+          "placeholderTh": "ตัวอย่าง: ร้านกาแฟไม้เก่าในเชียงใหม่หลังฝนตก ช่วงเย็น ไฟวอร์มในร้าน พื้นเปียกสะท้อนแสง ถนนด้านนอกเงียบ",
+          "helpText": "Include place, time, weather, color mood, and important environmental details.",
+          "helpTextTh": "ใส่สถานที่ เวลา สภาพอากาศ โทนสี และรายละเอียดสำคัญของสิ่งแวดล้อม"
+        },
+        {
+          "id": "story_bible",
+          "type": "textarea",
+          "label": "Story Bible",
+          "labelTh": "Story Bible",
+          "rows": 9,
+          "placeholder": "Example: Main character is Mali, 28, always wearing the navy jacket and silver necklace. All scenes happen in a rainy old town. No extra people, no second-person POV, Thai voice only, no English dialogue.",
+          "placeholderTh": "ตัวอย่าง: ตัวละครหลักชื่อมะลิ อายุ 28 ปี ใส่แจ็กเก็ตน้ำเงินและสร้อยเงินเสมอ ทุกฉากอยู่ในเมืองเก่าหลังฝนตก ห้ามมีคนเพิ่ม ห้ามมุมมองบุคคลที่หนึ่ง ใช้เสียงไทยเท่านั้น ห้ามบทพูดอังกฤษ",
+          "helpText": "This text is repeated verbatim inside every shot prompt. Do not write it as a short summary; write stable continuity rules.",
+          "helpTextTh": "ข้อความนี้จะถูกฝังซ้ำแบบเดิมทุก shot prompt ห้ามเขียนสั้นเกินไป ให้เขียนเป็นกฎ continuity ที่ต้องคงที่"
+        },
+        {
+          "id": "plot_summary",
+          "type": "textarea",
+          "label": "Plot Summary",
+          "labelTh": "สรุปเส้นเรื่อง",
+          "rows": 5,
+          "placeholder": "Example: Mali returns to the old cafe to find her mother's tape. She discovers clues in a menu notebook, follows a piano sound to the back room, and opens a letter that changes how she remembers her family.",
+          "placeholderTh": "ตัวอย่าง: มะลิกลับมาที่ร้านกาแฟเก่าเพื่อหาเทปเสียงของแม่ เธอพบเบาะแสในสมุดเมนู ตามเสียงเปียโนไปหลังร้าน และเปิดจดหมายที่เปลี่ยนความทรงจำเกี่ยวกับครอบครัว",
+          "helpText": "Write beginning, middle, and ending. The skill will spread this arc across the requested shots.",
+          "helpTextTh": "เขียนต้น กลาง จบ ระบบจะกระจายเส้นเรื่องนี้เป็นช็อตตามจำนวนที่กำหนด"
+        }
+      ]
+    },
+    {
+      "id": "production",
+      "title": "Production Choices",
+      "titleTh": "ตัวเลือกการผลิต",
+      "description": "Dropdown choices for visual style, camera, sound, and platform framing.",
+      "descriptionTh": "ตัวเลือกแบบ dropdown สำหรับสไตล์ภาพ กล้อง เสียง และสัดส่วนภาพ",
+      "collapsed": false,
+      "fields": [
+        { "id": "style", "label": "Visual Style", "labelTh": "สไตล์ภาพ" },
+        { "id": "lighting", "label": "Lighting", "labelTh": "แสง" },
+        { "id": "camera_rules", "label": "Camera Rules", "labelTh": "กฎกล้อง" },
+        { "id": "aspect_ratio", "label": "Aspect Ratio", "labelTh": "สัดส่วนภาพ" },
+        { "id": "music", "label": "Music", "labelTh": "ดนตรี" },
+        { "id": "voice_tone", "label": "Voice Tone", "labelTh": "โทนเสียงพูด" },
+        { "id": "ambient", "label": "Ambient Sound", "labelTh": "เสียงบรรยากาศ" }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced Controls",
+      "titleTh": "ตัวเลือกขั้นสูง",
+      "description": "Optional JSON controls. Leave blank unless you need exact per-shot beats or extra restrictions.",
+      "descriptionTh": "ตัวเลือก JSON เพิ่มเติม เว้นว่างได้ถ้าไม่ต้องการกำหนด beat รายช็อตหรือข้อห้ามเพิ่ม",
+      "collapsed": true,
+      "fields": [
+        {
+          "id": "forbidden_elements",
+          "type": "json",
+          "label": "Forbidden Elements",
+          "labelTh": "สิ่งที่ห้ามเกิด",
+          "rows": 5,
+          "placeholder": "[\"phantom hands\", \"extra fingers\", \"English dialogue\", \"extra people\"]",
+          "placeholderTh": "[\"phantom hands\", \"extra fingers\", \"English dialogue\", \"extra people\"]",
+          "helpText": "JSON array of things to forbid. Keep the default unless your story needs additional restrictions.",
+          "helpTextTh": "ใส่เป็น JSON array ของสิ่งที่ห้ามเกิด ใช้ค่าเดิมได้ถ้าไม่มีข้อห้ามเพิ่ม"
+        },
+        {
+          "id": "shot_outline",
+          "type": "json",
+          "label": "Shot Outline",
+          "labelTh": "แผนรายช็อต",
+          "rows": 8,
+          "placeholder": "[{\"shot_number\":1,\"beat\":\"Mali enters the cafe\",\"shot_type\":\"wide establishing shot\",\"action\":\"Camera tracks her through the door\",\"thai_dialogue\":\"ฉันกลับมาที่นี่อีกครั้ง (เสียงไทย)\",\"audio_notes\":\"Rain and door bell\"}]",
+          "placeholderTh": "[{\"shot_number\":1,\"beat\":\"มะลิเดินเข้าร้านกาแฟ\",\"shot_type\":\"wide establishing shot\",\"action\":\"กล้องแพนตามเธอเข้าประตู\",\"thai_dialogue\":\"ฉันกลับมาที่นี่อีกครั้ง (เสียงไทย)\",\"audio_notes\":\"เสียงฝนและกระดิ่งประตู\"}]",
+          "helpText": "Optional JSON array. Each item can include shot_number, beat, shot_type, action, thai_dialogue, voiceover, and audio_notes.",
+          "helpTextTh": "ไม่จำเป็นต้องใส่ ถ้าจะกำหนดเองให้ใช้ JSON array โดยแต่ละรายการใส่ shot_number, beat, shot_type, action, thai_dialogue, voiceover และ audio_notes ได้"
+        }
+      ]
+    }
+  ]
+}

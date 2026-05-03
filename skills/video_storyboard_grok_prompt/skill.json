@@ -1,0 +1,12 @@
+{
+  "name": "thai_video_storyboard_prompt_skill",
+  "version": "1.0.0",
+  "description": "Generate long-form Thai video storyboard prompts with 10-second shots, identical Story Bible in every prompt, Phase 1/Phase 2 blocks, audio rules, language lock, and validation.",
+  "language": "th",
+  "entrypoint": "src/generate_storyboard_prompts.py",
+  "schemas": {
+    "input": "schemas/input.schema.json",
+    "ui": "schemas/ui.schema.json",
+    "output": "schemas/output.schema.json"
+  }
+}
