@@ -903,6 +903,7 @@
       const imageModelRecommendations = ["qwen/qwen3-vl-32b-instruct", "qwen/qwen3-vl-8b-instruct", "qwen/qwen3-vl-235b-a22b-instruct", "qwen/qwen3.5-35b-a3b", "qwen/qwen3.5-plus-02-15", "qwen/qwen3.5-397b-a17b"];
       let language = localStorage.getItem("uiLanguage") || "en";
       let skills = [];
+      let invalidSkills = [];
       let selectedSkillId = localStorage.getItem("selectedSkillId") || "";
       let schemaState = null;
       let currentBundle = null;
@@ -1690,7 +1691,14 @@
       }
       function renderCoverage() {
         const c = schemaState.coverage;
-        reviewOutput.innerHTML = `<article class="review-item"><h3>${escapeHtml(t("coverage"))}</h3><p>${c.effectiveFieldCount}/${c.inputFieldCount} fields</p><p>ui.schema fields: ${c.uiFieldCount}; added from input.schema: ${c.missingUi.length}</p><p>${escapeHtml(c.missingUi.join(", ") || "No missing fields")}</p></article>`;
+        const issues = schemaState.skill?.issues || [];
+        const issueHtml = issues.length
+          ? `<article class="review-item"><h3>${language === "th" ? "สถานะสกิล" : "Skill Status"}</h3><ul>${issues.map((issue) => `<li><strong>${escapeHtml(issue.level.toUpperCase())}</strong> ${escapeHtml(issue.message)}${issue.file ? `<br><span>${escapeHtml(issue.file)}</span>` : ""}</li>`).join("")}</ul></article>`
+          : `<article class="review-item"><h3>${language === "th" ? "สถานะสกิล" : "Skill Status"}</h3><p>${language === "th" ? "ไม่พบปัญหาที่ทำให้สกิลโหลดไม่ได้" : "No load-blocking skill issues were found."}</p></article>`;
+        const invalidHtml = invalidSkills.length
+          ? `<article class="review-item"><h3>${language === "th" ? "สกิลที่โหลดไม่ได้" : "Invalid Skills"}</h3>${invalidSkills.map((skill) => `<p><strong>${escapeHtml(skill.title || skill.id)}</strong> <span>${escapeHtml(skill.id)}</span></p><ul>${(skill.issues || []).map((issue) => `<li><strong>${escapeHtml(issue.level.toUpperCase())}</strong> ${escapeHtml(issue.message)}${issue.file ? `<br><span>${escapeHtml(issue.file)}</span>` : ""}</li>`).join("")}</ul>`).join("")}</article>`
+          : "";
+        reviewOutput.innerHTML = `${invalidHtml}${issueHtml}<article class="review-item"><h3>${escapeHtml(t("coverage"))}</h3><p>${c.effectiveFieldCount}/${c.inputFieldCount} fields</p><p>ui.schema fields: ${c.uiFieldCount}; added from input.schema: ${c.missingUi.length}</p><p>${escapeHtml(c.missingUi.join(", ") || "No missing fields")}</p></article>`;
       }
       function renderReview(bundle) {
         const output = runtimeOutput(bundle);
@@ -1700,6 +1708,7 @@
       async function loadSkills() {
         const data = await fetch("/api/skills").then((r) => r.json());
         skills = data.skills || [];
+        invalidSkills = data.invalidSkills || [];
         if (!skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = data.defaultSkillId || skills[0]?.id || "";
         skillSelect.innerHTML = "";
         for (const skill of skills) {
@@ -1707,6 +1716,21 @@
           option.value = skill.id;
           option.textContent = `${language === "th" ? skill.titleTh || skill.title : skill.title}${skill.hasRuntime ? "" : " (LLM runtime)"}`;
           skillSelect.append(option);
+        }
+        if (invalidSkills.length) {
+          const separator = document.createElement("option");
+          separator.disabled = true;
+          separator.textContent = language === "th" ? "--- สกิลที่มีปัญหา ---" : "--- Skills with issues ---";
+          skillSelect.append(separator);
+          for (const skill of invalidSkills) {
+            const option = document.createElement("option");
+            const firstError = (skill.issues || []).find((issue) => issue.level === "error") || (skill.issues || [])[0];
+            option.value = skill.id;
+            option.disabled = true;
+            option.textContent = `${language === "th" ? skill.titleTh || skill.title : skill.title} (${language === "th" ? "ใช้ไม่ได้" : "invalid"}: ${firstError?.code || "issue"})`;
+            option.title = firstError?.message || "";
+            skillSelect.append(option);
+          }
         }
         skillSelect.value = selectedSkillId;
       }
@@ -1827,8 +1851,13 @@
         await loadSkills();
         if (!skills.length) {
           setRunButtonsDisabled(true);
-          setStatus(language === "th" ? "ไม่มีสกิล" : "No skills", "warn");
-          promptOutput.textContent = language === "th" ? "ยังไม่พบสกิลในโฟลเดอร์ skills/" : "No skills were found in the skills/ folder.";
+          setStatus(language === "th" ? "ไม่มีสกิลที่ใช้ได้" : "No valid skills", "warn");
+          promptOutput.textContent = invalidSkills.length
+            ? invalidSkills.map((skill) => [
+              `${skill.title || skill.id} (${skill.id})`,
+              ...(skill.issues || []).map((issue) => `- ${issue.level.toUpperCase()}: ${issue.message}${issue.file ? `\n  ${issue.file}` : ""}`)
+            ].join("\n")).join("\n\n")
+            : (language === "th" ? "ยังไม่พบสกิลในโฟลเดอร์ skills/" : "No skills were found in the skills/ folder.");
           jsonOutput.textContent = "{}";
           renderQuickGuide();
           return;

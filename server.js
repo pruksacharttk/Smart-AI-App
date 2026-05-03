@@ -121,9 +121,19 @@ function skillPaths(skillId) {
     entrypoint: join(root, "python", "skill.py"),
     inputSchema: join(root, "schemas", "input.schema.json"),
     uiSchema: join(root, "schemas", "ui.schema.json"),
+    skillJson: join(root, "skill.json"),
     skillMdUpper: join(root, "SKILL.md"),
     skillMdLower: join(root, "skill.md")
   };
+}
+
+async function readJsonFileDetailed(path) {
+  try {
+    const raw = await readFile(path, "utf8");
+    return { ok: true, value: JSON.parse(raw), error: null };
+  } catch (error) {
+    return { ok: false, value: null, error };
+  }
 }
 
 async function readJsonFile(path, fallback = null) {
@@ -140,31 +150,101 @@ function cleanMarkdown(markdown) {
     .slice(0, 12000);
 }
 
-async function readSkillInfo(skillId) {
-  const paths = skillPaths(skillId);
-  const [inputSchema, uiSchema] = await Promise.all([
-    readJsonFile(paths.inputSchema),
-    readJsonFile(paths.uiSchema, {})
-  ]);
-  if (!inputSchema) return null;
-  const skillMdPath = existsSync(paths.skillMdUpper) ? paths.skillMdUpper : paths.skillMdLower;
-  let markdown = "";
-  try {
-    markdown = await readFile(skillMdPath, "utf8");
-  } catch {}
+function skillIssue(level, code, message, file = "") {
+  return { level, code, message, file };
+}
+
+function parseSkillMarkdown(markdown) {
   const nameMatch = markdown.match(/^name:\s*(.+)$/m);
   const descMatch = markdown.match(/^description:\s*(.+)$/m);
   return {
+    name: nameMatch?.[1],
+    description: descMatch?.[1]
+  };
+}
+
+async function inspectSkill(skillId) {
+  const paths = skillPaths(skillId);
+  const issues = [];
+  const [inputResult, uiResult, skillJsonResult] = await Promise.all([
+    readJsonFileDetailed(paths.inputSchema),
+    readJsonFileDetailed(paths.uiSchema),
+    readJsonFileDetailed(paths.skillJson)
+  ]);
+  let inputSchema = inputResult.value;
+  let uiSchema = uiResult.value || {};
+  let markdown = "";
+  const skillMdPath = existsSync(paths.skillMdUpper) ? paths.skillMdUpper : paths.skillMdLower;
+  const hasSkillMd = existsSync(skillMdPath);
+
+  if (!inputResult.ok) {
+    const reason = inputResult.error?.code === "ENOENT" ? "missing" : inputResult.error?.message || "invalid JSON";
+    issues.push(skillIssue("error", "input_schema_unreadable", `Missing or invalid schemas/input.schema.json (${reason}).`, paths.inputSchema));
+  } else if (!inputSchema || inputSchema.type !== "object" || !inputSchema.properties || typeof inputSchema.properties !== "object") {
+    issues.push(skillIssue("error", "input_schema_shape", "schemas/input.schema.json must be a JSON object schema with a properties object.", paths.inputSchema));
+  }
+
+  if (!uiResult.ok) {
+    if (uiResult.error?.code === "ENOENT") {
+      issues.push(skillIssue("warning", "ui_schema_missing", "Missing schemas/ui.schema.json. The app can still build a fallback form from input.schema.json.", paths.uiSchema));
+    } else {
+      issues.push(skillIssue("warning", "ui_schema_invalid", `Invalid schemas/ui.schema.json (${uiResult.error?.message || "invalid JSON"}). The app will use a fallback form.`, paths.uiSchema));
+    }
+    uiSchema = {};
+  }
+
+  if (inputSchema?.properties && Array.isArray(inputSchema.required)) {
+    const missingRequired = inputSchema.required.filter((field) => !Object.hasOwn(inputSchema.properties, field));
+    if (missingRequired.length) {
+      issues.push(skillIssue("error", "required_field_missing", `input.schema required field(s) are not defined in properties: ${missingRequired.join(", ")}.`, paths.inputSchema));
+    }
+  }
+
+  if (!hasSkillMd) {
+    issues.push(skillIssue("warning", "skill_markdown_missing", "Missing SKILL.md or skill.md. The skill can load, but its name/description and LLM instructions may be poor.", paths.root));
+  } else {
+    try {
+      markdown = await readFile(skillMdPath, "utf8");
+      const meta = parseSkillMarkdown(markdown);
+      if (!meta.name || !meta.description) {
+        issues.push(skillIssue("warning", "skill_markdown_metadata", "SKILL.md should include YAML frontmatter name and description.", skillMdPath));
+      }
+    } catch (error) {
+      issues.push(skillIssue("warning", "skill_markdown_unreadable", `Unable to read skill markdown (${error.message}).`, skillMdPath));
+    }
+  }
+
+  const hasRuntime = existsSync(paths.entrypoint);
+  if (!hasRuntime) {
+    const configuredEntrypoint = skillJsonResult.value?.entrypoint;
+    const entrypointHint = configuredEntrypoint && configuredEntrypoint !== "python/skill.py"
+      ? ` skill.json points to "${configuredEntrypoint}", but this web app runs local skills through python/skill.py. Add a python/skill.py adapter or configure an LLM.`
+      : " Add python/skill.py for local execution or configure an LLM.";
+    issues.push(skillIssue("warning", "runtime_missing", `Missing local runtime python/skill.py.${entrypointHint}`, paths.entrypoint));
+  }
+
+  const meta = parseSkillMarkdown(markdown);
+  const title = uiSchema.title || meta.name || paths.id;
+  const description = uiSchema.description || meta.description || "";
+  const errorCount = issues.filter((issue) => issue.level === "error").length;
+  return {
     id: paths.id,
-    title: uiSchema.title || nameMatch?.[1] || paths.id,
-    titleTh: uiSchema.titleTh || uiSchema.title || nameMatch?.[1] || paths.id,
-    description: uiSchema.description || descMatch?.[1] || "",
-    descriptionTh: uiSchema.descriptionTh || uiSchema.description || descMatch?.[1] || "",
-    hasRuntime: existsSync(paths.entrypoint),
+    title,
+    titleTh: uiSchema.titleTh || uiSchema.title || meta.name || paths.id,
+    description,
+    descriptionTh: uiSchema.descriptionTh || uiSchema.description || meta.description || "",
+    hasRuntime,
     markdown: cleanMarkdown(markdown),
     inputSchema,
-    uiSchema
+    uiSchema,
+    issues,
+    isValid: errorCount === 0
   };
+}
+
+async function readSkillInfo(skillId) {
+  const info = await inspectSkill(skillId);
+  return info.isValid ? info : null;
 }
 
 function fallbackTargets(llmConfig) {
@@ -925,30 +1005,50 @@ async function handleRunSkillStream(req, res) {
 async function handleSkills(_req, res) {
   const entries = await readdir(skillsDir, { withFileTypes: true });
   const skills = [];
+  const invalidSkills = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const info = await readSkillInfo(entry.name);
-    if (info) {
+    const info = await inspectSkill(entry.name);
+    const summary = {
+      id: info.id,
+      title: info.title,
+      titleTh: info.titleTh,
+      description: info.description,
+      descriptionTh: info.descriptionTh,
+      hasRuntime: info.hasRuntime,
+      issues: info.issues
+    };
+    if (info.isValid) {
       skills.push({
-        id: info.id,
-        title: info.title,
-        titleTh: info.titleTh,
-        description: info.description,
-        descriptionTh: info.descriptionTh,
-        hasRuntime: info.hasRuntime
+        ...summary,
+        issueCount: info.issues.length
       });
+    } else {
+      invalidSkills.push(summary);
     }
   }
   skills.sort((a, b) => a.title.localeCompare(b.title));
-  sendJson(res, 200, { defaultSkillId, skills });
+  invalidSkills.sort((a, b) => a.title.localeCompare(b.title));
+  sendJson(res, 200, { defaultSkillId, skills, invalidSkills });
 }
 
 async function handleUiSchema(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const skillId = safeSkillId(url.searchParams.get("skill") || defaultSkillId);
-  const info = await readSkillInfo(skillId);
-  if (!info) {
-    sendJson(res, 404, { error: `Skill not found or missing input schema: ${skillId}` });
+  const info = await inspectSkill(skillId);
+  if (!info.isValid) {
+    sendJson(res, 422, {
+      error: `Skill "${skillId}" is invalid and cannot be loaded.`,
+      skill: {
+        id: info.id,
+        title: info.title,
+        titleTh: info.titleTh,
+        description: info.description,
+        descriptionTh: info.descriptionTh,
+        hasRuntime: info.hasRuntime,
+        issues: info.issues
+      }
+    });
     return;
   }
   const { inputSchema, uiSchema } = info;
@@ -965,7 +1065,8 @@ async function handleUiSchema(req, res) {
       titleTh: info.titleTh,
       description: info.description,
       descriptionTh: info.descriptionTh,
-      hasRuntime: info.hasRuntime
+      hasRuntime: info.hasRuntime,
+      issues: info.issues
     },
     inputSchema,
     uiSchema,
