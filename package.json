@@ -6,12 +6,28 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test"
+    "dev:server": "node --watch server.js",
+    "dev:frontend": "vite --config frontend/vite.config.ts",
+    "build": "vite build --config frontend/vite.config.ts",
+    "typecheck": "tsc --noEmit -p frontend/tsconfig.json",
+    "test": "node --test",
+    "test:frontend": "npm run typecheck && npm run build && playwright test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
   },
   "dependencies": {
-    "better-sqlite3": "^12.9.0"
+    "better-sqlite3": "^12.9.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
   }
 }

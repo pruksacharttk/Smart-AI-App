@@ -5,8 +5,9 @@ import { request } from "node:http";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { createAppConfigStore } from "../src/app-config-store.js";
 import { createUsageStore } from "../src/usage-store.js";
-import { configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, recordSuccessfulLlmUsage, requestHandler } from "../server.js";
+import { configureAppConfigStoreForTests, configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, hasConfigAccess, recordSuccessfulLlmUsage, requestHandler, resolveStaticRoot } from "../server.js";
 
 function listenWithHandler() {
   const server = createServer(requestHandler);
@@ -79,6 +80,15 @@ function parseSseEvents(body) {
   });
 }
 
+function withConfigStore() {
+  const dir = mkdtempSync(join(tmpdir(), "smart-ai-api-config-"));
+  const store = createAppConfigStore({
+    dbPath: join(dir, "config.sqlite"),
+    encryptionKey: Buffer.alloc(32, 8).toString("base64url")
+  }).init();
+  return { dir, store };
+}
+
 test("GET /api/llm-usage returns usage rows without sensitive fields", async () => {
   configureUsageStoreForTests({
     listUsage() {
@@ -116,6 +126,21 @@ test("GET /api/llm-usage returns usage rows without sensitive fields", async () 
   }
 });
 
+test("config access allows localhost and requires token for remote clients", () => {
+  assert.equal(hasConfigAccess({
+    socket: { remoteAddress: "127.0.0.1" },
+    headers: {}
+  }), true);
+  assert.equal(hasConfigAccess({
+    socket: { remoteAddress: "203.0.113.10" },
+    headers: {}
+  }, "admin-token"), false);
+  assert.equal(hasConfigAccess({
+    socket: { remoteAddress: "203.0.113.10" },
+    headers: { "x-config-admin-token": "admin-token" }
+  }, "admin-token"), true);
+});
+
 test("GET /api/llm-usage reports safe error when store is unavailable", async () => {
   configureUsageStoreForTests(null);
   const { server, url } = await listenWithHandler();
@@ -129,11 +154,90 @@ test("GET /api/llm-usage reports safe error when store is unavailable", async ()
   }
 });
 
+test("static serving prefers Vite dist when built and rejects sensitive paths", async () => {
+  const { server, url } = await listenWithHandler();
+  try {
+    assert.match(resolveStaticRoot(), /frontend[\\/]dist|public/);
+    const home = await requestText(`${url}/`);
+    assert.equal(home.status, 200);
+    assert.match(home.headers["content-type"], /text\/html/);
+    assert.match(home.body, /<div id="root"><\/div>|Smart AI App/);
+
+    const api = await requestJson(`${url}/api/skills`);
+    assert.equal(api.status, 200);
+    assert.ok(Array.isArray(api.body.skills));
+
+    const env = await requestText(`${url}/.env`);
+    assert.equal(env.status, 403);
+
+    const db = await requestText(`${url}/data/smart-ai-app.sqlite`);
+    assert.equal(db.status, 403);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("POST /api/config saves encrypted config and GET returns only key status", async () => {
+  const { dir, store } = withConfigStore();
+  configureAppConfigStoreForTests(store);
+  const { server, url } = await listenWithHandler();
+  try {
+    const saved = await requestJson(`${url}/api/config`, {
+      method: "POST",
+      body: {
+        config: {
+          providers: {
+            openrouter: { apiKey: "sk-or-secret", baseUrl: "https://openrouter.ai/api/v1" },
+            fal: { apiKey: "fal-secret", baseUrl: "https://fal.run" },
+            kie: { apiKey: "kie-secret", baseUrl: "https://api.kie.ai" },
+            wavespeed: { apiKey: "wavespeed-secret", baseUrl: "https://api.wavespeed.ai" }
+          },
+          fallback: [
+            { provider: "openrouter", model: "qwen/qwen3-vl-32b-instruct", customModel: "" }
+          ]
+        }
+      }
+    });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.config.providers.openrouter.apiKey, "");
+    assert.equal(saved.body.config.providers.openrouter.hasApiKey, true);
+    assert.equal(saved.body.config.providers.fal.apiKey, "");
+    assert.equal(saved.body.config.providers.fal.hasApiKey, true);
+    assert.equal(JSON.stringify(saved.body).includes("secret"), false);
+
+    const loaded = await requestJson(`${url}/api/config`);
+    assert.equal(loaded.status, 200);
+    assert.equal(loaded.body.config.providers.kie.apiKey, "");
+    assert.equal(loaded.body.config.providers.kie.hasApiKey, true);
+    assert.equal(loaded.body.config.providers.wavespeed.apiKey, "");
+    assert.equal(loaded.body.config.providers.wavespeed.hasApiKey, true);
+    assert.equal(JSON.stringify(loaded.body).includes("secret"), false);
+
+    const privateConfig = store.getConfig({ includeSecrets: true });
+    assert.equal(privateConfig.providers.openrouter.apiKey, "sk-or-secret");
+    assert.equal(privateConfig.providers.fal.apiKey, "fal-secret");
+
+    const revealed = await requestJson(`${url}/api/config/reveal`, {
+      method: "POST",
+      body: { provider: "fal" }
+    });
+    assert.equal(revealed.status, 200);
+    assert.equal(revealed.body.provider, "fal");
+    assert.equal(revealed.body.apiKey, "fal-secret");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    configureAppConfigStoreForTests(null);
+    store.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("POST /api/run-skill records usage visible through dashboard API", async () => {
   const previousFetch = globalThis.fetch;
   const tempDir = mkdtempSync(join(tmpdir(), "smart-ai-run-usage-"));
   const store = createUsageStore({ dbPath: join(tempDir, "usage.sqlite") }).init();
   configureUsageStoreForTests(store);
+  configureAppConfigStoreForTests(null);
   globalThis.fetch = async (url) => {
     assert.match(String(url), /\/chat\/completions$/);
     return new Response(JSON.stringify({
@@ -211,11 +315,62 @@ test("POST /api/run-skill records usage visible through dashboard API", async ()
   }
 });
 
+test("POST /api/test-llm redacts echoed API keys from upstream errors", async () => {
+  const previousFetch = globalThis.fetch;
+  const apiKey = "unusual-secret-value-12345";
+  configureUsageStoreForTests({
+    recordSuccess() {
+      throw new Error("should not record failed LLM test");
+    }
+  });
+  configureAppConfigStoreForTests(null);
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    error: {
+      message: `Rejected Authorization Bearer ${apiKey} for account`
+    }
+  }), {
+    status: 401,
+    headers: { "content-type": "application/json" }
+  });
+
+  const { server, url } = await listenWithHandler();
+  try {
+    const response = await requestJson(`${url}/api/test-llm`, {
+      method: "POST",
+      body: {
+        llmConfig: {
+          providers: {
+            openrouter: {
+              apiKey,
+              baseUrl: "https://llm.test/v1"
+            }
+          },
+          fallback: [
+            {
+              provider: "openrouter",
+              model: "provider/requested-model",
+              customModel: ""
+            }
+          ]
+        }
+      }
+    });
+    assert.equal(response.status, 400);
+    assert.equal(JSON.stringify(response.body).includes(apiKey), false);
+    assert.match(response.body.results[0].error, /\[redacted\]/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    globalThis.fetch = previousFetch;
+    configureUsageStoreForTests(null);
+  }
+});
+
 test("POST /api/run-skill-stream records usage visible through dashboard API", async () => {
   const previousFetch = globalThis.fetch;
   const tempDir = mkdtempSync(join(tmpdir(), "smart-ai-stream-usage-"));
   const store = createUsageStore({ dbPath: join(tempDir, "usage.sqlite") }).init();
   configureUsageStoreForTests(store);
+  configureAppConfigStoreForTests(null);
   globalThis.fetch = async (url) => {
     assert.match(String(url), /\/chat\/completions$/);
     return new Response(JSON.stringify({
@@ -292,6 +447,51 @@ test("POST /api/run-skill-stream records usage visible through dashboard API", a
     globalThis.fetch = previousFetch;
     store.close();
     rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/run-skill-stream returns local runtime execution metadata without LLM config", async () => {
+  configureUsageStoreForTests({
+    listUsage() {
+      return [];
+    },
+    recordSuccess() {
+      throw new Error("local runtime should not record LLM usage");
+    }
+  });
+  configureAppConfigStoreForTests(null);
+  const { server, url } = await listenWithHandler();
+  try {
+    const stream = await requestText(`${url}/api/run-skill-stream`, {
+      method: "POST",
+      body: {
+        skillId: "gpt-image-prompt-engineer",
+        params: {
+          topic: "minimal local runtime status test",
+          target_language: "en",
+          response_mode: "text_prompt",
+          text_prompt_field: "detailed"
+        }
+      }
+    });
+    assert.equal(stream.status, 200);
+    const events = parseSseEvents(stream.body);
+    assert.deepEqual(events.find((item) => item.event === "status" && item.data.phase === "local_runtime")?.data, {
+      phase: "local_runtime",
+      provider: "local-python",
+      model: "python/skill.py"
+    });
+    const result = events.find((item) => item.event === "result")?.data;
+    assert.equal(result.success, true);
+    assert.deepEqual(result.execution, {
+      type: "local_runtime",
+      provider: "local-python",
+      model: "python/skill.py"
+    });
+    assert.equal("lastSuccessfulLlm" in result, false);
+    assert.equal("usageRecorded" in result, false);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
   }
 });
 

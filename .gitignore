@@ -1,4 +1,7 @@
 node_modules/
+frontend/dist/
+playwright-report/
+test-results/
 data/
 __pycache__/
 *.py[cod]

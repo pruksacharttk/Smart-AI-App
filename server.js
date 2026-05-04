@@ -1,14 +1,20 @@
 import { createServer } from "node:http";
 import { readdir, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, relative } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createAppConfigStore, generateConfigEncryptionKey } from "./src/app-config-store.js";
+import { encryptionKeyEnvName, ensureEnvEncryptionKey, setEnvValue } from "./src/env-config.js";
+import { supportedProviderServiceIds, testProviderService } from "./src/provider-services.js";
 import { createUsageStore } from "./src/usage-store.js";
+
+ensureEnvEncryptionKey();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
+const frontendDistDir = join(__dirname, "frontend", "dist");
 const skillsDir = join(__dirname, "skills");
 const defaultSkillId = "gpt-image-prompt-engineer";
 const preferredPort = Number(process.env.PORT || 4173);
@@ -18,14 +24,30 @@ const rateBuckets = new Map();
 const rateLimits = {
   "/api/run-skill": { limit: 12, windowMs: 60_000 },
   "/api/run-skill-stream": { limit: 12, windowMs: 60_000 },
-  "/api/test-llm": { limit: 8, windowMs: 60_000 }
+  "/api/test-llm": { limit: 8, windowMs: 60_000 },
+  "/api/config": { limit: 30, windowMs: 60_000 },
+  "/api/config/reveal": { limit: 10, windowMs: 60_000 },
+  "/api/config/rotate-key": { limit: 3, windowMs: 60_000 },
+  "/api/providers": { limit: 12, windowMs: 60_000 }
 };
 let usageStore = null;
 let usageStoreInitError = null;
+let appConfigStore = null;
+let appConfigStoreInitError = null;
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
-  ".json": "application/json; charset=utf-8"
+  ".json": "application/json; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2"
 };
 
 function sendJson(res, status, body) {
@@ -41,9 +63,49 @@ function sendSse(res, event, data) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function redactSecrets(value, secrets = []) {
+  let text = String(value || "");
+  for (const secret of secrets) {
+    const trimmed = String(secret || "").trim();
+    if (!trimmed) continue;
+    text = text.replace(new RegExp(escapeRegExp(trimmed), "g"), "[redacted]");
+  }
+  return [
+    /sk-[a-z0-9_-]+/gi,
+    /sk-or-[a-z0-9_-]+/gi,
+    /nvapi-[a-z0-9_-]+/gi,
+    /(?:api[_-]?key|authorization|bearer|token)["':=\s]+[a-z0-9._-]{8,}/gi
+  ].reduce((next, pattern) => next.replace(pattern, "[redacted]"), text);
+}
+
+export function resolveStaticRoot() {
+  const configured = String(process.env.FRONTEND_DIST_DIR || "").trim();
+  const candidate = configured ? join(__dirname, configured) : frontendDistDir;
+  return existsSync(join(candidate, "index.html")) ? candidate : publicDir;
+}
+
+function isSafeStaticPath(staticRoot, filePath, requestedPath) {
+  const relativePath = relative(staticRoot, filePath);
+  if (relativePath.startsWith("..") || relativePath === "" || relativePath.includes("..\\")) return false;
+  const normalizedRequest = requestedPath.toLowerCase().replace(/\\/g, "/");
+  if (normalizedRequest.includes("/.env") || normalizedRequest.includes("/.git")) return false;
+  if (normalizedRequest.startsWith("/data/") || normalizedRequest.includes(".sqlite")) return false;
+  if (normalizedRequest.includes("/src/") || normalizedRequest.includes("/node_modules/")) return false;
+  return true;
+}
+
 export function configureUsageStoreForTests(store) {
   usageStore = store;
   usageStoreInitError = null;
+}
+
+export function configureAppConfigStoreForTests(store) {
+  appConfigStore = store;
+  appConfigStoreInitError = null;
 }
 
 function initializeUsageStore() {
@@ -54,6 +116,17 @@ function initializeUsageStore() {
     usageStore = null;
     usageStoreInitError = error;
     console.error(`Unable to initialize usage store: ${error.message}`);
+  }
+}
+
+function initializeAppConfigStore() {
+  try {
+    appConfigStore = createAppConfigStore().init();
+    appConfigStoreInitError = null;
+  } catch (error) {
+    appConfigStore = null;
+    appConfigStoreInitError = error;
+    console.error(`Unable to initialize app config store: ${error.message}`);
   }
 }
 
@@ -75,7 +148,8 @@ function clientIp(req) {
 }
 
 function checkRateLimit(req, res) {
-  const rule = rateLimits[new URL(req.url, `http://${req.headers.host}`).pathname];
+  const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+  const rule = rateLimits[pathname] || (pathname.startsWith("/api/providers/") ? rateLimits["/api/providers"] : null);
   if (!rule) return true;
   const now = Date.now();
   const key = `${clientIp(req)}:${req.url}`;
@@ -96,6 +170,40 @@ function checkRateLimit(req, res) {
     return false;
   }
   return true;
+}
+
+export function isLocalRequest(req) {
+  const address = String(req.socket.remoteAddress || "").toLowerCase();
+  return ["127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost"].includes(address);
+}
+
+function timingSafeTextEqual(left, right) {
+  const leftText = String(left || "");
+  const rightText = String(right || "");
+  if (!leftText || !rightText || leftText.length !== rightText.length) return false;
+  let diff = 0;
+  for (let index = 0; index < leftText.length; index += 1) {
+    diff |= leftText.charCodeAt(index) ^ rightText.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
+export function hasConfigAccess(req, expectedToken = process.env.CONFIG_ADMIN_TOKEN) {
+  if (isLocalRequest(req)) return true;
+  const expected = String(expectedToken || "").trim();
+  const provided = String(req.headers["x-config-admin-token"] || "").trim();
+  return Boolean(expected && timingSafeTextEqual(provided, expected));
+}
+
+function checkConfigAccess(req, res) {
+  if (hasConfigAccess(req)) return true;
+  const expected = String(process.env.CONFIG_ADMIN_TOKEN || "").trim();
+  sendJson(res, 403, {
+    error: expected
+      ? "Config API access denied. Use localhost or provide x-config-admin-token."
+      : "Config API access denied for non-localhost requests. Set CONFIG_ADMIN_TOKEN to allow remote admin access."
+  });
+  return false;
 }
 
 async function readJson(req) {
@@ -268,6 +376,32 @@ function fallbackTargets(llmConfig) {
 
 function configuredFallbacks(llmConfig) {
   return fallbackTargets(llmConfig).filter((item) => item.provider && item.model && item.apiKey && item.baseUrl);
+}
+
+function resolveStoredLlmConfig(incomingConfig = null) {
+  const stored = appConfigStore?.getConfig?.({ includeSecrets: true }) || null;
+  if (!incomingConfig || typeof incomingConfig !== "object") return stored;
+  if (!stored) return incomingConfig;
+  const providers = {};
+  const providerNames = new Set([
+    ...Object.keys(stored.providers || {}),
+    ...Object.keys(incomingConfig.providers || {})
+  ]);
+  for (const provider of providerNames) {
+    providers[provider] = {
+      ...(stored.providers?.[provider] || {}),
+      ...(incomingConfig.providers?.[provider] || {})
+    };
+    if (!String(providers[provider].apiKey || "").trim()) {
+      providers[provider].apiKey = stored.providers?.[provider]?.apiKey || "";
+    }
+  }
+  return {
+    ...stored,
+    ...incomingConfig,
+    providers,
+    fallback: Array.isArray(incomingConfig.fallback) ? incomingConfig.fallback : stored.fallback
+  };
 }
 
 function targetLanguageName(params) {
@@ -802,7 +936,7 @@ async function testChatCompletion(target) {
 
 async function handleTestLlm(req, res) {
   const body = await readJson(req);
-  const rows = fallbackTargets(body.llmConfig);
+  const rows = fallbackTargets(resolveStoredLlmConfig(body.llmConfig));
   const usableRows = rows.filter((target) => target.provider && target.model && target.apiKey && target.baseUrl);
   if (!usableRows.length) {
     sendJson(res, 400, {
@@ -841,11 +975,133 @@ async function handleTestLlm(req, res) {
         rank: target.index,
         provider: target.provider,
         model: target.model,
-        error: error.message || "LLM test failed"
+        error: redactSecrets(error.message || "LLM test failed", [target.apiKey])
       });
     }
   }
   sendJson(res, results.some((item) => item.ok) ? 200 : 400, { results });
+}
+
+async function handleGetConfig(_req, res) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  try {
+    sendJson(res, 200, { config: appConfigStore.getConfig() });
+  } catch (error) {
+    console.error(`Unable to read app config: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to read app config." });
+  }
+}
+
+async function handleSaveConfig(req, res) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  const body = await readJson(req);
+  try {
+    sendJson(res, 200, { config: appConfigStore.saveConfig(body.config || body) });
+  } catch (error) {
+    console.error(`Unable to save app config: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to save app config." });
+  }
+}
+
+async function handleRevealConfigSecret(req, res) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  const body = await readJson(req);
+  const providerId = String(body.provider || "").toLowerCase();
+  try {
+    const privateConfig = appConfigStore.getConfig({ includeSecrets: true });
+    if (!Object.hasOwn(privateConfig.providers || {}, providerId)) {
+      sendJson(res, 404, { error: "Unsupported provider." });
+      return;
+    }
+    const apiKey = String(privateConfig.providers[providerId]?.apiKey || "");
+    if (!apiKey) {
+      sendJson(res, 404, { error: "No saved API key for this provider." });
+      return;
+    }
+    sendJson(res, 200, { provider: providerId, apiKey });
+  } catch (error) {
+    console.error(`Unable to reveal app config secret: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to reveal saved API key." });
+  }
+}
+
+async function handleClearConfig(_req, res) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  try {
+    sendJson(res, 200, { config: appConfigStore.clearConfig() });
+  } catch (error) {
+    console.error(`Unable to clear app config: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to clear app config." });
+  }
+}
+
+async function handleRotateConfigKey(_req, res) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  const previousKey = process.env[encryptionKeyEnvName];
+  const nextKey = generateConfigEncryptionKey();
+  try {
+    setEnvValue(encryptionKeyEnvName, nextKey);
+    const config = appConfigStore.rotateEncryptionKey(nextKey);
+    sendJson(res, 200, { config, rotated: true });
+  } catch (error) {
+    if (previousKey) {
+      try {
+        setEnvValue(encryptionKeyEnvName, previousKey);
+      } catch (restoreError) {
+        console.error(`Unable to restore encryption key after rotate failure: ${restoreError.message}`);
+      }
+    }
+    console.error(`Unable to rotate config encryption key: ${error.message}`);
+    sendJson(res, 500, { error: "Unable to rotate config encryption key." });
+  }
+}
+
+async function handleProviderTest(req, res, providerId) {
+  if (!appConfigStore) {
+    sendJson(res, 500, {
+      error: appConfigStoreInitError ? "Config database is unavailable." : "Config database is not initialized."
+    });
+    return;
+  }
+  const id = String(providerId || "").toLowerCase();
+  if (!supportedProviderServiceIds().includes(id)) {
+    sendJson(res, 404, { error: "Unsupported provider service." });
+    return;
+  }
+  try {
+    const config = appConfigStore.getConfig({ includeSecrets: true });
+    const result = await testProviderService(id, config.providers?.[id], {
+      timeoutMs: Math.min(llmRequestTimeoutMs, 15000)
+    });
+    sendJson(res, result.ok ? 200 : 400, { result });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message || "Provider service test failed." });
+  }
 }
 
 async function handleLlmUsage(_req, res) {
@@ -889,8 +1145,10 @@ async function runLlmSkill(info, params, llmConfig, onStatus = null) {
       onStatus?.({ phase:"calling", rank:target.index, provider:target.provider, model:target.model });
       const result = await postChatCompletion(target, info, params);
       const usageRecorded = recordSuccessfulLlmUsage(result, target);
-      onStatus?.({ phase:"success", rank:target.index, provider:target.provider, model:result.llm?.model || target.model });
-      return { ...result, usageRecorded, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model:result.llm?.model || target.model, fallbackRank:target.index } };
+      const model = result.llm?.model || target.model;
+      const execution = { type:"llm", provider:target.provider, model, fallbackRank:target.index };
+      onStatus?.({ phase:"success", rank:target.index, provider:target.provider, model });
+      return { ...result, execution, usageRecorded, fallbackErrors: errors, lastSuccessfulLlm:{ provider:target.provider, model, fallbackRank:target.index } };
     } catch (error) {
       onStatus?.({ phase:"failed", rank:target.index, provider:target.provider, model:target.model, error:error.message || "LLM request failed" });
       errors.push({
@@ -971,7 +1229,7 @@ async function executeRunSkill(body, onStatus = null) {
     error.status = 400;
     throw error;
   }
-  const llmConfig = body.llmConfig && typeof body.llmConfig === "object" ? body.llmConfig : null;
+  const llmConfig = resolveStoredLlmConfig(body.llmConfig && typeof body.llmConfig === "object" ? body.llmConfig : null);
   const hasConfiguredLlm = configuredFallbacks(llmConfig).length > 0;
   if (!hasConfiguredLlm && !info.hasRuntime) {
     const error = new Error(`Skill "${skillId}" has no local runtime. Open Config, add an OpenRouter or NVIDIA API key, and choose at least one fallback model.`);
@@ -979,9 +1237,16 @@ async function executeRunSkill(body, onStatus = null) {
     throw error;
   }
   const enrichedParams = enrichKpopChoreographyParams(info, enrichReferenceLockedCharacterParams(info, params));
-  return hasConfiguredLlm
-    ? await runLlmSkill(info, enrichedParams, llmConfig, onStatus)
-    : await runPythonSkill(skillId, { params: enrichedParams });
+  if (hasConfiguredLlm) {
+    return await runLlmSkill(info, enrichedParams, llmConfig, onStatus);
+  }
+  const execution = { type:"local_runtime", provider:"local-python", model:"python/skill.py" };
+  onStatus?.({ phase:"local_runtime", provider:execution.provider, model:execution.model });
+  const result = await runPythonSkill(skillId, { params: enrichedParams });
+  if (result && typeof result === "object" && !Array.isArray(result)) {
+    return { ...result, execution };
+  }
+  return { success:true, output:result, execution };
 }
 
 async function handleRunSkillStream(req, res) {
@@ -1085,9 +1350,10 @@ async function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const requested = url.pathname === "/" ? "/index.html" : decodeURIComponent(url.pathname);
   const safePath = normalize(requested).replace(/^(\.\.[/\\])+/, "");
-  const filePath = join(publicDir, safePath);
+  const staticRoot = resolveStaticRoot();
+  const filePath = join(staticRoot, safePath);
 
-  if (!filePath.startsWith(publicDir)) {
+  if (!isSafeStaticPath(staticRoot, filePath, requested)) {
     res.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
     res.end("Forbidden");
     return;
@@ -1098,7 +1364,7 @@ async function serveStatic(req, res) {
     res.writeHead(200, { "content-type": mimeTypes[extname(filePath)] || "application/octet-stream" });
     res.end(file);
   } catch {
-    const fallback = await readFile(join(publicDir, "index.html"));
+    const fallback = await readFile(join(staticRoot, "index.html"));
     res.writeHead(200, { "content-type": mimeTypes[".html"] });
     res.end(fallback);
   }
@@ -1121,6 +1387,37 @@ export const requestHandler = async (req, res) => {
     }
     if (req.method === "GET" && req.url === "/api/llm-usage") {
       await handleLlmUsage(req, res);
+      return;
+    }
+    if (req.method === "GET" && req.url === "/api/config") {
+      if (!checkConfigAccess(req, res)) return;
+      await handleGetConfig(req, res);
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/config") {
+      if (!checkConfigAccess(req, res)) return;
+      await handleSaveConfig(req, res);
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/config/reveal") {
+      if (!checkConfigAccess(req, res)) return;
+      await handleRevealConfigSecret(req, res);
+      return;
+    }
+    if (req.method === "DELETE" && req.url === "/api/config") {
+      if (!checkConfigAccess(req, res)) return;
+      await handleClearConfig(req, res);
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/config/rotate-key") {
+      if (!checkConfigAccess(req, res)) return;
+      await handleRotateConfigKey(req, res);
+      return;
+    }
+    const providerTest = req.url.match(/^\/api\/providers\/([a-z0-9_-]+)\/test$/i);
+    if (req.method === "POST" && providerTest) {
+      if (!checkConfigAccess(req, res)) return;
+      await handleProviderTest(req, res, providerTest[1]);
       return;
     }
     if (req.method === "GET" && req.url === "/api/skills") {
@@ -1170,5 +1467,6 @@ function listen(port, attemptsLeft = maxPortAttempts) {
 
 if (process.argv[1] && normalize(process.argv[1]) === normalize(__filename)) {
   initializeUsageStore();
+  initializeAppConfigStore();
   listen(preferredPort);
 }

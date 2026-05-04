@@ -1,0 +1,19 @@
+{
+  "context": {
+    "check_enabled": true,
+    "_comment": "check_enabled: set false to skip context prompts before critical operations"
+  },
+  "external_review": {
+    "enabled": false,
+    "_comment": "External LLM review is disabled. Codex performs self-review using the active host model."
+  },
+  "runtime": {
+    "mode": "portable",
+    "requires_uv_at_runtime": false,
+    "external_llm": "disabled"
+  },
+  "plugin_root": "C:\\Users\\naiba\\.codex\\skills\\deep-plan",
+  "planning_dir": "D:\\Smart AI Hub\\Projects\\Smart AI App\\specs\\002-vite-react-typescript-migration",
+  "initial_file": "D:\\Smart AI Hub\\Projects\\Smart AI App\\specs\\002-vite-react-typescript-migration\\spec.md",
+  "review_mode": "self_review"
+}

@@ -37,7 +37,7 @@
       .app { width: min(1560px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0; }
       .topbar {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(300px, 520px);
+        grid-template-columns: minmax(0, 1fr) minmax(640px, 46vw);
         gap: 18px;
         align-items: end;
         margin-bottom: 18px;
@@ -48,7 +48,7 @@
       .subtitle { max-width: 820px; margin: 0; color: var(--muted); line-height: 1.5; }
       .top-controls {
         display: grid;
-        grid-template-columns: 1fr auto auto auto;
+        grid-template-columns: minmax(360px, 1fr) auto auto auto;
         gap: 10px;
         align-items: end;
       }
@@ -688,7 +688,6 @@
                 <div class="llm-status" id="llmStatus" role="status" aria-live="polite">LLM: not run yet</div>
                 <div class="pane active" id="promptPane">
                   <pre id="promptOutput">Loading...</pre>
-                  <aside class="model-hint" id="imageModelHint"></aside>
                 </div>
                 <div class="pane" id="jsonPane"><pre id="jsonOutput">{}</pre></div>
                 <div class="pane" id="reviewPane"><div class="review-grid" id="reviewOutput"></div></div>
@@ -713,15 +712,7 @@
           <button class="btn secondary" type="button" id="closeConfigBtn">Close</button>
         </div>
         <div class="modal-body">
-          <div class="quick-guide">
-            <h3>คู่มือฉบับย่อ: สมัครและนำ API key มาใส่</h3>
-            <ol>
-              <li><strong>NVIDIA NIM:</strong> ไปที่ <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a> แล้ว Sign in ด้วยบัญชี NVIDIA จากนั้นกดสร้าง API key แล้วคัดลอกมาใส่ช่อง NVIDIA NIM ด้านล่าง</li>
-              <li><strong>OpenRouter:</strong> ไปที่ <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a> แล้ว Sign in/Sign up จากนั้นกด Create key แล้วคัดลอกมาใส่ช่อง OpenRouter ด้านล่าง</li>
-              <li>API key มักแสดงให้คัดลอกเพียงครั้งเดียว ให้เก็บไว้ในที่ปลอดภัย และในแอปนี้ช่อง key จะถูกซ่อนเป็นรหัสผ่านพร้อมปุ่ม Show/Hide</li>
-              <li>หลังใส่ key ให้เลือก fallback model ลำดับ 1-4 แล้วกด Save Config ค่า config จะถูกเก็บใน browser นี้เท่านั้น ไม่สร้างไฟล์ config และไม่ใช้ database</li>
-            </ol>
-          </div>
+          <div class="quick-guide"></div>
           <div class="provider-grid">
             <article class="provider-card">
               <h3>NVIDIA NIM</h3>
@@ -736,7 +727,7 @@
                 <span>Base URL</span>
                 <input id="nvidiaBaseUrl" value="https://integrate.api.nvidia.com/v1">
               </label>
-              <p class="small-note">Key is masked in the UI and saved locally in this browser only.</p>
+              <p class="small-note">Saved encrypted in SQLite. Leave blank to keep an existing saved key.</p>
             </article>
             <article class="provider-card">
               <h3>OpenRouter</h3>
@@ -753,6 +744,51 @@
               </label>
               <p class="small-note">Free model availability can change. Custom model names are supported.</p>
             </article>
+            <article class="provider-card">
+              <h3>fal.ai</h3>
+              <label class="field">
+                <span>API Key</span>
+                <div class="secret-row">
+                  <input id="falKey" type="password" autocomplete="off" placeholder="Paste fal.ai key">
+                  <button class="btn secondary" type="button" data-toggle-secret="falKey">Show</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Base URL</span>
+                <input id="falBaseUrl" value="https://fal.run">
+              </label>
+              <p class="small-note">Create keys at <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noreferrer">fal.ai/dashboard/keys</a>. Sign in, generate a key, and paste it here.</p>
+            </article>
+            <article class="provider-card">
+              <h3>Kie.ai</h3>
+              <label class="field">
+                <span>API Key</span>
+                <div class="secret-row">
+                  <input id="kieKey" type="password" autocomplete="off" placeholder="Paste Kie.ai key">
+                  <button class="btn secondary" type="button" data-toggle-secret="kieKey">Show</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Base URL</span>
+                <input id="kieBaseUrl" value="https://api.kie.ai">
+              </label>
+              <p class="small-note">Create keys at <a href="https://kie.ai/api-key" target="_blank" rel="noreferrer">kie.ai/api-key</a>. Sign in, create or copy your key, and paste it here.</p>
+            </article>
+            <article class="provider-card">
+              <h3>WaveSpeedAI</h3>
+              <label class="field">
+                <span>API Key</span>
+                <div class="secret-row">
+                  <input id="wavespeedKey" type="password" autocomplete="off" placeholder="Paste WaveSpeedAI key">
+                  <button class="btn secondary" type="button" data-toggle-secret="wavespeedKey">Show</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Base URL</span>
+                <input id="wavespeedBaseUrl" value="https://api.wavespeed.ai">
+              </label>
+              <p class="small-note">Create keys from the <a href="https://www.wavespeed.ai/dashboard" target="_blank" rel="noreferrer">WaveSpeedAI dashboard</a>. Sign in, open API keys, and paste it here.</p>
+            </article>
           </div>
 
           <div class="section static" style="margin-top:14px">
@@ -764,14 +800,21 @@
               <span class="badge">1-4</span>
             </div>
             <div class="fallback-grid" id="fallbackRows"></div>
+            <aside class="model-hint" id="imageModelHint"></aside>
             <div class="test-results" id="testConfigResults" aria-live="polite"></div>
+          </div>
+          <div class="quick-guide" style="margin-top:14px">
+            <strong>Encryption backup warning</strong>
+            <p class="small-note">API keys are encrypted in SQLite using the private key in <code>.env</code>. Keep <code>data/smart-ai-app.sqlite</code> and <code>.env</code> together. If <code>.env</code> is deleted or replaced, existing saved API keys cannot be decrypted.</p>
           </div>
         </div>
         <div class="modal-foot">
-          <span class="small-note" id="configSavedNote">Stored in this browser only. No config file and no database are used.</span>
+          <span class="small-note" id="configSavedNote">Stored in SQLite with encrypted API keys. Secrets are not returned to the browser after saving.</span>
           <div class="actions" style="margin-top:0">
             <button class="btn secondary" type="button" id="clearConfigBtn">Clear</button>
-            <button class="btn secondary" type="button" id="testConfigBtn">Test LLM</button>
+            <button class="btn secondary" type="button" id="rotateConfigKeyBtn">Rotate Key</button>
+            <button class="btn secondary" type="button" id="testProviderKeysBtn">Test Media Provider APIs</button>
+            <button class="btn secondary" type="button" id="testConfigBtn">Test LLM Fallbacks</button>
             <button class="btn primary" type="button" id="saveConfigBtn">Save Config</button>
           </div>
         </div>
@@ -875,7 +918,10 @@
       const defaultConfig = {
         providers: {
           nvidia: { apiKey:"", baseUrl:"https://integrate.api.nvidia.com/v1" },
-          openrouter: { apiKey:"", baseUrl:"https://openrouter.ai/api/v1" }
+          openrouter: { apiKey:"", baseUrl:"https://openrouter.ai/api/v1" },
+          fal: { apiKey:"", baseUrl:"https://fal.run" },
+          kie: { apiKey:"", baseUrl:"https://api.kie.ai" },
+          wavespeed: { apiKey:"", baseUrl:"https://api.wavespeed.ai" }
         },
         fallback: [
           { provider:"openrouter", model:"qwen/qwen3-vl-32b-instruct", customModel:"" },
@@ -901,14 +947,34 @@
         "choreography_restrictions"
       ]);
       const imageModelRecommendations = ["qwen/qwen3-vl-32b-instruct", "qwen/qwen3-vl-8b-instruct", "qwen/qwen3-vl-235b-a22b-instruct", "qwen/qwen3.5-35b-a3b", "qwen/qwen3.5-plus-02-15", "qwen/qwen3.5-397b-a17b"];
+      const legacyConfigKey = "llmConfig";
+      const legacyConfigMigrationKey = "llmConfigDbMigrationCompleted";
+      const legacyConfigMigrationV2Key = "llmConfigDbMigrationV2Completed";
+      const legacyConfigMigrationV3Key = "llmConfigDbMigrationV3Completed";
+      const legacyConfigStorageKeys = ["llmConfig", "appConfig", "smartAiConfig", "smartAiAppConfig", "config", "settings"];
+      const providerAliases = {
+        nvidia: ["nvidia", "nvidiaNim"],
+        openrouter: ["openrouter", "openRouter"],
+        fal: ["fal", "falAi"],
+        kie: ["kie", "kieAi"],
+        wavespeed: ["wavespeed", "waveSpeed", "wavespeedAi", "waveSpeedAi"]
+      };
+      const legacyProviderApiKeyStorageKeys = {
+        nvidia: ["nvidiaApiKey", "nvidiaKey", "nvidiaNimApiKey", "nvidiaNimKey"],
+        openrouter: ["openrouterApiKey", "openrouterKey", "openRouterApiKey", "openRouterKey"],
+        fal: ["falApiKey", "falKey", "falAiApiKey", "falAiKey"],
+        kie: ["kieApiKey", "kieKey", "kieAiApiKey", "kieAiKey"],
+        wavespeed: ["wavespeedApiKey", "wavespeedKey", "waveSpeedApiKey", "waveSpeedKey", "wavespeedAiApiKey", "wavespeedAiKey", "waveSpeedAiApiKey", "waveSpeedAiKey"]
+      };
       let language = localStorage.getItem("uiLanguage") || "en";
       let skills = [];
       let invalidSkills = [];
       let selectedSkillId = localStorage.getItem("selectedSkillId") || "";
       let schemaState = null;
       let currentBundle = null;
-      let llmConfig = loadConfig();
+      let llmConfig = structuredClone(defaultConfig);
       let fileFieldValues = {};
+      const revealedConfigKeys = new Set();
       let activePage = "dashboard";
       let usageDashboardStale = true;
       let usageDashboardRequestId = 0;
@@ -920,30 +986,34 @@
         if (!guide) return;
         if (language === "th") {
           guide.innerHTML = `
-            <h3>คู่มือฉบับย่อ: สมัครและนำ API key มาใส่</h3>
-            <ol>
-              <li><strong>NVIDIA NIM:</strong> ไปที่ <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a> จากนั้น sign in, สร้าง API key และนำมาวางในช่อง NVIDIA</li>
-              <li><strong>OpenRouter:</strong> ไปที่ <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a> จากนั้น sign in, สร้าง key และนำมาวางในช่อง OpenRouter</li>
-              <li>ระบบจะซ่อน key ด้วย password field และเก็บเฉพาะใน local storage ของ browser นี้</li>
-              <li>เลือก fallback model ตามลำดับ 1-4 แล้วกด Save Config ระบบจะลอง model ถัดไปเมื่อ model ก่อนหน้าใช้ไม่ได้</li>
-            </ol>`;
+          <h3>คู่มือการสร้างและใส่ API key</h3>
+          <ol>
+            <li><strong>NVIDIA NIM:</strong> เปิด <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a> เข้าสู่ระบบ สร้าง API key แล้วนำมาใส่ในช่อง NVIDIA NIM</li>
+            <li><strong>OpenRouter:</strong> เปิด <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a> เข้าสู่ระบบ สร้าง key แล้วนำมาใส่ในช่อง OpenRouter</li>
+            <li><strong>fal.ai:</strong> เปิด <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noreferrer">fal.ai/dashboard/keys</a> เข้าสู่ระบบ สร้าง key แล้วนำมาใส่ในช่อง fal.ai</li>
+            <li><strong>Kie.ai:</strong> เปิด <a href="https://kie.ai/api-key" target="_blank" rel="noreferrer">kie.ai/api-key</a> เข้าสู่ระบบ สร้างหรือคัดลอก API key แล้วนำมาใส่ในช่อง Kie.ai</li>
+            <li><strong>WaveSpeedAI:</strong> เปิด <a href="https://www.wavespeed.ai/dashboard" target="_blank" rel="noreferrer">wavespeed.ai dashboard</a> เข้าสู่ระบบ ไปที่ API keys แล้วนำ key มาใส่ในช่อง WaveSpeedAI</li>
+            <li>ระบบเข้ารหัส key ฝั่ง server และเก็บใน SQLite โดย private encryption key จะถูกสร้างอัตโนมัติในไฟล์ .env ที่ถูก ignore จาก Git</li>
+          </ol>`;
           return;
         }
         guide.innerHTML = `
-          <h3>Quick guide: create and paste API keys</h3>
+          <h3>API key setup guide</h3>
           <ol>
-            <li><strong>NVIDIA NIM:</strong> open <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a>, sign in, create an API key, then paste it into the NVIDIA field.</li>
-            <li><strong>OpenRouter:</strong> open <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a>, sign in, create a key, then paste it into the OpenRouter field.</li>
-            <li>Keys are masked by default and stored only in this browser's local storage. Use Show/Hide only when needed.</li>
-            <li>Choose fallback models in order 1-4, then save. The app tries the next model when the previous one is unavailable.</li>
+            <li><strong>NVIDIA NIM:</strong> open <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noreferrer">build.nvidia.com/settings/api-keys</a>, sign in, create an API key, then paste it into NVIDIA NIM.</li>
+            <li><strong>OpenRouter:</strong> open <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">openrouter.ai/settings/keys</a>, sign in, create a key, then paste it into OpenRouter.</li>
+            <li><strong>fal.ai:</strong> open <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noreferrer">fal.ai/dashboard/keys</a>, sign in, generate a key, then paste it into fal.ai.</li>
+            <li><strong>Kie.ai:</strong> open <a href="https://kie.ai/api-key" target="_blank" rel="noreferrer">kie.ai/api-key</a>, sign in, create or copy your key, then paste it into Kie.ai.</li>
+            <li><strong>WaveSpeedAI:</strong> open <a href="https://www.wavespeed.ai/dashboard" target="_blank" rel="noreferrer">wavespeed.ai dashboard</a>, sign in, open API keys, then paste it into WaveSpeedAI.</li>
+            <li>Keys are encrypted on the server and stored in SQLite. The private encryption key is generated automatically in the ignored .env file.</li>
           </ol>`;
+        return;
       }
-
-      function setStatus(text, type="") {
+      function setStatus(text, tone = "ok") {
         statusEl.textContent = text;
-        statusEl.className = `status ${type}`.trim();
+        statusEl.className = `status ${tone}`.trim();
         document.body.classList.toggle("is-loading", text === t("loading"));
-        document.body.classList.toggle("is-running", text === t("running") || text === "Testing LLM");
+        document.body.classList.toggle("is-running", text === t("running") || text === "Testing LLM" || text === "Testing provider APIs" || text === "Rotating key");
       }
       function setRunButtonsDisabled(disabled) {
         runBtn.disabled = disabled;
@@ -958,6 +1028,21 @@
       }
       function setLlmStatus(text) {
         llmStatus.innerHTML = text;
+      }
+      function setExecutionStatus(result) {
+        const last = result.lastSuccessfulLlm || result.llm || (result.execution?.type === "llm" ? result.execution : null);
+        if (last) {
+          setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>${last.fallbackRank ? ` (fallback #${escapeHtml(last.fallbackRank)})` : ""}`);
+          if (result.usageRecorded === false) {
+            setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>, but usage was not recorded. Restart the server and try again.`);
+          }
+          return;
+        }
+        if (result.execution?.type === "local_runtime") {
+          setLlmStatus(`Runtime: <strong>${escapeHtml(result.execution.provider)}</strong> / <strong>${escapeHtml(result.execution.model)}</strong> (no LLM used)`);
+          return;
+        }
+        setLlmStatus("Runtime: completed, but no execution metadata was returned.");
       }
       function setupConfigPage() {
         const panel = configModal?.querySelector(".modal");
@@ -1091,45 +1176,283 @@
           <ul>${imageModelRecommendations.map((model) => `<li>${escapeHtml(model)}</li>`).join("")}</ul>
         `;
       }
-      function loadConfig() {
-        try {
-          const saved = JSON.parse(localStorage.getItem("llmConfig") || "{}");
-          const normalizedFallback = Array.isArray(saved.fallback)
-            ? saved.fallback.map((item) => {
-                if (item?.provider !== "nvidia") return item;
-                const valid = providerModels.nvidia.some((model) => model.id === item.model);
-                return valid || item.model === "__custom__" ? item : { ...item, model:"openai/gpt-oss-120b" };
-              })
-            : [];
-          return {
-            providers: {
-              nvidia: { ...defaultConfig.providers.nvidia, ...(saved.providers?.nvidia || {}) },
-              openrouter: { ...defaultConfig.providers.openrouter, ...(saved.providers?.openrouter || {}) }
-            },
-            fallback: Array.from({ length: 4 }, (_, index) => ({
-              ...defaultConfig.fallback[index],
-              ...(normalizedFallback[index] || {})
-            }))
+      function mergeConfig(saved = {}) {
+        const normalizedFallback = Array.isArray(saved.fallback)
+          ? saved.fallback.map((item) => {
+              if (item?.provider !== "nvidia") return item;
+              const valid = providerModels.nvidia.some((model) => model.id === item.model);
+              return valid || item.model === "__custom__" ? item : { ...item, model:"openai/gpt-oss-120b" };
+            })
+          : [];
+        return {
+          providers: {
+            nvidia: { ...defaultConfig.providers.nvidia, ...(saved.providers?.nvidia || {}) },
+            openrouter: { ...defaultConfig.providers.openrouter, ...(saved.providers?.openrouter || {}) },
+            fal: { ...defaultConfig.providers.fal, ...(saved.providers?.fal || {}) },
+            kie: { ...defaultConfig.providers.kie, ...(saved.providers?.kie || {}) },
+            wavespeed: { ...defaultConfig.providers.wavespeed, ...(saved.providers?.wavespeed || {}) }
+          },
+          fallback: Array.from({ length: 4 }, (_, index) => ({
+            ...defaultConfig.fallback[index],
+            ...(normalizedFallback[index] || {})
+          }))
+        };
+      }
+      function configHasApiKey(config) {
+        return Object.values(config?.providers || {}).some((provider) => String(provider?.apiKey || "").trim());
+      }
+      function configHasSavedApiKey(config) {
+        return Object.values(config?.providers || {}).some((provider) => Boolean(provider?.hasApiKey));
+      }
+      function providerHasSavedApiKey(config, providerId) {
+        return Boolean(config?.providers?.[providerId]?.hasApiKey);
+      }
+      function readSecretLikeValue(value) {
+        return typeof value === "string" ? value.trim() : "";
+      }
+      function readProviderApiKey(source, providerId) {
+        if (!source || typeof source !== "object") return "";
+        for (const alias of providerAliases[providerId] || []) {
+          const direct = source[`${alias}ApiKey`] ?? source[`${alias}Key`] ?? source[`${alias}Token`] ?? source[`${alias}Secret`];
+          const directValue = readSecretLikeValue(direct);
+          if (directValue) return directValue;
+          const nested = source[alias];
+          const aliasValue = readSecretLikeValue(nested);
+          if (aliasValue) return aliasValue;
+          if (nested && typeof nested === "object") {
+            const nestedValue = readSecretLikeValue(nested.apiKey ?? nested.key ?? nested.token ?? nested.secret);
+            if (nestedValue) return nestedValue;
+          }
+        }
+        return "";
+      }
+      function applyLegacyObject(config, value) {
+        if (!value || typeof value !== "object") return false;
+        let found = false;
+        const candidates = [value, value.config, value.llmConfig, value.settings, value.apiKeys, value.providerKeys, value.providers];
+        for (const candidate of candidates) {
+          if (!candidate || typeof candidate !== "object") continue;
+          for (const providerId of Object.keys(defaultConfig.providers)) {
+            const apiKey = readProviderApiKey(candidate, providerId);
+            if (!apiKey) continue;
+            config.providers[providerId].apiKey = apiKey;
+            found = true;
+          }
+        }
+        const parsed = mergeConfig(value);
+        for (const providerId of Object.keys(defaultConfig.providers)) {
+          const apiKey = parsed.providers[providerId]?.apiKey?.trim();
+          if (!apiKey) continue;
+          config.providers[providerId] = parsed.providers[providerId];
+          found = true;
+        }
+        return found;
+      }
+      function isStandaloneProviderSecretKey(keyName, providerId) {
+        const normalizedKey = keyName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const looksSecret = ["apikey", "key", "token", "secret"].some((part) => normalizedKey.includes(part));
+        if (!looksSecret) return false;
+        return (providerAliases[providerId] || []).some((alias) => normalizedKey.includes(alias.toLowerCase().replace(/[^a-z0-9]/g, "")));
+      }
+      function isProviderAliasKey(keyName, providerId) {
+        const normalizedKey = keyName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return (providerAliases[providerId] || []).some((alias) => normalizedKey === alias.toLowerCase().replace(/[^a-z0-9]/g, ""));
+      }
+      function extractLegacyLocalConfig() {
+        let foundLegacyValue = false;
+        let legacyConfig = mergeConfig(defaultConfig);
+        for (const storageKey of legacyConfigStorageKeys) {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) continue;
+          try {
+            foundLegacyValue = applyLegacyObject(legacyConfig, JSON.parse(raw)) || foundLegacyValue;
+          } catch {
+            if (storageKey === legacyConfigKey) localStorage.removeItem(storageKey);
+          }
+        }
+        for (const providerId of Object.keys(defaultConfig.providers)) {
+          for (const keyName of legacyProviderApiKeyStorageKeys[providerId] || []) {
+            const apiKey = localStorage.getItem(keyName)?.trim();
+            if (!apiKey) continue;
+            legacyConfig.providers[providerId].apiKey = apiKey;
+            foundLegacyValue = true;
+            break;
+          }
+        }
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const keyName = localStorage.key(index);
+          if (!keyName) continue;
+          for (const providerId of Object.keys(defaultConfig.providers)) {
+            if (!isStandaloneProviderSecretKey(keyName, providerId)) continue;
+            const apiKey = localStorage.getItem(keyName)?.trim();
+            if (!apiKey || apiKey.startsWith("{") || apiKey.startsWith("[")) continue;
+            legacyConfig.providers[providerId].apiKey = apiKey;
+            foundLegacyValue = true;
+          }
+        }
+        return foundLegacyValue ? legacyConfig : null;
+      }
+      function hasMigratableApiKey(legacyConfig, serverConfig) {
+        return Object.keys(defaultConfig.providers).some((providerId) => {
+          const apiKey = legacyConfig.providers?.[providerId]?.apiKey?.trim();
+          return apiKey && !providerHasSavedApiKey(serverConfig, providerId);
+        });
+      }
+      function sanitizeLegacyLocalConfig() {
+        for (const storageKey of legacyConfigStorageKeys) {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            sanitizeLegacyObject(parsed);
+            localStorage.setItem(storageKey, JSON.stringify(parsed));
+          } catch {
+            if (storageKey === legacyConfigKey) localStorage.removeItem(storageKey);
+          }
+        }
+        for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+          const keyName = localStorage.key(index);
+          if (!keyName) continue;
+          for (const providerId of Object.keys(defaultConfig.providers)) {
+            if (!isStandaloneProviderSecretKey(keyName, providerId)) continue;
+            localStorage.removeItem(keyName);
+            break;
+          }
+        }
+        for (const providerId of Object.keys(defaultConfig.providers)) {
+          for (const keyName of legacyProviderApiKeyStorageKeys[providerId] || []) localStorage.removeItem(keyName);
+        }
+      }
+      function sanitizeLegacyObject(value) {
+        if (!value || typeof value !== "object") return;
+        for (const key of Object.keys(value)) {
+          const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const isProviderSecret = Object.keys(defaultConfig.providers).some((providerId) => isStandaloneProviderSecretKey(key, providerId));
+          const isProviderAlias = Object.keys(defaultConfig.providers).some((providerId) => isProviderAliasKey(key, providerId));
+          if (isProviderAlias && typeof value[key] === "string") {
+            value[key] = "";
+            continue;
+          }
+          if (isProviderSecret || ["apikey", "key", "token", "secret"].includes(normalizedKey)) {
+            if (typeof value[key] === "string") value[key] = "";
+            continue;
+          }
+          sanitizeLegacyObject(value[key]);
+        }
+      }
+      async function migrateLegacyLocalConfigOnce(serverConfig) {
+        const legacyConfig = extractLegacyLocalConfig();
+        if (!legacyConfig) return serverConfig;
+        if (localStorage.getItem(legacyConfigMigrationV3Key) === "true") {
+          sanitizeLegacyLocalConfig();
+          return serverConfig;
+        }
+        if (!configHasApiKey(legacyConfig) || !hasMigratableApiKey(legacyConfig, serverConfig)) {
+          sanitizeLegacyLocalConfig();
+          localStorage.setItem(legacyConfigMigrationKey, "true");
+          localStorage.setItem(legacyConfigMigrationV2Key, "true");
+          localStorage.setItem(legacyConfigMigrationV3Key, "true");
+          return serverConfig;
+        }
+        const nextConfig = mergeConfig(serverConfig);
+        for (const providerId of Object.keys(defaultConfig.providers)) {
+          const apiKey = legacyConfig.providers?.[providerId]?.apiKey?.trim();
+          if (!apiKey || providerHasSavedApiKey(serverConfig, providerId)) continue;
+          nextConfig.providers[providerId] = {
+            ...nextConfig.providers[providerId],
+            apiKey,
+            baseUrl: legacyConfig.providers?.[providerId]?.baseUrl || nextConfig.providers[providerId].baseUrl
           };
         }
-        catch { return structuredClone(defaultConfig); }
+        if (!configHasSavedApiKey(serverConfig)) nextConfig.fallback = legacyConfig.fallback;
+        const migrated = await saveConfig(nextConfig);
+        sanitizeLegacyLocalConfig();
+        localStorage.setItem(legacyConfigMigrationKey, "true");
+        localStorage.setItem(legacyConfigMigrationV2Key, "true");
+        localStorage.setItem(legacyConfigMigrationV3Key, "true");
+        return migrated;
       }
-      function saveConfig() {
-        localStorage.setItem("llmConfig", JSON.stringify(llmConfig));
+      async function loadConfig() {
+        try {
+          const response = await fetch("/api/config", { headers:{ "accept":"application/json" } });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.error || "Unable to load config");
+          let serverConfig = mergeConfig(payload.config || {});
+          serverConfig = await migrateLegacyLocalConfigOnce(serverConfig);
+          llmConfig = serverConfig;
+        }
+        catch (error) {
+          console.warn(`Unable to load saved config: ${error.message}`);
+          llmConfig = structuredClone(defaultConfig);
+        }
+      }
+      async function saveConfig(config = llmConfig) {
+        const response = await fetch("/api/config", {
+          method:"POST",
+          headers:{ "content-type":"application/json" },
+          body:JSON.stringify({ config })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Unable to save config");
+        llmConfig = mergeConfig(payload.config || {});
+        return llmConfig;
+      }
+      async function clearConfig() {
+        const response = await fetch("/api/config", { method:"DELETE" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Unable to clear config");
+        sanitizeLegacyLocalConfig(localStorage.getItem(legacyConfigKey));
+        llmConfig = mergeConfig(payload.config || {});
+        return llmConfig;
+      }
+      async function rotateConfigKey() {
+        const response = await fetch("/api/config/rotate-key", { method:"POST" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Unable to rotate encryption key");
+        llmConfig = mergeConfig(payload.config || {});
+        return payload;
+      }
+      async function testProviderKey(provider) {
+        const response = await fetch(`/api/providers/${provider}/test`, { method:"POST" });
+        const payload = await response.json().catch(() => ({}));
+        return { ok: response.ok, ...(payload.result || {}), error: payload.error };
+      }
+      async function revealConfigKey(provider) {
+        const response = await fetch("/api/config/reveal", {
+          method:"POST",
+          headers:{ "content-type":"application/json" },
+          body:JSON.stringify({ provider })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Unable to reveal saved key");
+        return payload.apiKey || "";
       }
       function hasConfiguredLlm() {
         return (llmConfig.fallback || []).some((item) => {
           const provider = item.provider;
           const model = item.model === "__custom__" ? item.customModel : item.model;
-          return provider && model && llmConfig.providers?.[provider]?.apiKey && llmConfig.providers?.[provider]?.baseUrl;
+          const providerConfig = llmConfig.providers?.[provider] || {};
+          return provider && model && (providerConfig.apiKey || providerConfig.hasApiKey) && providerConfig.baseUrl;
         });
       }
       function renderConfig() {
         renderQuickGuide();
+        renderImageModelHint();
         document.querySelector("#nvidiaKey").value = llmConfig.providers.nvidia.apiKey || "";
+        document.querySelector("#nvidiaKey").placeholder = llmConfig.providers.nvidia.hasApiKey ? "Saved encrypted key - leave blank to keep" : "nvapi-...";
         document.querySelector("#nvidiaBaseUrl").value = llmConfig.providers.nvidia.baseUrl || defaultConfig.providers.nvidia.baseUrl;
         document.querySelector("#openrouterKey").value = llmConfig.providers.openrouter.apiKey || "";
+        document.querySelector("#openrouterKey").placeholder = llmConfig.providers.openrouter.hasApiKey ? "Saved encrypted key - leave blank to keep" : "sk-or-...";
         document.querySelector("#openrouterBaseUrl").value = llmConfig.providers.openrouter.baseUrl || defaultConfig.providers.openrouter.baseUrl;
+        document.querySelector("#falKey").value = llmConfig.providers.fal.apiKey || "";
+        document.querySelector("#falKey").placeholder = llmConfig.providers.fal.hasApiKey ? "Saved encrypted key - leave blank to keep" : "Paste fal.ai key";
+        document.querySelector("#falBaseUrl").value = llmConfig.providers.fal.baseUrl || defaultConfig.providers.fal.baseUrl;
+        document.querySelector("#kieKey").value = llmConfig.providers.kie.apiKey || "";
+        document.querySelector("#kieKey").placeholder = llmConfig.providers.kie.hasApiKey ? "Saved encrypted key - leave blank to keep" : "Paste Kie.ai key";
+        document.querySelector("#kieBaseUrl").value = llmConfig.providers.kie.baseUrl || defaultConfig.providers.kie.baseUrl;
+        document.querySelector("#wavespeedKey").value = llmConfig.providers.wavespeed.apiKey || "";
+        document.querySelector("#wavespeedKey").placeholder = llmConfig.providers.wavespeed.hasApiKey ? "Saved encrypted key - leave blank to keep" : "Paste WaveSpeedAI key";
+        document.querySelector("#wavespeedBaseUrl").value = llmConfig.providers.wavespeed.baseUrl || defaultConfig.providers.wavespeed.baseUrl;
         fallbackRows.innerHTML = "";
         for (let index = 0; index < 4; index += 1) {
           const item = llmConfig.fallback[index] || defaultConfig.fallback[index];
@@ -1167,6 +1490,12 @@
         llmConfig.providers.nvidia.baseUrl = document.querySelector("#nvidiaBaseUrl").value.trim() || defaultConfig.providers.nvidia.baseUrl;
         llmConfig.providers.openrouter.apiKey = document.querySelector("#openrouterKey").value.trim();
         llmConfig.providers.openrouter.baseUrl = document.querySelector("#openrouterBaseUrl").value.trim() || defaultConfig.providers.openrouter.baseUrl;
+        llmConfig.providers.fal.apiKey = document.querySelector("#falKey").value.trim();
+        llmConfig.providers.fal.baseUrl = document.querySelector("#falBaseUrl").value.trim() || defaultConfig.providers.fal.baseUrl;
+        llmConfig.providers.kie.apiKey = document.querySelector("#kieKey").value.trim();
+        llmConfig.providers.kie.baseUrl = document.querySelector("#kieBaseUrl").value.trim() || defaultConfig.providers.kie.baseUrl;
+        llmConfig.providers.wavespeed.apiKey = document.querySelector("#wavespeedKey").value.trim();
+        llmConfig.providers.wavespeed.baseUrl = document.querySelector("#wavespeedBaseUrl").value.trim() || defaultConfig.providers.wavespeed.baseUrl;
         llmConfig.fallback = [];
         for (let index = 0; index < 4; index += 1) {
           llmConfig.fallback.push({
@@ -1194,6 +1523,20 @@
             <strong>${item.ok ? "OK" : item.skipped ? "SKIP" : "FAIL"}</strong>
             <span>${escapeHtml(item.provider || "")}<br>${escapeHtml(item.model || "")}</span>
             <span>${escapeHtml(item.preview || item.error || "")}</span>
+          `;
+          testConfigResults.append(row);
+        }
+      }
+      function renderProviderTestResults(results) {
+        testConfigResults.innerHTML = "";
+        for (const item of results || []) {
+          const row = document.createElement("div");
+          row.className = `test-row ${item.ok ? "ok" : "fail"}`;
+          row.innerHTML = `
+            <strong>${escapeHtml(item.ok ? "OK" : item.status === 0 ? "MISSING KEY" : "FAIL")}</strong>
+            <strong>${escapeHtml(item.label || item.provider || "")}</strong>
+            <span>${item.ok ? "Connected" : item.status === 0 ? "Add API key above, save, then test again" : `HTTP ${escapeHtml(item.status ?? "-")}`}</span>
+            <span>${escapeHtml(item.message || item.error || "")}</span>
           `;
           testConfigResults.append(row);
         }
@@ -1661,23 +2004,20 @@
         setRunButtonsDisabled(true);
         promptOutput.textContent = "Running selected skill...";
         jsonOutput.textContent = "{}";
-        setLlmStatus("LLM: preparing request...");
+        setLlmStatus(hasConfiguredLlm() ? "LLM: preparing request..." : "Runtime: preparing local skill...");
         try {
           const result = await postJsonStream("/api/run-skill-stream", { skillId:selectedSkillId, params:payload, llmConfig }, (event, data) => {
             if (event !== "status") return;
             if (data.phase === "calling") setLlmStatus(`LLM: calling <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)})`);
             if (data.phase === "failed") setLlmStatus(`LLM: failed <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)}): ${escapeHtml(data.error || "")}`);
             if (data.phase === "success") setLlmStatus(`LLM: latest success <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong> (fallback #${escapeHtml(data.rank)})`);
+            if (data.phase === "local_runtime") setLlmStatus(`Runtime: <strong>${escapeHtml(data.provider)}</strong> / <strong>${escapeHtml(data.model)}</strong>`);
           });
           currentBundle = result;
           promptOutput.textContent = extractPrompt(result);
           jsonOutput.textContent = JSON.stringify(result, null, 2);
           renderReview(result);
-          const last = result.lastSuccessfulLlm || result.llm;
-          if (last) setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>${last.fallbackRank ? ` (fallback #${escapeHtml(last.fallbackRank)})` : ""}`);
-          if (last && result.usageRecorded === false) {
-            setLlmStatus(`LLM: latest success <strong>${escapeHtml(last.provider)}</strong> / <strong>${escapeHtml(last.model)}</strong>, but usage was not recorded. Restart the server and try again.`);
-          }
+          setExecutionStatus(result);
           markUsageDashboardStale();
           setStatus(t("completed"), "ok");
         } catch (err) {
@@ -1706,7 +2046,9 @@
         reviewOutput.innerHTML = `<article class="review-item"><h3>Final Review</h3><p>Status: ${escapeHtml(output.final_review?.status || "n/a")}</p><p>Approved: ${escapeHtml(String(output.final_review?.approved ?? "n/a"))}</p></article><article class="review-item"><h3>Quality</h3><p>Score: ${escapeHtml(String(output.prompt_quality?.score ?? "n/a"))}</p></article><article class="review-item"><h3>Safety</h3><p>Status: ${escapeHtml(output.safety_review?.status || "n/a")}</p><p>Risk: ${escapeHtml(output.safety_review?.risk_level || "n/a")}</p></article><article class="review-item"><h3>Warnings</h3><ul>${warnings.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></article>`;
       }
       async function loadSkills() {
-        const data = await fetch("/api/skills").then((r) => r.json());
+        const response = await fetch("/api/skills", { headers:{ "accept":"application/json" } });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `Unable to load skills (HTTP ${response.status})`);
         skills = data.skills || [];
         invalidSkills = data.invalidSkills || [];
         if (!skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = data.defaultSkillId || skills[0]?.id || "";
@@ -1785,27 +2127,78 @@
       configModal.addEventListener("click", (event) => { if (event.target === configModal) closeConfig(); });
       pageButtons.forEach((button) => button.addEventListener("click", () => showPage(button.dataset.page)));
       refreshUsageBtn.addEventListener("click", loadUsageDashboard);
-      document.querySelector("#saveConfigBtn").addEventListener("click", () => {
+      document.querySelector("#saveConfigBtn").addEventListener("click", async () => {
+        const button = document.querySelector("#saveConfigBtn");
         readConfigFromModal();
-        saveConfig();
-        closeConfig();
-        if (!currentBundle) promptOutput.textContent = t("promptEmpty");
-        setStatus("Config saved", "ok");
+        button.disabled = true;
+        try {
+          await saveConfig();
+          closeConfig();
+          if (!currentBundle) promptOutput.textContent = t("promptEmpty");
+          setStatus("Config saved", "ok");
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+        } finally {
+          button.disabled = false;
+        }
       });
-      document.querySelector("#clearConfigBtn").addEventListener("click", () => {
-        llmConfig = structuredClone(defaultConfig);
-        localStorage.removeItem("llmConfig");
-        renderConfig();
-        testConfigResults.innerHTML = "";
-        setStatus("Config cleared", "ok");
+      document.querySelector("#clearConfigBtn").addEventListener("click", async () => {
+        try {
+          await clearConfig();
+          renderConfig();
+          testConfigResults.innerHTML = "";
+          setStatus("Config cleared", "ok");
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+        }
+      });
+      document.querySelector("#rotateConfigKeyBtn").addEventListener("click", async () => {
+        const button = document.querySelector("#rotateConfigKeyBtn");
+        const ok = confirm("Rotate the encryption key and re-encrypt saved API keys? Keep .env and data/smart-ai-app.sqlite together; if .env is lost, saved keys cannot be decrypted.");
+        if (!ok) return;
+        button.disabled = true;
+        setStatus("Rotating key", "warn");
+        try {
+          await rotateConfigKey();
+          renderConfig();
+          setStatus("Encryption key rotated", "ok");
+          testConfigResults.innerHTML = `<div class="test-row ok"><strong>OK</strong><strong>ROTATED</strong><span>Encryption key</span><span>Saved API keys were re-encrypted.</span></div>`;
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+      document.querySelector("#testProviderKeysBtn").addEventListener("click", async () => {
+        const button = document.querySelector("#testProviderKeysBtn");
+        readConfigFromModal();
+        button.disabled = true;
+        setStatus("Testing media provider APIs", "warn");
+        testConfigResults.innerHTML = `<div class="test-row"><strong>...</strong><strong>TEST</strong><span>fal.ai, Kie.ai, WaveSpeedAI</span><span>This does not test OpenRouter/NVIDIA. Use Test LLM Fallbacks for those.</span></div>`;
+        try {
+          await saveConfig();
+          const results = await Promise.all(["fal", "kie", "wavespeed"].map((provider) => testProviderKey(provider)));
+          renderProviderTestResults(results);
+          setStatus(results.some((item) => item.ok) ? "Provider test complete" : "Error", results.some((item) => item.ok) ? "ok" : "warn");
+        } catch (err) {
+          setStatus("Error", "warn");
+          promptOutput.textContent = err.message;
+          testConfigResults.innerHTML = `<div class="test-row fail"><strong>!</strong><strong>FAIL</strong><span>Provider API test</span><span>${escapeHtml(err.message)}</span></div>`;
+        } finally {
+          button.disabled = false;
+        }
       });
       document.querySelector("#testConfigBtn").addEventListener("click", async () => {
         const button = document.querySelector("#testConfigBtn");
         readConfigFromModal();
         setStatus("Testing LLM", "warn");
         button.disabled = true;
-        testConfigResults.innerHTML = `<div class="test-row"><strong>...</strong><strong>TEST</strong><span>Checking all configured fallback rows</span><span>Please wait</span></div>`;
+        testConfigResults.innerHTML = `<div class="test-row"><strong>...</strong><strong>TEST</strong><span>Checking OpenRouter/NVIDIA fallback rows</span><span>Please wait</span></div>`;
         try {
+          await saveConfig();
           const response = await fetch("/api/test-llm", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ llmConfig }) });
           const result = await response.json().catch(() => ({}));
           if (result.results) renderLlmTestResults(result.results);
@@ -1828,11 +2221,35 @@
         }
       });
       document.querySelectorAll("[data-toggle-secret]").forEach((button) => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           const input = document.querySelector(`#${button.dataset.toggleSecret}`);
           const hidden = input.type === "password";
-          input.type = hidden ? "text" : "password";
-          button.textContent = hidden ? "Hide" : "Show";
+          const provider = button.dataset.toggleSecret.replace(/Key$/, "").toLowerCase();
+          if (!hidden) {
+            input.type = "password";
+            button.textContent = "Show";
+            if (revealedConfigKeys.has(provider)) {
+              input.value = "";
+              llmConfig.providers[provider].apiKey = "";
+              revealedConfigKeys.delete(provider);
+            }
+            return;
+          }
+          if (!input.value && llmConfig.providers[provider]?.hasApiKey) {
+            if (!confirm("Reveal this saved API key in the browser? Hide it again when finished.")) return;
+            try {
+              setStatus(`Revealing ${provider} key`, "warn");
+              input.value = await revealConfigKey(provider);
+              llmConfig.providers[provider].apiKey = input.value;
+              revealedConfigKeys.add(provider);
+              setStatus(`${provider} key revealed`, "ok");
+            } catch (error) {
+              setStatus(error.message, "warn");
+              return;
+            }
+          }
+          input.type = "text";
+          button.textContent = "Hide";
         });
       });
       fallbackRows.addEventListener("change", (event) => {
@@ -1849,6 +2266,7 @@
         showPage("dashboard");
         setStatus(t("loading"), "warn");
         await loadSkills();
+        await loadConfig();
         if (!skills.length) {
           setRunButtonsDisabled(true);
           setStatus(language === "th" ? "ไม่มีสกิลที่ใช้ได้" : "No valid skills", "warn");
