@@ -271,6 +271,326 @@ function parseSkillMarkdown(markdown) {
   };
 }
 
+function firstString(...values) {
+  return values.find((value) => typeof value === "string" && value.trim()) || "";
+}
+
+function humanizeFieldId(fieldId) {
+  return String(fieldId || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function rjsfUiForField(uiSchema, fieldId) {
+  const direct = uiSchema?.[fieldId];
+  const wrapped = uiSchema?.properties?.[fieldId];
+  return direct && typeof direct === "object"
+    ? direct
+    : wrapped && typeof wrapped === "object"
+      ? wrapped
+      : {};
+}
+
+function schemaTypeForField(fieldId, prop, uiMeta) {
+  const widget = firstString(uiMeta["ui:widget"], uiMeta.widget, uiMeta["ui:field"]);
+  if (/referenceImageArray|imageUpload|fileOrText/i.test(widget)) return "images";
+  if (/reference_?images?|start_?frame_?image|stop_?frame_?image/i.test(fieldId)) return "images";
+  if (/reference_?images?/i.test(String(prop?.title || "")) || /reference_?images?/i.test(String(prop?.description || ""))) return "images";
+  if (/checkboxes/i.test(widget)) return "multiselect";
+  if (/radio|select/i.test(widget) || Array.isArray(prop?.enum)) return "select";
+  if (prop?.type === "integer" || prop?.type === "number") return "number";
+  if (prop?.type === "boolean") return "checkbox";
+  if (prop?.type === "array") return "array";
+  if (prop?.type === "object" || prop?.$ref) return "object";
+  if (/storyboardShotArray|textarea/i.test(widget)) return "textarea";
+  return "text";
+}
+
+function resolveLocalSchema(inputSchema, prop = {}) {
+  if (!prop?.$ref || typeof prop.$ref !== "string" || !prop.$ref.startsWith("#/$defs/")) return prop || {};
+  const key = prop.$ref.slice("#/$defs/".length);
+  return inputSchema?.$defs?.[key] || prop;
+}
+
+function withAutoOption(fieldId, options, prop = {}) {
+  if (!Array.isArray(options)) return undefined;
+  if (prop.type !== "string") return options;
+  if (options.includes("auto")) return options;
+  if (/project_name|reference|negative|language/i.test(fieldId)) return options;
+  return ["auto", ...options];
+}
+
+function sampleForField(fieldId, prop = {}) {
+  if (prop.default !== undefined && prop.default !== "" && !Array.isArray(prop.default) && typeof prop.default !== "object") {
+    return String(prop.default);
+  }
+  const samples = {
+    project_name: "เช่น bridal_window_portrait_01",
+    mode: "เช่น auto ให้ระบบเลือกโหมดที่เหมาะสมจากข้อมูลที่กรอก",
+    genre: "เช่น comedy, drama, fashion_film หรือ auto",
+    aspect_ratio: "เช่น 9:16 สำหรับวิดีโอแนวตั้ง, 16:9 สำหรับภาพยนตร์",
+    video_aspect_ratio: "เช่น auto หรือ 16:9",
+    output_type: "เช่น auto หรือ single_video_prompt",
+    preset: "เช่น auto หรือ soft_korean_beauty_drama",
+    story_seed: "เช่น เจ้าสาวเจอจดหมายลับก่อนเข้าพิธี แล้วต้องตัดสินใจว่าจะเปิดอ่านหรือไม่",
+    cinematic_intent: "เช่น slow push-in จาก medium shot ไป close-up ใกล้หน้าต่าง แสงนุ่ม โทนโรแมนติก",
+    custom_style_notes: "เช่น soft window light, warm skin tone, shallow depth of field",
+    reference_images: "แนบภาพตัวละคร/สินค้า/ฉากที่ต้องการล็อกความต่อเนื่อง",
+    shot_list: "กด Add item เพื่อเพิ่มช็อต แล้วกรอกมุมกล้อง แอ็กชัน และรายละเอียดของช็อตนั้น",
+    storyboard: "กด Add item เพื่อเพิ่มช็อตวิดีโอทีละช็อต",
+    character_bible: "กด Add item เพื่อเพิ่มตัวละครหลักและรายละเอียดคงที่",
+    location_bible: "กด Add item เพื่อเพิ่มสถานที่และรายละเอียดฉาก",
+    negative_prompt: "เช่น no flicker, no warped hands, no identity drift, no watermark",
+    negative_prompt_global: "เช่น no continuity drift, no flat lighting, no duplicated faces",
+    negative_constraints: "เช่น no new accessories, no background change, no extra people"
+  };
+  return samples[fieldId] || "";
+}
+
+function thaiHelpForField(fieldId, prop = {}, type = "text") {
+  const help = {
+    project_name: "ตั้งชื่อโปรเจกต์เพื่อแยกงานและอ้างอิงผลลัพธ์ภายหลัง",
+    mode: "เลือก workflow หลักของ skill ถ้าไม่แน่ใจให้เลือก auto แล้วระบบจะเลือกโหมดที่เหมาะสม",
+    output_type: "เลือกรูปแบบผลลัพธ์ที่ต้องการ ถ้าไม่แน่ใจให้เลือก auto",
+    generator_target: "ระบุโมเดลหรือระบบปลายทางที่ต้องการนำ prompt ไปใช้",
+    reference_images: "แนบภาพอ้างอิง 1-5 ภาพเพื่อคงตัวตน เสื้อผ้า วัสดุ แสง สี และฉาก",
+    story_seed: "เขียนไอเดียเรื่องแบบสั้น ๆ ระบบจะขยายเป็น beat sheet และ storyboard",
+    cinematic_intent: "อธิบายฉาก วัตถุประสงค์ของวิดีโอ อารมณ์ มุมกล้อง หรือ movement ที่ต้องการ",
+    aspect_ratio: "เลือกสัดส่วนภาพหรือวิดีโอปลายทาง",
+    video_aspect_ratio: "เลือกสัดส่วนวิดีโอ ถ้าไม่แน่ใจให้เลือก auto",
+    shot_list: "เพิ่มรายการช็อตเมื่อต้องการควบคุมมุมกล้องและ action แบบละเอียด",
+    storyboard: "เพิ่มช็อตสำหรับวิดีโอหลายช็อต โดยแต่ละช็อตมีเวลา กล้อง action และ continuity",
+    tone: "เลือกอารมณ์ของงานได้มากกว่าหนึ่งข้อ",
+    output_scope: "เลือกส่วนของแพ็กเกจที่ต้องการให้สร้าง",
+    character_bible: "เพิ่มข้อมูลตัวละครที่ต้องคงที่ เช่น ชื่อ บทบาท หน้าตา เสื้อผ้า และบุคลิก",
+    location_bible: "เพิ่มข้อมูลสถานที่ ฉาก แสง และพร็อพที่ต้องคงต่อเนื่อง",
+    negative_prompt: "ระบุสิ่งที่ไม่ต้องการให้เกิดในวิดีโอหรือภาพ",
+    negative_prompt_global: "ระบุข้อห้ามรวมทั้งเรื่อง เช่น ห้ามตัวละครเปลี่ยน ห้ามแสงเพี้ยน",
+    negative_constraints: "เพิ่มข้อห้ามเป็นรายการ เช่น ห้ามเพิ่มคน ห้ามเปลี่ยนฉาก"
+  };
+  if (help[fieldId]) return help[fieldId];
+  if (type === "select") return "เลือกค่าที่ตรงกับงาน ถ้าเห็นตัวเลือก auto สามารถให้ระบบเลือกให้ได้";
+  if (type === "multiselect") return "เลือกได้หลายข้อ ใช้เพื่อกำหนดคุณสมบัติหรือขอบเขตงาน";
+  if (type === "object") return "กรอกช่องย่อยตามรายละเอียดที่ต้องการควบคุม";
+  if (type === "array") return "กด Add item เพื่อเพิ่มรายการ แล้วกรอกข้อมูลย่อยของแต่ละรายการ";
+  if (type === "images") return "อัปโหลดภาพอ้างอิงหรือภาพเริ่มต้นที่ต้องการให้ระบบยึดเป็นหลัก";
+  if (prop.description) return prop.description;
+  return "กรอกข้อมูลสำหรับใช้สร้าง prompt ให้ละเอียดพอที่ระบบจะนำไปใช้งานได้";
+}
+
+function thaiLabelForField(fieldId) {
+  const labels = {
+    reference_images: "ภาพอ้างอิง",
+    custom_style_notes: "รายละเอียดสไตล์เพิ่มเติม",
+    story_seed: "ไอเดียเรื่องเพิ่มเติม",
+    cinematic_intent: "รายละเอียดวิดีโอเพิ่มเติม"
+  };
+  return labels[fieldId] || "";
+}
+
+function fieldFromInputSchema(fieldId, prop = {}, uiMeta = {}, required = [], inputSchema = null, depth = 0) {
+  prop = resolveLocalSchema(inputSchema, prop);
+  const type = schemaTypeForField(fieldId, prop, uiMeta);
+  const itemSchemaForOptions = prop.type === "array" ? resolveLocalSchema(inputSchema, prop.items || {}) : {};
+  const rawOptions = Array.isArray(prop.enum)
+    ? prop.enum
+    : Array.isArray(itemSchemaForOptions.enum)
+      ? itemSchemaForOptions.enum
+      : undefined;
+  const options = withAutoOption(fieldId, rawOptions, prop);
+  const rows = uiMeta?.["ui:options"]?.rows || uiMeta.rows || (type === "textarea" ? 3 : undefined);
+  const defaultValue = (fieldId === "mode" || fieldId === "output_type") && options?.includes("auto")
+    ? "auto"
+    : prop.default !== undefined
+      ? prop.default
+      : quickStartSkillSections ? schemaDefaultForField(fieldId, prop, inputSchema) : undefined;
+  const field = {
+    id: fieldId,
+    label: firstString(uiMeta["ui:title"], uiMeta.title, prop.title, humanizeFieldId(fieldId)),
+    labelTh: thaiLabelForField(fieldId),
+    description: firstString(uiMeta["ui:help"], uiMeta.helpText, prop.description),
+    helpTextTh: thaiHelpForField(fieldId, prop, type),
+    type,
+    options,
+    default: defaultValue,
+    placeholder: firstString(uiMeta["ui:placeholder"], uiMeta.placeholder),
+    required: required.includes(fieldId),
+    example: firstString(uiMeta.example, uiMeta["ui:example"], prop.examples?.[0], sampleForField(fieldId, prop)),
+    min: prop.minimum,
+    max: prop.maximum,
+    minItems: prop.minItems,
+    maxItems: prop.maxItems,
+    rows,
+    maxImages: prop.maxItems
+  };
+  if (type === "object" && prop.properties && depth < 3) {
+    const childRequired = Array.isArray(prop.required) ? prop.required : [];
+    field.fields = Object.keys(prop.properties).map((childId) =>
+      fieldFromInputSchema(childId, prop.properties[childId], {}, childRequired, inputSchema, depth + 1)
+    );
+  }
+  if (type === "array") {
+    const itemSchema = resolveLocalSchema(inputSchema, prop.items || {});
+    if (itemSchema.enum) {
+      field.type = "multiselect";
+      field.options = withAutoOption(fieldId, itemSchema.enum, itemSchema);
+    } else if ((itemSchema.type === "object" || itemSchema.properties) && depth < 3) {
+      const childRequired = Array.isArray(itemSchema.required) ? itemSchema.required : [];
+      field.itemFields = Object.keys(itemSchema.properties || {}).map((childId) =>
+        fieldFromInputSchema(childId, itemSchema.properties[childId], {}, childRequired, inputSchema, depth + 1)
+      );
+      field.itemLabel = humanizeFieldId(fieldId).replace(/s$/, "");
+    } else {
+      field.type = "list";
+      field.itemType = itemSchema.type || "string";
+    }
+  }
+  return field;
+}
+
+const quickStartSkillSections = {
+  auto_cinematic_image: [
+    { id: "basic", title: "Basic Settings", titleTh: "ตั้งค่าพื้นฐาน", fields: ["reference_images", "mode", "aspect_ratio", "style_preset", "custom_style_notes"] },
+    { id: "output", title: "Output Tuning", titleTh: "ปรับแต่งผลลัพธ์", fields: ["output_count", "language", "negative_constraints"] },
+    { id: "advanced", title: "Advanced Options", titleTh: "ตัวเลือกขั้นสูง", collapsed: true, fields: ["prompt_detail_level", "subject_preservation", "continuity_locks"] }
+  ],
+  auto_cinematic_storyboard_master: [
+    { id: "basic", title: "Basic Settings", titleTh: "ตั้งค่าพื้นฐาน", fields: ["reference_images", "story_seed", "mode", "genre", "tone"] },
+    { id: "storyboard", title: "Storyboard Tuning", titleTh: "ปรับแต่งสตอรี่บอร์ด", fields: ["target_duration_minutes", "average_shot_seconds", "use_auto_shot_count", "aspect_ratio", "video_aspect_ratio", "visual_style_preset", "camera_style"] },
+    { id: "output", title: "Output Package", titleTh: "แพ็กเกจผลลัพธ์", fields: ["output_scope", "language", "negative_prompt_global"] },
+    { id: "advanced", title: "Advanced Options", titleTh: "ตัวเลือกขั้นสูง", collapsed: true, fields: ["target_duration_total_seconds", "shot_count_target", "shot_duration_policy", "character_bible", "location_bible", "cinematic_rules", "continuity_locks"] }
+  ],
+  auto_cinematic_video_promptll: [
+    { id: "basic", title: "Basic Settings", titleTh: "ตั้งค่าพื้นฐาน", fields: ["reference_images", "cinematic_intent", "mode", "output_type", "aspect_ratio", "preset"] },
+    { id: "motion", title: "Motion And Camera", titleTh: "กล้องและการเคลื่อนไหว", fields: ["duration", "camera_plan", "subject_action", "lighting_and_grade"] },
+    { id: "output", title: "Output Tuning", titleTh: "ปรับแต่งผลลัพธ์", fields: ["negative_prompt", "language", "prompt_style"] },
+    { id: "advanced", title: "Advanced Options", titleTh: "ตัวเลือกขั้นสูง", collapsed: true, fields: ["start_frame", "stop_frame", "storyboard", "storyboard_preset", "motion_quality", "continuity_locks", "start_stop_difference_policy"] }
+  ]
+};
+
+function visibleFieldIdsForSkill(skillId, inputFieldIds) {
+  const sections = quickStartSkillSections[skillId];
+  if (!sections) return inputFieldIds;
+  return sections.flatMap((section) => section.fields).filter((id) => inputFieldIds.includes(id));
+}
+
+function normalizeUiSchemaForApp(inputSchema, uiSchema = {}, skillId = "") {
+  if (Array.isArray(uiSchema.sections) && uiSchema.sections.length) return uiSchema;
+
+  const properties = inputSchema?.properties || {};
+  const required = Array.isArray(inputSchema?.required) ? inputSchema.required : [];
+  const effectiveRequired = quickStartSkillSections[skillId] ? ["reference_images"] : required;
+  const inputFieldIds = Object.keys(properties);
+  const visibleFieldIds = visibleFieldIdsForSkill(skillId, inputFieldIds);
+  const order = Array.isArray(uiSchema["ui:order"])
+    ? uiSchema["ui:order"]
+    : Array.isArray(uiSchema?.properties?.["ui:order"]?.default)
+      ? uiSchema.properties["ui:order"].default
+      : visibleFieldIds;
+  const orderedIds = [
+    ...order.filter((id) => visibleFieldIds.includes(id)),
+    ...visibleFieldIds.filter((id) => !order.includes(id))
+  ];
+  const makeField = (id) => fieldFromInputSchema(id, properties[id], rjsfUiForField(uiSchema, id), effectiveRequired, inputSchema);
+  const groups = uiSchema["ui:groups"] || uiSchema?.properties?.["ui:groups"] || {};
+  const quickSections = quickStartSkillSections[skillId];
+  if (quickSections) {
+    return {
+      ...uiSchema,
+      title: firstString(uiSchema.title, uiSchema["ui:title"], inputSchema?.title),
+      description: firstString(uiSchema.description, uiSchema["ui:description"], inputSchema?.description),
+      sections: quickSections.map((section) => ({
+        ...section,
+        fields: section.fields.filter((id) => inputFieldIds.includes(id)).map(makeField)
+      })).filter((section) => section.fields.length)
+    };
+  }
+
+  const groupEntries = quickStartSkillSections[skillId]
+    ? []
+    : Object.entries(groups).filter(([, ids]) => Array.isArray(ids));
+
+  const sections = [];
+  const groupedIds = new Set();
+  for (const [title, ids] of groupEntries) {
+    const fields = ids.filter((id) => inputFieldIds.includes(id)).map((id) => {
+      groupedIds.add(id);
+      return makeField(id);
+    });
+    if (fields.length) {
+      sections.push({
+        id: title.toLowerCase().replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "group",
+        title,
+        fields
+      });
+    }
+  }
+
+  const remaining = orderedIds.filter((id) => !groupedIds.has(id)).map(makeField);
+  if (remaining.length || !sections.length) {
+    sections.unshift({
+      id: "inputs",
+      title: "Inputs",
+      titleTh: "ข้อมูลนำเข้า",
+      fields: remaining.length ? remaining : orderedIds.map(makeField)
+    });
+  }
+
+  return {
+    ...uiSchema,
+    title: firstString(uiSchema.title, uiSchema["ui:title"], inputSchema?.title),
+    description: firstString(uiSchema.description, uiSchema["ui:description"], inputSchema?.description),
+    sections
+  };
+}
+
+function cloneDefault(value) {
+  if (value === undefined) return undefined;
+  return value && typeof value === "object" ? JSON.parse(JSON.stringify(value)) : value;
+}
+
+function schemaDefaultForField(fieldId, prop = {}, inputSchema = null, skillId = "") {
+  prop = resolveLocalSchema(inputSchema, prop);
+  const fallback = {
+    project_name: "Auto_Cinematic_Project",
+    mode: "auto",
+    aspect_ratio: "9:16",
+    video_aspect_ratio: "auto",
+    output_type: "auto",
+    story_seed: "Create a cinematic storyboard from the uploaded reference image. Preserve identity, wardrobe, mood, lighting, and environment.",
+    cinematic_intent: "Create a cinematic reference-locked video prompt from the uploaded image with natural motion, camera movement, and strict continuity.",
+    genre: "auto",
+    target_duration_total_seconds: 60,
+    target_duration_minutes: 1,
+    average_shot_seconds: 8,
+    use_auto_shot_count: true
+  };
+  if (fallback[fieldId] !== undefined) return cloneDefault(fallback[fieldId]);
+  if (prop.default !== undefined) return cloneDefault(prop.default);
+  if (prop.type === "boolean") return false;
+  if (prop.type === "array") return [];
+  if (prop.type === "object" || prop.properties) {
+    return Object.fromEntries(Object.entries(prop.properties || {}).map(([childId, child]) => [
+      childId,
+      schemaDefaultForField(childId, child, inputSchema, skillId)
+    ]));
+  }
+  if (Array.isArray(prop.enum)) return prop.enum[0] || "";
+  if (prop.type === "integer" || prop.type === "number") return prop.minimum ?? 0;
+  return "";
+}
+
+function applyInputDefaults(params, inputSchema, skillId = "") {
+  if (!quickStartSkillSections[skillId]) return params;
+  const next = { ...(params || {}) };
+  for (const [fieldId, prop] of Object.entries(inputSchema?.properties || {})) {
+    if (next[fieldId] === undefined || next[fieldId] === null || next[fieldId] === "") {
+      next[fieldId] = schemaDefaultForField(fieldId, prop, inputSchema, skillId);
+    }
+  }
+  return next;
+}
+
 async function inspectSkill(skillId) {
   const paths = skillPaths(skillId);
   const issues = [];
@@ -332,15 +652,16 @@ async function inspectSkill(skillId) {
   }
 
   const meta = parseSkillMarkdown(markdown);
-  const title = uiSchema.title || meta.name || paths.id;
-  const description = uiSchema.description || meta.description || "";
+  const skillJson = skillJsonResult.value || {};
+  const title = firstString(skillJson.display_name, uiSchema.title, uiSchema["ui:title"], meta.name, paths.id);
+  const description = firstString(skillJson.description, uiSchema.description, uiSchema["ui:description"], meta.description);
   const errorCount = issues.filter((issue) => issue.level === "error").length;
   return {
     id: paths.id,
     title,
-    titleTh: uiSchema.titleTh || uiSchema.title || meta.name || paths.id,
+    titleTh: firstString(uiSchema.titleTh, skillJson.display_name, uiSchema.title, uiSchema["ui:title"], meta.name, paths.id),
     description,
-    descriptionTh: uiSchema.descriptionTh || uiSchema.description || meta.description || "",
+    descriptionTh: firstString(uiSchema.descriptionTh, skillJson.description, uiSchema.description, uiSchema["ui:description"], meta.description),
     hasRuntime,
     markdown: cleanMarkdown(markdown),
     inputSchema,
@@ -1211,7 +1532,8 @@ async function handleRunSkill(req, res) {
 
 async function executeRunSkill(body, onStatus = null) {
   const skillId = safeSkillId(body.skillId || body.skill_id);
-  const params = body.params && typeof body.params === "object" ? body.params : body;
+  const requestedLlm = body.useLlm === true;
+  let params = body.params && typeof body.params === "object" ? body.params : body;
   delete params.skillId;
   delete params.skill_id;
   delete params.llmConfig;
@@ -1222,6 +1544,7 @@ async function executeRunSkill(body, onStatus = null) {
     error.status = 404;
     throw error;
   }
+  params = applyInputDefaults(params, info.inputSchema, skillId);
   const required = info.inputSchema.required || [];
   const missing = required.filter((field) => params[field] === undefined || params[field] === null || params[field] === "");
   if (missing.length) {
@@ -1237,7 +1560,8 @@ async function executeRunSkill(body, onStatus = null) {
     throw error;
   }
   const enrichedParams = enrichKpopChoreographyParams(info, enrichReferenceLockedCharacterParams(info, params));
-  if (hasConfiguredLlm) {
+  const preferLocalRuntime = info.hasRuntime && quickStartSkillSections[skillId] && !requestedLlm;
+  if (hasConfiguredLlm && !preferLocalRuntime) {
     return await runLlmSkill(info, enrichedParams, llmConfig, onStatus);
   }
   const execution = { type:"local_runtime", provider:"local-python", model:"python/skill.py" };
@@ -1316,7 +1640,11 @@ async function handleUiSchema(req, res) {
     });
     return;
   }
-  const { inputSchema, uiSchema } = info;
+  const { inputSchema } = info;
+  const uiSchema = normalizeUiSchemaForApp(inputSchema, info.uiSchema, info.id);
+  const displayInputSchema = quickStartSkillSections[info.id]
+    ? { ...inputSchema, required: ["reference_images"] }
+    : inputSchema;
   const inputFields = Object.keys(inputSchema.properties || {});
   const uiFields = new Set((uiSchema.sections || []).flatMap((section) => (section.fields || []).map((field) => field.id)));
   const mappedFields = new Set(Object.keys(uiSchema.outputMapping || {}));
@@ -1333,7 +1661,7 @@ async function handleUiSchema(req, res) {
       hasRuntime: info.hasRuntime,
       issues: info.issues
     },
-    inputSchema,
+    inputSchema: displayInputSchema,
     uiSchema,
     coverage: {
       inputFieldCount: inputFields.length,

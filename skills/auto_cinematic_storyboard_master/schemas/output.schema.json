@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/auto-cinematic-storyboard-master-skill/output.schema.json",
+  "title": "Auto Cinematic Storyboard Master Skill Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "mode",
+    "logline",
+    "expanded_story",
+    "beat_sheet",
+    "continuity_bible",
+    "storyboard"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "logline": {
+      "type": "string"
+    },
+    "expanded_story": {
+      "type": "string"
+    },
+    "beat_sheet": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beat_id",
+          "title",
+          "summary"
+        ],
+        "properties": {
+          "beat_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "emotion_shift": {
+            "type": "string"
+          },
+          "story_function": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "continuity_bible": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "characters": {
+          "type": "string"
+        },
+        "wardrobe": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "lighting": {
+          "type": "string"
+        },
+        "props": {
+          "type": "string"
+        },
+        "color_grade": {
+          "type": "string"
+        },
+        "camera_language": {
+          "type": "string"
+        },
+        "must_keep_consistent": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storyboard": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "shot_id",
+          "title",
+          "beat_id",
+          "duration_seconds",
+          "story_purpose",
+          "camera_design",
+          "subject_action",
+          "start_frame_prompt",
+          "stop_frame_prompt",
+          "image_prompt",
+          "video_prompt"
+        ],
+        "properties": {
+          "shot_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "beat_id": {
+            "type": "string"
+          },
+          "sequence_group": {
+            "type": "string"
+          },
+          "duration_seconds": {
+            "type": "number"
+          },
+          "story_purpose": {
+            "type": "string"
+          },
+          "emotional_tone": {
+            "type": "string"
+          },
+          "shot_type": {
+            "type": "string"
+          },
+          "camera_design": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "framing": {
+                "type": "string"
+              },
+              "angle": {
+                "type": "string"
+              },
+              "lens_language": {
+                "type": "string"
+              },
+              "movement": {
+                "type": "string"
+              },
+              "visual_hook": {
+                "type": "string"
+              }
+            }
+          },
+          "subject_action": {
+            "type": "string"
+          },
+          "start_frame_description": {
+            "type": "string"
+          },
+          "stop_frame_description": {
+            "type": "string"
+          },
+          "image_prompt": {
+            "type": "string"
+          },
+          "start_frame_prompt": {
+            "type": "string"
+          },
+          "stop_frame_prompt": {
+            "type": "string"
+          },
+          "video_prompt": {
+            "type": "string"
+          },
+          "continuity_notes": {
+            "type": "string"
+          },
+          "transition_to_next_shot": {
+            "type": "string"
+          },
+          "negative_prompt": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "timing_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "shot_id": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string"
+          },
+          "end_time": {
+            "type": "string"
+          },
+          "duration_seconds": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "master_image_prompt_rules": {
+      "type": "string"
+    },
+    "master_video_prompt_rules": {
+      "type": "string"
+    },
+    "production_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

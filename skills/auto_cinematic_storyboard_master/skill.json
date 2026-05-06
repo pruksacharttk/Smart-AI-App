@@ -1,0 +1,56 @@
+{
+  "name": "auto_cinematic_storyboard_master_skill",
+  "version": "1.0.0",
+  "display_name": "Auto Cinematic Storyboard Master Skill",
+  "description": "One unified skill that generates cinematic stories, storyboard structures, image prompts, start-frame prompts, stop-frame prompts, and Seedance 2-ready video prompts from a short user synopsis and style direction.",
+  "primary_goal": "Turn a simple story idea into a complete cinematic production prompt package.",
+  "supported_outputs": [
+    "story synopsis expansion",
+    "beat sheet",
+    "full storyboard",
+    "shot-by-shot image prompts",
+    "shot-by-shot video prompts",
+    "start-frame prompt for each shot",
+    "stop-frame prompt for each shot",
+    "continuity bible",
+    "multi-shot production package"
+  ],
+  "supported_modes": [
+    "storyboard_from_synopsis",
+    "storyboard_from_reference_images",
+    "image_prompt_pack_only",
+    "video_prompt_pack_only",
+    "full_story_package",
+    "episode_teaser_package",
+    "scene_rebuild_from_references"
+  ],
+  "schemas": {
+    "input": "schemas/input.schema.json",
+    "ui": "schemas/ui.schema.json",
+    "output": "schemas/output.schema.json"
+  },
+  "required_directories": [
+    "schemas",
+    "templates",
+    "presets",
+    "examples"
+  ],
+  "recommended_engines": {
+    "image_generation": [
+      "GPT Image 2"
+    ],
+    "video_generation": [
+      "Seedance 2"
+    ]
+  },
+  "core_principles": [
+    "Everything must remain cinematic.",
+    "Do not produce flat walk-and-follow coverage unless explicitly requested.",
+    "Vary shot scale, camera angle, framing, emotional distance, and pose design.",
+    "Use close-up detail shots strategically for rhythm and visual interest.",
+    "Preserve continuity across shots unless the script explicitly changes scene, time, wardrobe, or environment.",
+    "For each shot, produce both image prompt and video prompt.",
+    "For each shot, produce start-frame prompt and stop-frame prompt.",
+    "Each shot's stop frame should be usable as the next shot's start frame."
+  ]
+}

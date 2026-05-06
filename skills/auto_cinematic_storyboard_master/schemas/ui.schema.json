@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/auto-cinematic-storyboard-master-skill/ui.schema.json",
+  "title": "Auto Cinematic Storyboard Master Skill UI",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ui:order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "mode",
+        "story_seed",
+        "genre",
+        "tone",
+        "story_structure",
+        "reference_images",
+        "character_bible",
+        "location_bible",
+        "output_scope",
+        "target_duration_minutes",
+        "average_shot_seconds",
+        "use_auto_shot_count",
+        "target_duration_total_seconds",
+        "shot_count_target",
+        "shot_duration_policy",
+        "user_defined_shot_durations",
+        "aspect_ratio",
+        "video_aspect_ratio",
+        "visual_style_preset",
+        "camera_style",
+        "cinematic_rules",
+        "continuity_locks",
+        "image_engine_target",
+        "video_engine_target",
+        "image_prompt_style",
+        "video_prompt_style",
+        "negative_prompt_global",
+        "language"
+      ]
+    },
+    "story_seed": {
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      },
+      "ui:placeholder": "Example: A tidy young woman tries to secretly steal snacks at night, but every attempt is ruined by an overly smart cat. Make it cinematic and funny."
+    },
+    "tone": {
+      "ui:widget": "checkboxes"
+    },
+    "reference_images": {
+      "ui:field": "referenceImageArray",
+      "ui:help": "Attach 1–5 images if you want the storyboards and prompts to preserve a specific character, wardrobe, location, or lighting."
+    },
+    "character_bible": {
+      "ui:field": "characterArray",
+      "ui:collapsible": true
+    },
+    "location_bible": {
+      "ui:field": "locationArray",
+      "ui:collapsible": true
+    },
+    "output_scope": {
+      "ui:widget": "checkboxes"
+    },
+    "cinematic_rules": {
+      "ui:collapsible": true,
+      "ui:title": "Cinematic Rules"
+    },
+    "continuity_locks": {
+      "ui:collapsible": true,
+      "ui:title": "Continuity Locks"
+    },
+    "negative_prompt_global": {
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
+    },
+    "ui:groups": {
+      "Story Setup": [
+        "mode",
+        "story_seed",
+        "genre",
+        "tone",
+        "story_structure"
+      ],
+      "Reference Control": [
+        "reference_images",
+        "character_bible",
+        "location_bible"
+      ],
+      "Output Scope": [
+        "output_scope",
+        "target_duration_minutes",
+        "average_shot_seconds",
+        "use_auto_shot_count",
+        "target_duration_total_seconds",
+        "shot_count_target",
+        "shot_duration_policy",
+        "user_defined_shot_durations"
+      ],
+      "Look and Feel": [
+        "aspect_ratio",
+        "video_aspect_ratio",
+        "visual_style_preset",
+        "camera_style",
+        "cinematic_rules",
+        "continuity_locks"
+      ],
+      "Engine Formatting": [
+        "image_engine_target",
+        "video_engine_target",
+        "image_prompt_style",
+        "video_prompt_style",
+        "negative_prompt_global",
+        "language"
+      ]
+    },
+    "ui:submitButtonOptions": {
+      "submitText": "Generate Cinematic Storyboard Package",
+      "norender": false
+    }
+  }
+}

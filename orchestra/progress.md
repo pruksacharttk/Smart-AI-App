@@ -1,22 +1,22 @@
 # Orchestra Progress
 
-[COMPLETE] specs-002-deep-plan - Created the full deep-plan artifact set for the Vite + React + TypeScript migration spec.
-
-## Current Planning Verification
-
-- Used official Vite, React TypeScript, and Playwright documentation for current stack guidance.
-- Added missing deep-plan files: research, interview notes, refined spec, implementation plan, TDD plan, and reviews.
-- Refreshed section guidance for Node/Vite compatibility, config isolation, legacy migration idempotence, static serving safety, and browser smoke coverage.
-
-[COMPLETE] wave-1-header-fix - Dashboard remains the first page, the global header stays "Smart AI App", and the skill-specific header now lives inside the Run Skill page.
-
-## Verification
-
-- `npm test` passed 8 tests.
-- Inline script syntax check passed.
-- Server smoke test returned `home=200 usage=200` and confirmed the static top header contains `Smart AI App`.
-
-## Advisory Git State
-
-- Worktree had no uncommitted files before this task.
-- Branch `main` was ahead of `origin/main` by commit `ca61709`.
+- Session started: 2026-05-05
+- Platform: standard
+- Dirty state at start: three untracked auto cinematic skill directories.
+- Wave 1 complete: The three auto cinematic skill packages have required schema/docs files and valid input/output JSON shapes.
+- Wave 2 complete: Root cause found in UI contract mismatch. The new skills use RJSF/JSON-Schema UI metadata, while the app expected `uiSchema.sections[].fields[]`.
+- Wave 3 complete: `server.js` now normalizes RJSF/JSON-Schema UI metadata into app sections and uses `skill.json.display_name` for skill titles.
+- Wave 4 complete: API, typecheck, unit tests, production build, and Playwright smoke check passed.
+- Follow-up completion: Added local Python runtimes for all three auto cinematic skills, added SKILL.md frontmatter metadata, and improved JSON textarea handling in the React form.
+- Follow-up completion: Replaced JSON textarea UX with schema-driven object fieldsets, repeatable array item editors, checkbox groups for multi-choice fields, and list controls. Added auto choices/defaults and Thai help/example metadata for the three auto cinematic skills.
+- Follow-up completion: Converted the three auto cinematic skills to quick-start UI. Each now shows only the reference image field plus one optional guidance field, while backend defaults fill hidden fields before validation and execution.
+- Follow-up correction: Rebalanced the three auto cinematic UIs to show editable basic controls with ready-to-run defaults, plus collapsed advanced sections at the bottom.
+- Bug fix: Resolved React file input async event bug that caused `Cannot set properties of null (setting 'value')` after attaching an image.
+- Bug fix: Auto cinematic skills now prefer their local Python runtimes even when LLM fallback config exists, preventing configured LLM failures from breaking local skill execution.
+- Prompt fix: Auto Cinematic Image output now emits mode-specific final generation prompts instead of metadata/report-style prompt packages, including a concrete 3x3 angle grid prompt for `angle_grid_3x3`.
+- Prompt fix: Converted the primary `output.prompt` for all three auto cinematic local runtimes to normal prose prompts that reference uploaded images as `@image1`, `@image2`, etc. Removed report-style headings from the Prompt tab output while keeping structured details available in JSON output.
+- Verification: Direct runtime prose checks passed for all three auto cinematic skills. `npm run typecheck`, `npm test`, and `npm run build` passed.
+- Verification: `/api/run-skill` smoke test for `auto_cinematic_image` passed through `local-python`; prompt output contains `@image1` and no report-style headings.
+- Storyboard Master correction: Changed the primary Prompt tab output to copy-friendly per-shot blocks, with `SHOT NN`, `Prompt สร้างภาพ:`, and `Prompt สร้างวีดีโอ:` for each shot. Runtime and `/api/run-skill` checks confirmed matching image/video block counts and `@image1` references.
+- Storyboard Master correction: Rebuilt the local runtime as a duration-based storyboard planner. It now splits the short story idea into source story events, calculates shot count from `target_duration_minutes` and `average_shot_seconds`, and generates one copy-ready image prompt plus one copy-ready video prompt per shot instead of repeating the whole synopsis in every shot. Added visible basic inputs for target minutes, average shot seconds, and auto shot count.
+- Verification: `/api/run-skill` with only a reference image now succeeds for Storyboard Master with default 1 minute / 8 seconds per shot, producing 8 image prompt blocks and 8 video prompt blocks. `npm run typecheck`, `npm test`, and `npm run build` passed.

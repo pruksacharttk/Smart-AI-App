@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "RJSF-compatible UI schema metadata. This file is intentionally a UI configuration object, not the primary validation schema.",
+  "ui:title": "Auto Cinematic Image Generator",
+  "ui:description": "แนบภาพอ้างอิง 1–5 รูป เลือกรูปแบบ และสร้าง prompt สำหรับภาพเดี่ยว, ชุดภาพ, contact sheet, angle grid, macro detail หรือ start/stop frame สำหรับวิดีโอ",
+  "ui:order": [
+    "project_name",
+    "mode",
+    "generator_target",
+    "reference_images",
+    "aspect_ratio",
+    "output_count",
+    "style_preset",
+    "custom_style_notes",
+    "subject_preservation",
+    "continuity_locks",
+    "camera_defaults",
+    "layout",
+    "shot_list",
+    "video_frame_pair",
+    "negative_constraints",
+    "prompt_detail_level",
+    "include_keyframe_breakdown",
+    "include_negative_prompt",
+    "seed_strategy",
+    "language"
+  ],
+  "project_name": {
+    "ui:title": "Project name",
+    "ui:placeholder": "Auto_Cinematic_Image_Generator"
+  },
+  "mode": {
+    "ui:title": "รูปแบบที่ต้องการ",
+    "ui:widget": "select",
+    "ui:help": "เลือก workflow หลัก: ภาพเดี่ยว, หลาย prompt, contact sheet, grid, macro detail, หรือ start/stop frame"
+  },
+  "generator_target": {
+    "ui:title": "Target generator",
+    "ui:placeholder": "GPT Image 2"
+  },
+  "reference_images": {
+    "ui:title": "ภาพอ้างอิง 1–5 รูป",
+    "ui:options": {
+      "orderable": true,
+      "addable": true,
+      "removable": true
+    },
+    "items": {
+      "id": {
+        "ui:title": "Image ID / File handle",
+        "ui:widget": "fileOrText",
+        "ui:placeholder": "แนบไฟล์หรือใส่ image id"
+      },
+      "uri": {
+        "ui:title": "URI / path (optional)",
+        "ui:placeholder": "optional"
+      },
+      "role": {
+        "ui:title": "บทบาทของภาพ",
+        "ui:widget": "select",
+        "ui:help": "รูปแรกควรเป็น primary_identity"
+      },
+      "description": {
+        "ui:title": "สิ่งที่ต้อง preserve จากภาพนี้",
+        "ui:widget": "textarea",
+        "ui:placeholder": "เช่น face identity, gold satin top, orange background, hard flash look"
+      },
+      "fidelity_weight": {
+        "ui:title": "Reference weight",
+        "ui:widget": "range"
+      },
+      "preserve_from_this_reference": {
+        "ui:title": "Preserve fields",
+        "ui:widget": "checkboxes"
+      }
+    }
+  },
+  "aspect_ratio": {
+    "ui:title": "Aspect ratio",
+    "ui:widget": "radio",
+    "ui:options": {
+      "inline": true
+    },
+    "ui:help": "แนะนำ: 9:16 สำหรับ vertical portrait/video, 16:9 สำหรับ cinematic/storyboard, 1:1 สำหรับ square/contact sheet, 2:3 สำหรับ fashion still"
+  },
+  "output_count": {
+    "ui:title": "จำนวนภาพ / prompt แยก",
+    "ui:widget": "updown"
+  },
+  "style_preset": {
+    "ui:title": "Cinematic style preset",
+    "ui:widget": "select"
+  },
+  "custom_style_notes": {
+    "ui:title": "Custom style notes",
+    "ui:widget": "textarea",
+    "ui:placeholder": "เช่น Fuji Velvia film, hard flash, oversaturated, visible grain, shiny skin highlights"
+  },
+  "subject_preservation": {
+    "ui:title": "สิ่งที่ต้องคงไว้ 100%",
+    "ui:order": [
+      "identity",
+      "face",
+      "body_proportions",
+      "hair",
+      "makeup",
+      "wardrobe",
+      "fabric_materials",
+      "colors",
+      "accessories",
+      "environment",
+      "lighting",
+      "color_grade"
+    ]
+  },
+  "continuity_locks": {
+    "ui:title": "Continuity locks",
+    "ui:help": "แนะนำให้เปิดทั้งหมดเมื่อต้องการ character และ fashion fidelity"
+  },
+  "camera_defaults": {
+    "ui:title": "Camera defaults"
+  },
+  "layout": {
+    "ui:title": "Layout สำหรับ contact sheet / grid",
+    "rows": {
+      "ui:title": "Rows"
+    },
+    "columns": {
+      "ui:title": "Columns"
+    },
+    "panel_labels": {
+      "ui:title": "ใส่ label ในแต่ละ panel"
+    },
+    "panel_captions": {
+      "ui:title": "ใส่ keyframe caption ใน panel"
+    }
+  },
+  "shot_list": {
+    "ui:title": "Custom shot list",
+    "ui:options": {
+      "orderable": true,
+      "addable": true,
+      "removable": true
+    },
+    "items": {
+      "shot_id": {
+        "ui:title": "Shot ID",
+        "ui:placeholder": "Frame 1 / Shot A / Start"
+      },
+      "label": {
+        "ui:title": "Label"
+      },
+      "shot_type": {
+        "ui:title": "Shot type",
+        "ui:widget": "select"
+      },
+      "camera_position": {
+        "ui:title": "Camera position",
+        "ui:widget": "textarea",
+        "ui:placeholder": "เช่น very close, slightly above eye level, offset angle"
+      },
+      "framing": {
+        "ui:title": "Framing / crop",
+        "ui:placeholder": "close-up, chest-up, full body, detail insert"
+      },
+      "subject_action": {
+        "ui:title": "Subject resting action",
+        "ui:widget": "textarea",
+        "ui:placeholder": "Describe final resting pose only, not motion"
+      },
+      "focus_target": {
+        "ui:title": "Focus target",
+        "ui:widget": "select"
+      },
+      "lens_feel": {
+        "ui:title": "Lens feel",
+        "ui:widget": "select"
+      },
+      "depth_of_field": {
+        "ui:title": "Depth of field",
+        "ui:widget": "select"
+      },
+      "notes": {
+        "ui:title": "Notes",
+        "ui:widget": "textarea"
+      }
+    }
+  },
+  "video_frame_pair": {
+    "ui:title": "Start / Stop frames สำหรับวิดีโอ",
+    "enabled": {
+      "ui:title": "Enable start/stop frame pair"
+    },
+    "continuity_instruction": {
+      "ui:title": "Video continuity instruction",
+      "ui:widget": "textarea"
+    },
+    "frame_difference_policy": {
+      "ui:title": "นโยบายบังคับให้ Start/Stop ต่างกัน",
+      "must_be_visually_distinct": {
+        "ui:title": "Start และ Stop ต้องไม่เป็นภาพซ้ำ/ใกล้เคียงกัน"
+      },
+      "minimum_difference_axes": {
+        "ui:title": "จำนวนแกนที่ต้องต่างกันอย่างน้อย"
+      },
+      "preferred_pair_type": {
+        "ui:title": "รูปแบบความต่างหลัก",
+        "ui:widget": "select"
+      },
+      "allowed_difference_axes": {
+        "ui:title": "เลือกสิ่งที่อนุญาตให้ต่างกัน",
+        "ui:widget": "checkboxes"
+      },
+      "locked_similarity_axes": {
+        "ui:title": "สิ่งที่ต้องคงเดิมเสมอ",
+        "ui:widget": "checkboxes"
+      },
+      "anti_duplicate_instruction": {
+        "ui:title": "คำสั่งกันภาพซ้ำ",
+        "ui:widget": "textarea"
+      },
+      "recommended_pair_recipes": {
+        "ui:title": "สูตรคู่ภาพแนะนำ",
+        "ui:options": {
+          "orderable": true,
+          "addable": true,
+          "removable": true
+        }
+      }
+    }
+  },
+  "negative_constraints": {
+    "ui:title": "Negative constraints",
+    "ui:options": {
+      "orderable": true,
+      "addable": true,
+      "removable": true
+    },
+    "items": {
+      "ui:placeholder": "เช่น no glasses, no jewelry, no extra people, no new props"
+    }
+  },
+  "prompt_detail_level": {
+    "ui:title": "ระดับความละเอียดของ prompt",
+    "ui:widget": "radio",
+    "ui:options": {
+      "inline": true
+    }
+  },
+  "include_keyframe_breakdown": {
+    "ui:title": "สร้าง keyframe breakdown"
+  },
+  "include_negative_prompt": {
+    "ui:title": "สร้าง negative prompt / constraints"
+  },
+  "seed_strategy": {
+    "ui:title": "Seed strategy",
+    "ui:help": "สำหรับ start/stop frame ถ้าภาพออกมาซ้ำ ให้ใช้ paired_seed_for_video_keyframes หรือ different_seed_per_variation"
+  },
+  "language": {
+    "ui:title": "Prompt language",
+    "ui:widget": "radio",
+    "ui:options": {
+      "inline": true
+    }
+  }
+}

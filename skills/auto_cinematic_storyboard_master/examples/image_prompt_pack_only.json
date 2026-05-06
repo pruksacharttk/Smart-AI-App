@@ -1,0 +1,23 @@
+{
+  "mode": "image_prompt_pack_only",
+  "story_seed": "A glamorous beauty editorial sequence in a hotel room, focused on confidence and elegance.",
+  "genre": "beauty_editorial",
+  "tone": [
+    "cinematic",
+    "glamorous",
+    "elegant"
+  ],
+  "output_scope": [
+    "storyboard",
+    "image_prompts",
+    "start_frames",
+    "stop_frames",
+    "continuity_bible"
+  ],
+  "target_duration_total_seconds": 30,
+  "shot_count_target": 8,
+  "aspect_ratio": "9:16",
+  "video_aspect_ratio": "9:16",
+  "visual_style_preset": "high_fashion_editorial",
+  "camera_style": "editorial_cinematic"
+}

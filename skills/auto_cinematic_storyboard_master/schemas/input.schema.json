@@ -1,0 +1,522 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/auto-cinematic-storyboard-master-skill/input.schema.json",
+  "title": "Auto Cinematic Storyboard Master Skill Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "story_seed",
+    "genre",
+    "tone",
+    "output_scope",
+    "aspect_ratio",
+    "video_aspect_ratio",
+    "target_duration_total_seconds"
+  ],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "storyboard_from_synopsis",
+        "storyboard_from_reference_images",
+        "image_prompt_pack_only",
+        "video_prompt_pack_only",
+        "full_story_package",
+        "episode_teaser_package",
+        "scene_rebuild_from_references"
+      ],
+      "default": "full_story_package",
+      "description": "Choose whether the skill creates the full package or only part of it."
+    },
+    "story_seed": {
+      "type": "string",
+      "minLength": 5,
+      "description": "A short story idea or summary from the user."
+    },
+    "genre": {
+      "type": "string",
+      "enum": [
+        "comedy",
+        "romantic_comedy",
+        "drama",
+        "melodrama",
+        "thriller",
+        "mystery",
+        "fantasy",
+        "action",
+        "adventure",
+        "slice_of_life",
+        "music_video",
+        "fashion_film",
+        "bridal_editorial",
+        "beauty_editorial",
+        "family",
+        "kids_story",
+        "dark_comedy",
+        "sci_fi",
+        "horror_light",
+        "custom"
+      ],
+      "default": "comedy"
+    },
+    "tone": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "enum": [
+          "cinematic",
+          "funny",
+          "playful",
+          "whimsical",
+          "heartwarming",
+          "romantic",
+          "dreamy",
+          "glamorous",
+          "tense",
+          "mysterious",
+          "epic",
+          "intimate",
+          "emotional",
+          "energetic",
+          "elegant",
+          "stylized",
+          "dark",
+          "inspirational"
+        ]
+      },
+      "default": [
+        "cinematic",
+        "funny"
+      ]
+    },
+    "story_structure": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "3_act",
+        "5_beat",
+        "hero_journey_light",
+        "setup_conflict_payoff",
+        "fashion_editorial_flow",
+        "music_video_flow"
+      ],
+      "default": "auto"
+    },
+    "reference_images": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "image_id_or_path",
+          "role"
+        ],
+        "properties": {
+          "image_id_or_path": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary_character",
+              "secondary_character",
+              "wardrobe_reference",
+              "environment_reference",
+              "style_reference",
+              "lighting_reference",
+              "composition_reference",
+              "prop_reference"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 5
+          }
+        }
+      },
+      "default": []
+    },
+    "character_bible": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "character_id",
+          "role"
+        ],
+        "properties": {
+          "character_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "default": ""
+          },
+          "role": {
+            "type": "string"
+          },
+          "age_appearance": {
+            "type": "string",
+            "default": ""
+          },
+          "identity_notes": {
+            "type": "string",
+            "default": ""
+          },
+          "wardrobe_notes": {
+            "type": "string",
+            "default": ""
+          },
+          "personality_notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      },
+      "default": []
+    },
+    "location_bible": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "location_id",
+          "name"
+        ],
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visual_notes": {
+            "type": "string",
+            "default": ""
+          },
+          "lighting_notes": {
+            "type": "string",
+            "default": ""
+          },
+          "prop_notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      },
+      "default": []
+    },
+    "output_scope": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "expanded_story",
+          "beat_sheet",
+          "storyboard",
+          "image_prompts",
+          "video_prompts",
+          "start_frames",
+          "stop_frames",
+          "continuity_bible",
+          "production_notes"
+        ]
+      },
+      "default": [
+        "expanded_story",
+        "beat_sheet",
+        "storyboard",
+        "image_prompts",
+        "video_prompts",
+        "start_frames",
+        "stop_frames",
+        "continuity_bible",
+        "production_notes"
+      ]
+    },
+    "target_duration_total_seconds": {
+      "type": "number",
+      "minimum": 5,
+      "maximum": 900,
+      "default": 45
+    },
+    "target_duration_minutes": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 15,
+      "default": 1,
+      "description": "Desired total video length in minutes. The storyboard runtime uses this to calculate how many 8-10 second shots are needed."
+    },
+    "average_shot_seconds": {
+      "type": "number",
+      "minimum": 4,
+      "maximum": 15,
+      "default": 8,
+      "description": "Average duration per storyboard shot. Use 8-10 seconds for most cinematic video generators."
+    },
+    "use_auto_shot_count": {
+      "type": "boolean",
+      "default": true,
+      "description": "When enabled, the skill calculates shot count from total duration and average shot length."
+    },
+    "shot_count_target": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "default": 8
+    },
+    "shot_duration_policy": {
+      "type": "string",
+      "enum": [
+        "auto_balanced",
+        "user_defined",
+        "fast_cut",
+        "medium_rhythm",
+        "slow_cinematic"
+      ],
+      "default": "auto_balanced"
+    },
+    "user_defined_shot_durations": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 60
+      },
+      "default": []
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9",
+        "1:1"
+      ],
+      "default": "9:16",
+      "description": "Default still-image aspect ratio for generated image prompts."
+    },
+    "video_aspect_ratio": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9",
+        "1:1"
+      ],
+      "default": "9:16"
+    },
+    "image_engine_target": {
+      "type": "string",
+      "enum": [
+        "gpt_image_2",
+        "generic"
+      ],
+      "default": "gpt_image_2"
+    },
+    "video_engine_target": {
+      "type": "string",
+      "enum": [
+        "seedance_2",
+        "generic"
+      ],
+      "default": "seedance_2"
+    },
+    "visual_style_preset": {
+      "type": "string",
+      "enum": [
+        "cinematic_comedy_bright",
+        "stylized_romcom",
+        "soft_bridal_windowlight",
+        "warm_orange_studio_beauty",
+        "hard_flash_editorial",
+        "dreamy_music_video",
+        "neo_noir",
+        "family_film_warm",
+        "high_fashion_editorial",
+        "korean_drama_soft",
+        "golden_hour_romance",
+        "fantasy_glow",
+        "dark_comedy_cinematic",
+        "kids_story_playful"
+      ],
+      "default": "cinematic_comedy_bright"
+    },
+    "camera_style": {
+      "type": "string",
+      "enum": [
+        "dynamic_cinematic",
+        "editorial_cinematic",
+        "commercial_cinematic",
+        "music_video_cinematic",
+        "comedy_visual_variety",
+        "drama_emotional_coverage"
+      ],
+      "default": "dynamic_cinematic"
+    },
+    "cinematic_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "avoid_flat_follow_cam": {
+          "type": "boolean",
+          "default": true
+        },
+        "force_visual_variety": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_closeups": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_detail_shots": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_angle_variation": {
+          "type": "boolean",
+          "default": true
+        },
+        "max_same_scale_in_a_row": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 2
+        }
+      },
+      "default": {
+        "avoid_flat_follow_cam": true,
+        "force_visual_variety": true,
+        "require_closeups": true,
+        "require_detail_shots": true,
+        "require_angle_variation": true,
+        "max_same_scale_in_a_row": 2
+      }
+    },
+    "continuity_locks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identity": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "absolute"
+        },
+        "wardrobe": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "strict"
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "strict"
+        },
+        "lighting": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "strict"
+        },
+        "color_grade": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "strict"
+        },
+        "props": {
+          "type": "string",
+          "enum": [
+            "loose",
+            "medium",
+            "strict",
+            "absolute"
+          ],
+          "default": "strict"
+        }
+      },
+      "default": {
+        "identity": "absolute",
+        "wardrobe": "strict",
+        "environment": "strict",
+        "lighting": "strict",
+        "color_grade": "strict",
+        "props": "strict"
+      }
+    },
+    "video_prompt_style": {
+      "type": "string",
+      "enum": [
+        "seedance_compact",
+        "seedance_detailed",
+        "director_dp_notes",
+        "all_formats"
+      ],
+      "default": "seedance_detailed"
+    },
+    "image_prompt_style": {
+      "type": "string",
+      "enum": [
+        "gpt_image_clean",
+        "gpt_image_detailed",
+        "cinematic_editorial",
+        "all_formats"
+      ],
+      "default": "gpt_image_detailed"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "english",
+        "thai",
+        "bilingual"
+      ],
+      "default": "english"
+    },
+    "negative_prompt_global": {
+      "type": "string",
+      "default": "no identity drift, no wardrobe drift, no extra people, no extra fingers, no distorted hands, no background morphing, no flicker, no warped face, no duplicated limbs, no random text, no logo, no unwanted props, no generic flat staging"
+    }
+  }
+}

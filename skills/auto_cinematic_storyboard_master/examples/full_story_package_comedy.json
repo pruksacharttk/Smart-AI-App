@@ -1,0 +1,34 @@
+{
+  "mode": "full_story_package",
+  "story_seed": "A neat young woman sneaks into the kitchen at midnight to steal snacks, but a clever cat keeps exposing her. Make it cinematic and funny.",
+  "genre": "comedy",
+  "tone": [
+    "cinematic",
+    "funny",
+    "playful"
+  ],
+  "story_structure": "setup_conflict_payoff",
+  "output_scope": [
+    "expanded_story",
+    "beat_sheet",
+    "storyboard",
+    "image_prompts",
+    "video_prompts",
+    "start_frames",
+    "stop_frames",
+    "continuity_bible",
+    "production_notes"
+  ],
+  "target_duration_total_seconds": 45,
+  "shot_count_target": 10,
+  "shot_duration_policy": "medium_rhythm",
+  "aspect_ratio": "9:16",
+  "video_aspect_ratio": "9:16",
+  "visual_style_preset": "cinematic_comedy_bright",
+  "camera_style": "comedy_visual_variety",
+  "image_engine_target": "gpt_image_2",
+  "video_engine_target": "seedance_2",
+  "image_prompt_style": "gpt_image_detailed",
+  "video_prompt_style": "seedance_detailed",
+  "language": "english"
+}

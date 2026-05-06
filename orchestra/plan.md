@@ -1,22 +1,19 @@
 # Orchestra Plan
 
 ## Task
-Run the deep-plan workflow for the existing Vite + React + TypeScript migration spec in `specs/002-vite-react-typescript-migration/spec.md`.
-
-## Classification
-- scope: large
-- risk: medium
-- affected_domains: frontend architecture, backend static serving, API client contracts, testing, documentation
-- estimated_file_count: 15
-- chosen_route: deep-plan-chain
-- task_summary: Create or refresh the full deep-plan artifacts for the React/Vite/TypeScript migration plan.
-- bug_route: false
+Investigate and fix incomplete input rendering for the three auto cinematic skills, and review the completeness of those skill packages.
 
 ## Task Classification
-- Scope: large
-- Risk: medium
-- Affected domains: Frontend architecture, Backend static serving, API contracts, Test strategy
-- Estimated file count: 15
-- Chosen route: deep-plan-chain
-- Bug route: false
-- Classification notes: The migration spec spans the frontend build system, React component architecture, server static serving, API contracts, and browser smoke tests. Risk is medium because this is planning-only now, but implementation will touch build tooling and user workflows.
+- Scope: medium
+- Risk: low
+- Affected domains: skill packages, skill loader, frontend skill form rendering
+- Estimated file count: 4-10
+- Chosen route: multi-agent-waves (inline standard mode)
+- Bug route: true
+- Classification notes: The issue is a user-visible bug in skill input rendering and may involve both skill metadata/schema files and the UI/server loader. No auth, database, or external integration changes are expected.
+
+## Wave Plan
+- Wave 1: Inspect skill package structure and compare against known working skills.
+- Wave 2: Inspect frontend/backend input rendering and schema loading behavior.
+- Wave 3: Apply scoped fixes to the three skills or loader as needed.
+- Wave 4: Run relevant validation and summarize completeness gaps.

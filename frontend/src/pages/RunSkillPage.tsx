@@ -27,20 +27,65 @@ function helpFor(field: UiField, language: Language) {
   return (language === "th" ? field.helpTextTh : field.helpText) || field.description || "";
 }
 
-function optionValue(option: string | { value?: string; id?: string; label?: string; name?: string }) {
-  return typeof option === "string" ? option : option.value || option.id || option.label || option.name || "";
+function optionValue(option: string | number | { value?: string | number; id?: string; label?: string; name?: string }) {
+  return typeof option === "string" || typeof option === "number" ? String(option) : String(option.value || option.id || option.label || option.name || "");
 }
 
-function optionLabel(option: string | { value?: string; id?: string; label?: string; labelTh?: string; name?: string }, language: Language) {
-  return typeof option === "string" ? option : (language === "th" ? option.labelTh : option.label) || option.label || option.name || option.value || "";
+function optionLabel(option: string | number | { value?: string | number; id?: string; label?: string; labelTh?: string; name?: string }, language: Language) {
+  return typeof option === "string" || typeof option === "number" ? String(option) : String((language === "th" ? option.labelTh : option.label) || option.label || option.name || option.value || "");
 }
 
-function defaultFor(field: UiField) {
+function defaultFor(field: UiField): unknown {
   if (field.default !== undefined) return field.default;
   if (field.type === "number") return "";
   if (field.type === "checkbox" || field.type === "boolean") return false;
+  if (field.type === "multiselect" || field.type === "list") return [];
+  if (field.type === "object") return Object.fromEntries((field.fields || []).map((child) => [fieldId(child), defaultFor(child)]).filter(([id]) => id));
+  if (field.type === "array") return [];
   if (field.type === "images" || field.type === "imageUpload") return [];
   return "";
+}
+
+function displayValueFor(field: UiField, value: unknown) {
+  if (field.format === "json" && (Array.isArray(value) || (value && typeof value === "object"))) {
+    return JSON.stringify(value, null, 2);
+  }
+  return String(value || "");
+}
+
+function valueForForm(field: UiField) {
+  const value = defaultFor(field);
+  return field.format === "json" && (Array.isArray(value) || (value && typeof value === "object"))
+    ? JSON.stringify(value, null, 2)
+    : value;
+}
+
+function parseJsonFieldValue(field: UiField, value: unknown) {
+  if (field.format !== "json" || typeof value !== "string") return value;
+  const raw = value.trim();
+  if (!raw) return "";
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeFormValue(field: UiField, value: unknown): unknown {
+  if (field.type === "object") {
+    const current = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+    return Object.fromEntries((field.fields || []).map((child) => {
+      const id = fieldId(child);
+      return [id, normalizeFormValue(child, current[id] ?? defaultFor(child))];
+    }).filter(([id]) => id));
+  }
+  if (field.type === "array") {
+    return Array.isArray(value) ? value.map((item) => normalizeFormValue({ ...field, type: "object", fields: field.itemFields }, item)) : [];
+  }
+  if (field.type === "list" || field.type === "multiselect" || isImageField(field)) {
+    return Array.isArray(value) ? value : [];
+  }
+  return parseJsonFieldValue(field, value);
 }
 
 function maxImagesFor(field: UiField) {
@@ -53,6 +98,14 @@ function fieldsFromSchema(schema: UiSchemaResponse | null) {
   const sectionFields = schema.uiSchema?.sections?.flatMap((section) => section.fields || []) || [];
   const directFields = schema.uiSchema?.fields || schema.fields || [];
   return sectionFields.length ? sectionFields : directFields;
+}
+
+function sectionsFromSchema(schema: UiSchemaResponse | null) {
+  if (!schema) return [];
+  const sections = schema.uiSchema?.sections || [];
+  if (sections.length) return sections;
+  const directFields = schema.uiSchema?.fields || schema.fields || [];
+  return directFields.length ? [{ id: "inputs", title: "Inputs", titleTh: "ข้อมูลนำเข้า", fields: directFields }] : [];
 }
 
 function extractRequired(schema: UiSchemaResponse | null) {
@@ -114,14 +167,20 @@ function ImageUploadControl({ field, value, onChange }: ImageUploadControlProps)
 
   return (
     <div className="image-upload">
-      <input
-        type="file"
-        accept={field.accept || "image/*"}
-        multiple={!isSingle}
-        onChange={(event) => void addFiles(event.target.files).finally(() => {
-          event.currentTarget.value = "";
-        })}
-      />
+      <label className="file-picker">
+        <span>{images.length ? "Add / replace image" : "Choose image"}</span>
+        <input
+          type="file"
+          accept={field.accept || "image/*"}
+          multiple={!isSingle}
+          onChange={(event) => {
+            const input = event.currentTarget;
+            void addFiles(input.files).finally(() => {
+              input.value = "";
+            });
+          }}
+        />
+      </label>
       {images.length ? (
         <div className="image-preview-grid">
           {images.map((src, index) => (
@@ -132,7 +191,7 @@ function ImageUploadControl({ field, value, onChange }: ImageUploadControlProps)
           ))}
         </div>
       ) : null}
-      <small>{images.length}/{maxImages} images</small>
+      <small>{images.length ? `${images.length}/${maxImages} images attached` : `No images attached (${maxImages} max)`}</small>
     </div>
   );
 }
@@ -154,6 +213,7 @@ export function RunSkillPage({
   const [runtimeStatus, setRuntimeStatus] = useState("");
   const [result, setResult] = useState<RunSkillResult | null>(null);
   const fields = useMemo(() => fieldsFromSchema(schema), [schema]);
+  const sections = useMemo(() => sectionsFromSchema(schema), [schema]);
   const required = useMemo(() => extractRequired(schema), [schema]);
 
   useEffect(() => {
@@ -171,7 +231,7 @@ export function RunSkillPage({
         const initial: Record<string, unknown> = {};
         for (const field of fieldsFromSchema(next)) {
           const id = fieldId(field);
-          if (id) initial[id] = defaultFor(field);
+          if (id) initial[id] = valueForForm(field);
         }
         setValues(initial);
         setStatus(t(language, "ready"), "ok");
@@ -188,6 +248,130 @@ export function RunSkillPage({
 
   function updateValue(id: string, value: unknown) {
     setValues((current) => ({ ...current, [id]: value }));
+  }
+
+  function renderHelp(field: UiField) {
+    const help = helpFor(field, language);
+    return (
+      <div className="field-help">
+        {help ? <small>{help}</small> : null}
+        {field.example ? <small><strong>{language === "th" ? "ตัวอย่าง:" : "Example:"}</strong> {field.example}</small> : null}
+      </div>
+    );
+  }
+
+  function renderNestedControl(field: UiField, value: unknown, onChange: (next: unknown) => void) {
+    const options = field.options || field.choices || field.enum || [];
+    if (isImageField(field)) {
+      return <ImageUploadControl field={field} value={value} onChange={onChange as (value: string | string[]) => void} />;
+    }
+    if (field.type === "object") {
+      const current = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+      return (
+        <div className="nested-control">
+          {(field.fields || []).map((child) => {
+            const childId = fieldId(child);
+            if (!childId) return null;
+            return (
+              <div className="nested-field" key={childId}>
+                <span className="field-label">{labelFor(child, language)}{child.required ? " *" : ""}</span>
+                {renderNestedControl(child, current[childId] ?? valueForForm(child), (next) => onChange({ ...current, [childId]: next }))}
+                {renderHelp(child)}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    if (field.type === "array" && field.itemFields?.length) {
+      const rows = Array.isArray(value) ? value as Record<string, unknown>[] : [];
+      const blank = () => Object.fromEntries((field.itemFields || []).map((child) => [fieldId(child), valueForForm(child)]).filter(([id]) => id));
+      return (
+        <div className="repeater">
+          {rows.map((row, index) => (
+            <div className="repeater-item" key={index}>
+              <div className="repeater-head">
+                <strong>{field.itemLabel || "Item"} {index + 1}</strong>
+                <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>Remove</button>
+              </div>
+              {(field.itemFields || []).map((child) => {
+                const childId = fieldId(child);
+                if (!childId) return null;
+                return (
+                  <div className="nested-field" key={childId}>
+                    <span className="field-label">{labelFor(child, language)}{child.required ? " *" : ""}</span>
+                    {renderNestedControl(child, row[childId] ?? valueForForm(child), (next) => {
+                      const nextRows = rows.map((item, rowIndex) => rowIndex === index ? { ...item, [childId]: next } : item);
+                      onChange(nextRows);
+                    })}
+                    {renderHelp(child)}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <button type="button" className="link-button" onClick={() => onChange([...rows, blank()])}>
+            Add {field.itemLabel || "item"}
+          </button>
+        </div>
+      );
+    }
+    if (field.type === "multiselect") {
+      const selected = new Set((Array.isArray(value) ? value : []).map(String));
+      return (
+        <div className="choice-grid">
+          {options.map((option) => {
+            const optionId = optionValue(option);
+            return (
+              <label className="choice" key={optionId}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(optionId)}
+                  onChange={(event) => {
+                    const next = new Set(selected);
+                    if (event.target.checked) next.add(optionId);
+                    else next.delete(optionId);
+                    onChange(Array.from(next));
+                  }}
+                />
+                <span>{optionLabel(option, language)}</span>
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+    if (field.type === "list") {
+      const rows = Array.isArray(value) ? value.map(String) : [];
+      return (
+        <div className="list-control">
+          {rows.map((row, index) => (
+            <div className="list-row" key={index}>
+              <input value={row} onChange={(event) => onChange(rows.map((item, rowIndex) => rowIndex === index ? event.target.value : item))} />
+              <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>Remove</button>
+            </div>
+          ))}
+          <button type="button" className="link-button" onClick={() => onChange([...rows, ""])}>Add item</button>
+        </div>
+      );
+    }
+    if (field.type === "textarea") {
+      return <textarea rows={field.rows || 3} value={displayValueFor(field, value)} placeholder={(language === "th" ? field.placeholderTh : field.placeholder) || field.placeholder || ""} onChange={(event) => onChange(event.target.value)} />;
+    }
+    if (field.type === "select" || options.length) {
+      return (
+        <select value={String(value || "")} onChange={(event) => onChange(event.target.value)}>
+          {options.map((option) => <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option, language)}</option>)}
+        </select>
+      );
+    }
+    if (field.type === "number") {
+      return <input type="number" min={field.min} max={field.max} step={field.step || 1} value={String(value ?? "")} onChange={(event) => onChange(event.target.value ? Number(event.target.value) : "")} />;
+    }
+    if (field.type === "boolean" || field.type === "checkbox") {
+      return <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(event.target.checked)} />;
+    }
+    return <input value={String(value || "")} placeholder={(language === "th" ? field.placeholderTh : field.placeholder) || field.placeholder || ""} onChange={(event) => onChange(event.target.value)} />;
   }
 
   function validate() {
@@ -209,7 +393,11 @@ export function RunSkillPage({
       setStatus("Needs input", "warn");
       return;
     }
-    const params = samplePayload || values;
+    const params = samplePayload || fields.reduce<Record<string, unknown>>((payload, field) => {
+      const id = fieldId(field);
+      if (id) payload[id] = normalizeFormValue(field, values[id]);
+      return payload;
+    }, {});
     setRunning(true);
     setRuntimeStatus("Starting...");
     setResult(null);
@@ -233,7 +421,7 @@ export function RunSkillPage({
     const initial: Record<string, unknown> = {};
     for (const field of fields) {
       const id = fieldId(field);
-      if (id) initial[id] = defaultFor(field);
+      if (id) initial[id] = valueForForm(field);
     }
     setValues(initial);
     setResult(null);
@@ -280,31 +468,34 @@ export function RunSkillPage({
 
       <div className="workbench">
         <form className="dynamic-form" onSubmit={(event) => { event.preventDefault(); void runSkill(); }}>
-          {fields.map((field) => {
-            const id = fieldId(field);
-            if (!id) return null;
-            const options = field.options || field.choices || field.enum || [];
-            const value = values[id];
-            return (
-              <label className="field" key={id}>
-                <span>{labelFor(field, language)}{field.required || required.has(id) ? " *" : ""}</span>
-                {isImageField(field) ? (
-                  <ImageUploadControl field={field} value={value} onChange={(next) => updateValue(id, next)} />
-                ) : field.type === "textarea" ? (
-                  <textarea rows={field.rows || 3} value={String(value || "")} placeholder={(language === "th" ? field.placeholderTh : field.placeholder) || field.placeholder || ""} onChange={(event) => updateValue(id, event.target.value)} />
-                ) : field.type === "select" || options.length ? (
-                  <select value={String(value || "")} onChange={(event) => updateValue(id, event.target.value)}>
-                    {options.map((option) => <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option, language)}</option>)}
-                  </select>
-                ) : field.type === "number" ? (
-                  <input type="number" min={field.min} max={field.max} step={field.step || 1} value={String(value ?? "")} onChange={(event) => updateValue(id, event.target.value ? Number(event.target.value) : "")} />
-                ) : field.type === "boolean" || field.type === "checkbox" ? (
-                  <input type="checkbox" checked={Boolean(value)} onChange={(event) => updateValue(id, event.target.checked)} />
-                ) : (
-                  <input value={String(value || "")} placeholder={(language === "th" ? field.placeholderTh : field.placeholder) || field.placeholder || ""} onChange={(event) => updateValue(id, event.target.value)} />
-                )}
-                {helpFor(field, language) ? <small>{helpFor(field, language)}</small> : null}
-              </label>
+          {sections.map((section, index) => {
+            const title = (language === "th" ? section.titleTh : section.title) || section.title || "";
+            const body = (
+              <div className="section-fields">
+                {(section.fields || []).map((field) => {
+                  const id = fieldId(field);
+                  if (!id) return null;
+                  const value = values[id];
+                  return (
+                    <div className="field" key={id}>
+                      <span className="field-label">{labelFor(field, language)}{field.required || required.has(id) ? " *" : ""}</span>
+                      {renderNestedControl(field, value, (next) => updateValue(id, next))}
+                      {renderHelp(field)}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+            return section.collapsed ? (
+              <details className="form-section" key={section.id || index}>
+                <summary>{title}</summary>
+                {body}
+              </details>
+            ) : (
+              <section className="form-section" key={section.id || index}>
+                {title ? <h3>{title}</h3> : null}
+                {body}
+              </section>
             );
           })}
           <div className="actions">

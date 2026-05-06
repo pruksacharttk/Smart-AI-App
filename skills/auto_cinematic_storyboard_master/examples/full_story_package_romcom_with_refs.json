@@ -1,0 +1,50 @@
+{
+  "mode": "full_story_package",
+  "story_seed": "Two shy people accidentally keep meeting at the same flower shop and slowly realize they like each other.",
+  "genre": "romantic_comedy",
+  "tone": [
+    "cinematic",
+    "romantic",
+    "heartwarming",
+    "intimate"
+  ],
+  "story_structure": "3_act",
+  "reference_images": [
+    {
+      "image_id_or_path": "UPLOAD_MAIN_CHARACTER_A",
+      "role": "primary_character",
+      "notes": "Lead A identity",
+      "priority": 5
+    },
+    {
+      "image_id_or_path": "UPLOAD_MAIN_CHARACTER_B",
+      "role": "secondary_character",
+      "notes": "Lead B identity",
+      "priority": 5
+    },
+    {
+      "image_id_or_path": "UPLOAD_FLOWER_SHOP",
+      "role": "environment_reference",
+      "notes": "Primary location",
+      "priority": 4
+    }
+  ],
+  "output_scope": [
+    "expanded_story",
+    "beat_sheet",
+    "storyboard",
+    "image_prompts",
+    "video_prompts",
+    "start_frames",
+    "stop_frames",
+    "continuity_bible"
+  ],
+  "target_duration_total_seconds": 60,
+  "shot_count_target": 12,
+  "shot_duration_policy": "slow_cinematic",
+  "aspect_ratio": "16:9",
+  "video_aspect_ratio": "16:9",
+  "visual_style_preset": "stylized_romcom",
+  "camera_style": "dynamic_cinematic",
+  "language": "english"
+}

@@ -33,15 +33,22 @@ export interface UiField {
   input?: string;
   widget?: string;
   required?: boolean;
-  options?: Array<string | { value?: string; label?: string; id?: string; name?: string }>;
-  choices?: Array<string | { value?: string; label?: string; id?: string; name?: string }>;
-  enum?: string[];
+  options?: Array<string | number | { value?: string | number; label?: string; id?: string; name?: string }>;
+  choices?: Array<string | number | { value?: string | number; label?: string; id?: string; name?: string }>;
+  enum?: Array<string | number>;
   default?: unknown;
   placeholder?: string;
   multiple?: boolean;
   accept?: string;
   maxImages?: number;
   rows?: number;
+  format?: string;
+  example?: string;
+  fields?: UiField[];
+  itemFields?: UiField[];
+  itemLabel?: string;
+  itemType?: string;
+  minItems?: number;
   labelTh?: string;
   placeholderTh?: string;
   helpText?: string;
@@ -57,6 +64,7 @@ export interface UiSection {
   titleTh?: string;
   description?: string;
   descriptionTh?: string;
+  collapsed?: boolean;
   fields?: UiField[];
 }
 

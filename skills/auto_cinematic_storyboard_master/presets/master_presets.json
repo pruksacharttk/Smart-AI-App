@@ -1,0 +1,109 @@
+{
+  "story_presets": {
+    "cinematic_comedy_bright": {
+      "story_notes": "funny but visually polished, bright timing, expressive reaction shots, dynamic cut rhythm",
+      "camera_notes": "alternate wide setup shots with tight punchline closeups, occasional high-angle comedy beat, occasional low-angle exaggeration",
+      "color_grade": "warm bright, clean contrast, cheerful highlight rolloff"
+    },
+    "stylized_romcom": {
+      "story_notes": "cute, stylish, emotionally playful",
+      "camera_notes": "push-ins, soft closeups, romantic reversals, elegant profile shots",
+      "color_grade": "soft pastel highlights, warm skin tones"
+    },
+    "soft_bridal_windowlight": {
+      "story_notes": "graceful, elegant, emotional, timeless",
+      "camera_notes": "slow cinematic motion, wide-to-close reveal, macro lace detail, intimate face shots",
+      "color_grade": "creamy whites, soft gold, low contrast"
+    },
+    "high_fashion_editorial": {
+      "story_notes": "stylized, pose-driven, luxurious",
+      "camera_notes": "dramatic angles, strong silhouettes, low-angle power, detail shots, structured visual rhythm",
+      "color_grade": "rich contrast, premium texture clarity"
+    },
+    "dark_comedy_cinematic": {
+      "story_notes": "odd, dry, funny with tension",
+      "camera_notes": "awkward wide shots mixed with sudden closeups and visual irony",
+      "color_grade": "controlled saturation, moody warmth"
+    }
+  },
+  "camera_coverage_presets": {
+    "dynamic_cinematic": [
+      "establishing_wide",
+      "medium_character_intro",
+      "close_reaction",
+      "detail_insert",
+      "profile_or_three_quarter",
+      "high_or_low_angle_emphasis",
+      "emotional_closeup",
+      "payoff_frame"
+    ],
+    "comedy_visual_variety": [
+      "wide_setup",
+      "tight_reaction",
+      "prop_detail",
+      "awkward_profile",
+      "overhead_comedy",
+      "low_angle_exaggeration",
+      "punchline_closeup",
+      "resolution_wide"
+    ],
+    "editorial_cinematic": [
+      "wide_silhouette",
+      "medium_pose",
+      "texture_macro",
+      "beauty_closeup",
+      "profile",
+      "low_angle_hero",
+      "high_angle_shape",
+      "final_key_art_frame"
+    ]
+  },
+  "shot_design_presets": {
+    "shot_types": [
+      "establishing_wide",
+      "wide",
+      "full_body",
+      "medium",
+      "medium_closeup",
+      "closeup",
+      "extreme_closeup",
+      "macro_detail",
+      "profile",
+      "three_quarter",
+      "over_shoulder",
+      "high_angle",
+      "low_angle",
+      "top_down",
+      "insert"
+    ],
+    "visual_hooks": [
+      "strong foreground framing",
+      "gaze-to-camera reveal",
+      "sudden punch-in reaction",
+      "prop-led composition",
+      "symmetry break",
+      "silhouette contrast",
+      "detail-to-emotion shift",
+      "funny visual mismatch",
+      "texture emphasis",
+      "mirror or reflection reveal"
+    ]
+  },
+  "storyboard_rhythm_presets": {
+    "fast_cut": {
+      "closeup_ratio": 0.35,
+      "detail_ratio": 0.18,
+      "wide_ratio": 0.18
+    },
+    "medium_rhythm": {
+      "closeup_ratio": 0.25,
+      "detail_ratio": 0.12,
+      "wide_ratio": 0.22
+    },
+    "slow_cinematic": {
+      "closeup_ratio": 0.2,
+      "detail_ratio": 0.1,
+      "wide_ratio": 0.28
+    }
+  }
+}
