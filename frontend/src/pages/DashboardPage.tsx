@@ -10,6 +10,13 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({ language, rows, loading, error, onRefresh }: DashboardPageProps) {
+  const totalRuns = rows.reduce((sum, row) => sum + row.usageCount, 0);
+  const activeModels = rows.length;
+  const latestUsage = rows
+    .map((row) => row.lastUsedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
   return (
     <section className="page">
       <div className="page-head">
@@ -18,6 +25,20 @@ export function DashboardPage({ language, rows, loading, error, onRefresh }: Das
           <p>{t(language, "dashboardDesc")}</p>
         </div>
         <button type="button" onClick={onRefresh}>{t(language, "refresh")}</button>
+      </div>
+      <div className="stats-grid">
+        <article className="stat-card">
+          <p className="muted">{t(language, "count")}</p>
+          <h3>{totalRuns.toLocaleString()}</h3>
+        </article>
+        <article className="stat-card">
+          <p className="muted">{t(language, "model")}</p>
+          <h3>{activeModels.toLocaleString()}</h3>
+        </article>
+        <article className="stat-card">
+          <p className="muted">{t(language, "lastUsed")}</p>
+          <h3>{latestUsage ? new Date(latestUsage).toLocaleDateString() : "-"}</h3>
+        </article>
       </div>
       {loading ? <p className="muted">{t(language, "loading")}</p> : null}
       {error ? <p className="alert">{error}</p> : null}

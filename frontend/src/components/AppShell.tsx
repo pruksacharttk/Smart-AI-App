@@ -22,10 +22,12 @@ export function AppShell({
   children
 }: AppShellProps) {
   const pages: PageId[] = ["dashboard", "run", "config"];
+  const pageLabel = (page: PageId) => page === "dashboard" ? t(language, "dashboard") : page === "run" ? t(language, "runSkill") : t(language, "config");
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="brand-block">
+          <p className="brand-kicker">Smart AI Hub</p>
           <h1>Smart AI App</h1>
           <p>{t(language, "appDesc")}</p>
         </div>
@@ -44,8 +46,14 @@ export function AppShell({
       <div className="layout">
         <nav className="side-nav" aria-label="Main">
           {pages.map((page) => (
-            <button key={page} className={activePage === page ? "active" : ""} type="button" onClick={() => onPageChange(page)}>
-              {page === "dashboard" ? t(language, "dashboard") : page === "run" ? t(language, "runSkill") : t(language, "config")}
+            <button
+              key={page}
+              aria-current={activePage === page ? "page" : undefined}
+              className={activePage === page ? "active" : ""}
+              type="button"
+              onClick={() => onPageChange(page)}
+            >
+              {pageLabel(page)}
             </button>
           ))}
         </nav>
