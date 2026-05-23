@@ -275,6 +275,12 @@ function firstString(...values) {
   return values.find((value) => typeof value === "string" && value.trim()) || "";
 }
 
+function localizedString(value, language = "en") {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  return firstString(value[language], value.en, value.th);
+}
+
 function humanizeFieldId(fieldId) {
   return String(fieldId || "")
     .replace(/[_-]+/g, " ")
@@ -291,11 +297,26 @@ function rjsfUiForField(uiSchema, fieldId) {
       : {};
 }
 
+function nestedUiForField(uiMeta, fieldId) {
+  if (!uiMeta || typeof uiMeta !== "object") return {};
+  const direct = uiMeta[fieldId];
+  const wrapped = uiMeta.properties?.[fieldId];
+  return direct && typeof direct === "object" && !Array.isArray(direct)
+    ? direct
+    : wrapped && typeof wrapped === "object" && !Array.isArray(wrapped)
+      ? wrapped
+      : {};
+}
+
 function schemaTypeForField(fieldId, prop, uiMeta) {
   const widget = firstString(uiMeta["ui:widget"], uiMeta.widget, uiMeta["ui:field"]);
+  const itemSchema = prop?.type === "array" ? prop.items || {} : {};
+  const mediaType = firstString(prop?.contentMediaType, itemSchema?.contentMediaType, prop?.["x-ui-accept"], prop?.accept);
+  const fileMode = firstString(prop?.["x-ui-file-mode"], itemSchema?.["x-ui-file-mode"]);
   if (/referenceImageArray|imageUpload|fileOrText/i.test(widget)) return "images";
-  if (/reference_?images?|start_?frame_?image|stop_?frame_?image/i.test(fieldId)) return "images";
-  if (/reference_?images?/i.test(String(prop?.title || "")) || /reference_?images?/i.test(String(prop?.description || ""))) return "images";
+  if (/drag-and-drop|image/i.test(fileMode) || /^image\//i.test(mediaType) || mediaType === "image/*") return "images";
+  if (/^(reference_images?|start_?frame_?image|stop_?frame_?image)$/i.test(fieldId)) return "images";
+  if (/reference.*images?/i.test(String(prop?.title || "")) || /reference.*images?/i.test(String(prop?.description || ""))) return "images";
   if (/checkboxes/i.test(widget)) return "multiselect";
   if (/radio|select/i.test(widget) || Array.isArray(prop?.enum)) return "select";
   if (prop?.type === "integer" || prop?.type === "number") return "number";
@@ -318,6 +339,101 @@ function withAutoOption(fieldId, options, prop = {}) {
   if (options.includes("auto")) return options;
   if (/project_name|reference|negative|language/i.test(fieldId)) return options;
   return ["auto", ...options];
+}
+
+function humanizeOptionValue(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (/^\d+:\d+$/.test(text)) return text;
+  return text
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function optionLabelMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value;
+}
+
+function localizedOptionLabel(value, language = "en") {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  return localizedString(value, language);
+}
+
+function thaiOptionLabel(value) {
+  const labels = {
+    auto: "อัตโนมัติ",
+    custom: "กำหนดเอง",
+    none: "ไม่มี",
+    female: "หญิง",
+    male: "ชาย",
+    non_binary: "นอนไบนารี",
+    genderfluid: "เพศลื่นไหล",
+    agender: "ไม่มีเพศสภาวะ",
+    transgender_female: "หญิงข้ามเพศ",
+    transgender_male: "ชายข้ามเพศ",
+    feminine: "แสดงออกแบบผู้หญิง",
+    masculine: "แสดงออกแบบผู้ชาย",
+    androgynous: "กึ่งหญิงกึ่งชาย",
+    gender_neutral: "ไม่เน้นเพศ",
+    fresh_youthful: "สดใสอ่อนเยาว์",
+    wise_mature: "สุขุมดูมีวุฒิภาวะ",
+    freckles: "กระ",
+    beauty_marks: "ไฝเสน่ห์",
+    vitiligo: "ด่างขาว",
+    birthmarks: "ปาน",
+    tanning_lines: "รอยผิวจากแดด",
+    sun_spots: "จุดด่างแดด",
+    moles: "ไฝ",
+    clear_skin: "ผิวใส",
+    cool: "โทนเย็น",
+    warm: "โทนอุ่น",
+    neutral: "โทนกลาง",
+    golden: "โทนทอง",
+    peachy: "โทนพีช",
+    pink: "โทนชมพู",
+    red: "โทนแดง",
+    yellow: "โทนเหลือง",
+    olive: "โทนโอลีฟ",
+    light: "ผิวสว่าง",
+    medium: "ผิวปานกลาง",
+    tan: "ผิวแทน",
+    brown: "ผิวน้ำตาล",
+    deep: "ผิวเข้ม",
+    ebony: "ผิวเข้มมาก",
+    file_picker_only: "กดเลือกไฟล์เท่านั้น",
+    drag_and_drop_only: "ลากวางเท่านั้น",
+    preserve_face_identity: "รักษาเอกลักษณ์ใบหน้า",
+    auto_merge_with_selected_traits: "ผสานภาพอ้างอิงกับตัวเลือกอัตโนมัติ",
+    use_as_loose_inspiration: "ใช้เป็นแรงบันดาลใจหลวม ๆ",
+    override_only_unspecified_traits: "ใช้ภาพเฉพาะส่วนที่ยังไม่ระบุ",
+    ignore_person_reference: "ไม่ใช้ภาพบุคคลอ้างอิง",
+    preserve_environment: "รักษาฉากตามภาพอ้างอิง",
+    auto_use_as_environment: "ใช้ภาพเป็นฉากอัตโนมัติ",
+    override_environment_only: "ใช้ภาพเฉพาะส่วนฉาก",
+    ignore_background_reference: "ไม่ใช้ภาพฉากอ้างอิง",
+    user_choices_override_reference: "ตัวเลือกผู้ใช้สำคัญกว่าภาพอ้างอิง",
+    reference_overrides_unspecified_only: "ภาพอ้างอิงเติมเฉพาะส่วนที่ยังไม่ระบุ",
+    ask_when_conflict: "ถามเมื่อข้อมูลขัดแย้ง",
+    auto_best_consistency: "เลือกทางที่คงความต่อเนื่องดีที่สุด"
+  };
+  return labels[value] || "";
+}
+
+function optionsForField(fieldId, options, prop = {}, uiMeta = {}) {
+  if (!Array.isArray(options)) return undefined;
+  const labels = Array.isArray(prop.enumNames) ? prop.enumNames : [];
+  const labelsTh = Array.isArray(prop["x-ui-enumNamesTh"]) ? prop["x-ui-enumNamesTh"] : [];
+  const labelMap = optionLabelMap(prop["x-ui-enum-labels"] || uiMeta["ui:enum-labels"] || uiMeta["ui:enumNames"]);
+  const labelMapTh = optionLabelMap(prop["x-ui-enum-labels-th"] || uiMeta["ui:enum-labels-th"]);
+  return options.map((value, index) => ({
+    value,
+    label: localizedOptionLabel(labelMap[value], "en") || labels[index] || humanizeOptionValue(value),
+    labelTh: fieldId === "session_commands"
+      ? localizedOptionLabel(labelMapTh[value], "th") || localizedOptionLabel(labelMap[value], "th") || thaiOptionLabel(value) || labelsTh[index] || labels[index] || humanizeOptionValue(value)
+      : thaiOptionLabel(value) || localizedOptionLabel(labelMapTh[value], "th") || localizedOptionLabel(labelMap[value], "th") || labelsTh[index] || labels[index] || humanizeOptionValue(value)
+  }));
 }
 
 function sampleForField(fieldId, prop = {}) {
@@ -366,7 +482,54 @@ function thaiHelpForField(fieldId, prop = {}, type = "text") {
     location_bible: "เพิ่มข้อมูลสถานที่ ฉาก แสง และพร็อพที่ต้องคงต่อเนื่อง",
     negative_prompt: "ระบุสิ่งที่ไม่ต้องการให้เกิดในวิดีโอหรือภาพ",
     negative_prompt_global: "ระบุข้อห้ามรวมทั้งเรื่อง เช่น ห้ามตัวละครเปลี่ยน ห้ามแสงเพี้ยน",
-    negative_constraints: "เพิ่มข้อห้ามเป็นรายการ เช่น ห้ามเพิ่มคน ห้ามเปลี่ยนฉาก"
+    negative_constraints: "เพิ่มข้อห้ามเป็นรายการ เช่น ห้ามเพิ่มคน ห้ามเปลี่ยนฉาก",
+    workflow_mode: "เลือกวิธีทำงานของสกิล ถ้าไม่แน่ใจให้เลือก Auto หรือเลือก Interactive เพื่อให้ระบบถามทีละขั้น",
+    ui_language: "เลือกภาษาที่ใช้แสดงชื่อช่อง ตัวเลือก และคำอธิบายในฟอร์มนี้",
+    output_language: "เลือกภาษาที่ต้องการให้พรอมต์สุดท้ายเขียนออกมา แยกจากภาษาหน้า UI",
+    prompt_count: "จำนวนพรอมต์แยกที่ต้องการสร้าง แต่ละพรอมต์จะใช้ประเภทภาพที่เลือกไว้เพียงแบบเดียว",
+    shot_types: "เลือกมุมภาพเพียงข้อเดียวต่อพรอมต์ เพื่อไม่ให้ภาพเดียวมีทั้งระยะใกล้ พอร์ตเทรต ครึ่งตัว และเต็มตัวปนกัน",
+    include_translation: "เปิดเฉพาะเมื่อต้องการให้ผลลัพธ์มีคำแปลอีกชุดเพิ่มจากพรอมต์หลัก ไม่ใช่ภาษาหลักของพรอมต์",
+    translation_language: "ใช้เฉพาะเมื่อเปิด ใส่คำแปลเพิ่มเติม เท่านั้น ส่วนภาษาหลักของพรอมต์ให้ตั้งที่ช่อง ภาษาพรอมต์ ด้านบน",
+    reference_image_behavior: "กำหนดว่าระบบควรใช้ภาพอ้างอิงอย่างไร และเมื่อข้อมูลในภาพขัดกับตัวเลือกผู้ใช้ให้ตัดสินใจแบบไหน",
+    allow_reference_images: "เปิดหรือปิดการใช้ภาพอ้างอิงในการสร้างตัวละคร",
+    person_reference_policy: "กำหนดระดับการยึดใบหน้า รูปร่าง เสื้อผ้า หรือท่าทางจากภาพบุคคลอ้างอิง",
+    background_reference_policy: "กำหนดระดับการยึดฉาก แสง มู้ด หรือองค์ประกอบจากภาพฉากอ้างอิง",
+    conflict_resolution: "เลือกว่าถ้าภาพอ้างอิงขัดกับตัวเลือกที่กรอก ระบบควรให้ข้อมูลใดสำคัญกว่า",
+    privacy_note_acknowledged: "ยืนยันว่าเข้าใจการใช้ภาพอ้างอิงและความเป็นส่วนตัวของข้อมูลภาพ",
+    character_profile: "กรอกรายละเอียดตัวละครที่ต้องการล็อกให้คงที่ในทุกพรอมต์ ยิ่งระบุชัด ผลลัพธ์ยิ่งสม่ำเสมอ",
+    name: "ชื่อตัวละครหรือชื่อเล่น ใช้เป็น anchor สำหรับคงตัวตนในพรอมต์",
+    gender_identity: "ระบุเพศสภาวะและภาพรวมการแสดงออกทางเพศของตัวละคร",
+    identity: "เลือกเพศสภาวะหลักของตัวละคร หรือเลือก Auto ให้ระบบตีความจากบริบท",
+    expression: "เลือกบุคลิกการแสดงออกทางเพศ เช่น feminine, masculine, androgynous หรือ custom",
+    custom_identity: "กรอกเพศสภาวะเฉพาะเมื่อไม่มีตัวเลือกที่ตรงพอ",
+    custom_expression: "กรอกคำอธิบายการแสดงออกเพิ่มเติม เช่น ลุคนุ่มนวล สุขุม หรือแฟชั่นจัด",
+    age: "กำหนดช่วงอายุและภาพลักษณ์ตามวัย เพื่อให้ใบหน้า ร่างกาย และสไตล์สมจริง",
+    range: "เลือกช่วงอายุโดยรวม ถ้าเลือก Auto ระบบจะเลือกให้สัมพันธ์กับข้อมูลอื่น",
+    specific_age: "ระบุอายุเป็นตัวเลขเมื่ออยากควบคุมอายุชัดเจน เช่น 24 หรือ 35",
+    appearance: "เลือกว่าตัวละครควรดูเด็กกว่า เหมาะสมตามวัย หรือดูเป็นผู้ใหญ่กว่าวัย",
+    ethnicity_skin: "กำหนดเชื้อชาติ ภูมิภาค โทนผิว และรายละเอียดผิว เพื่อให้ตัวละครมีลักษณะชัดเจนและสอดคล้อง",
+    ethnicity: "เลือกเชื้อชาติหรือภูมิภาคของตัวละคร ใช้เพื่อกำหนดลักษณะใบหน้าและบริบทวัฒนธรรมอย่างเหมาะสม",
+    skin_tone: "เลือกความสว่างหรือความเข้มของสีผิวหลัก",
+    undertone: "เลือกอันเดอร์โทนผิว เช่น เย็น อุ่น กลาง พีช หรือโอลีฟ เพื่อช่วยกำหนดสีผิวและเมคอัพ",
+    special_features: "เลือกจุดเด่นบนผิวที่ต้องการให้ปรากฏ เช่น กระ ไฝ ปาน หรือผิวใส เลือกได้หลายข้อ",
+    custom_description: "กรอกรายละเอียดเพิ่มเติมที่ตัวเลือกไม่มี เช่น ลักษณะเฉพาะของใบหน้า ผิว หรือสไตล์",
+    face_structure: "กำหนดโครงหน้า เช่น รูปหน้า หน้าผาก โหนกแก้ม กราม และคาง",
+    eyes: "กำหนดรายละเอียดดวงตา เช่น รูปตา ขนาด สี ขนตา และระยะห่าง",
+    body_proportions: "กำหนดสัดส่วนร่างกาย ส่วนสูง รูปร่าง โครงสร้าง และท่าทาง",
+    bust_chest: "ใช้คำอธิบายทรงเสื้อ การเข้ารูป การทิ้งตัวของผ้า หรือซิลูเอตช่วงลำตัวบนแทนการระบุขนาดหน้าอกโดยตรง เพื่อให้พรอมต์ปลอดภัยและผ่านระบบสร้างภาพง่ายขึ้น",
+    hair: "กำหนดความยาว ทรง สี พื้นผิว และการจัดแต่งผม",
+    nose: "กำหนดรูปทรงจมูก สันจมูก ปลายจมูก และขนาดโดยรวม",
+    mouth: "กำหนดรูปปาก สีริมฝีปาก ความหนา และลักษณะรอยยิ้ม",
+    personality_posture: "กำหนดบุคลิก สีหน้า พลังงาน ท่าทางมือ และความมั่นใจของตัวละคร",
+    generation_preferences: "กำหนดสไตล์ภาพ ฉาก แสง กล้อง ฟิล์ม และข้อห้ามเพื่อให้พรอมต์พร้อมใช้งาน",
+    style_direction: "เลือกแนวภาพหลัก เช่น studio, cinematic, beauty, lifestyle หรือ fantasy realism",
+    camera_quality: "เลือกระดับคุณภาพภาพและลักษณะงานถ่าย เช่น commercial, studio, cinematic หรือ ultra high resolution",
+    environment_style: "เลือกฉากหรือสภาพแวดล้อมหลักของภาพ",
+    lighting_setup: "เลือกแนวแสง เช่น studio, natural window light, ring light หรือ cinematic soft light",
+    camera_system: "เลือกกล้องหรือเลนส์อ้างอิงสำหรับ mood ของภาพ",
+    film_processing: "เลือกโทนฟิล์ม สี และการประมวลผลภาพ",
+    negative_rules: "เลือกข้อห้ามที่ต้องล็อกไว้ เช่น ห้ามตัวละครเพี้ยน ห้าม JSON หรือห้าม markdown ในพรอมต์สุดท้าย",
+    custom_requirements: "กรอกข้อกำหนดเพิ่มเติมที่ต้องการให้พรอมต์ยึดตาม"
   };
   if (help[fieldId]) return help[fieldId];
   if (type === "select") return "เลือกค่าที่ตรงกับงาน ถ้าเห็นตัวเลือก auto สามารถให้ระบบเลือกให้ได้";
@@ -381,6 +544,38 @@ function thaiHelpForField(fieldId, prop = {}, type = "text") {
 function thaiLabelForField(fieldId) {
   const labels = {
     reference_images: "ภาพอ้างอิง",
+    reference_image_behavior: "การใช้งานภาพอ้างอิง",
+    character_profile: "โปรไฟล์ตัวละคร",
+    generation_preferences: "การตั้งค่าการสร้างภาพ",
+    workflow_mode: "โหมดการทำงาน",
+    ui_language: "ภาษา UI",
+    output_language: "ภาษาพรอมต์",
+    prompt_count: "จำนวนพรอมต์",
+    shot_types: "ประเภทภาพต่อพรอมต์",
+    aspect_ratio: "อัตราส่วนภาพ",
+    include_translation: "ใส่คำแปลเพิ่มเติม",
+    translation_language: "ภาษาคำแปลเพิ่มเติม",
+    session_commands: "คำสั่งพิเศษ",
+    gender_identity: "เพศสภาวะและการแสดงออก",
+    age: "อายุ",
+    ethnicity_skin: "เชื้อชาติและโทนผิว",
+    face_structure: "โครงหน้า",
+    eyes: "ดวงตา",
+    body_proportions: "สัดส่วนร่างกาย",
+    bust_chest: "ทรงเสื้อช่วงลำตัวบน",
+    hair: "ทรงผมและสีผม",
+    nose: "จมูก",
+    mouth: "ปากและริมฝีปาก",
+    personality_posture: "บุคลิกและท่าทาง",
+    skin_details: "รายละเอียดผิว",
+    eyebrows: "คิ้ว",
+    smile_teeth: "รอยยิ้มและฟัน",
+    ears: "หู",
+    facial_hair: "หนวดและเครา",
+    eyewear: "แว่นตา",
+    makeup: "เมคอัพ",
+    additional_features: "ลักษณะเพิ่มเติม",
+    custom_notes: "หมายเหตุเพิ่มเติม",
     custom_style_notes: "รายละเอียดสไตล์เพิ่มเติม",
     story_seed: "ไอเดียเรื่องเพิ่มเติม",
     cinematic_intent: "รายละเอียดวิดีโอเพิ่มเติม"
@@ -406,14 +601,16 @@ function fieldFromInputSchema(fieldId, prop = {}, uiMeta = {}, required = [], in
       : quickStartSkillSections ? schemaDefaultForField(fieldId, prop, inputSchema) : undefined;
   const field = {
     id: fieldId,
-    label: firstString(uiMeta["ui:title"], uiMeta.title, prop.title, humanizeFieldId(fieldId)),
-    labelTh: thaiLabelForField(fieldId),
-    description: firstString(uiMeta["ui:help"], uiMeta.helpText, prop.description),
-    helpTextTh: thaiHelpForField(fieldId, prop, type),
+    label: firstString(localizedString(uiMeta["ui:title"], "en"), localizedString(uiMeta.title, "en"), localizedString(prop.title, "en"), humanizeFieldId(fieldId)),
+    labelTh: firstString(localizedString(uiMeta["ui:title"], "th"), localizedString(uiMeta.title, "th"), thaiLabelForField(fieldId)),
+    description: firstString(localizedString(uiMeta["ui:help"], "en"), localizedString(uiMeta.helpText, "en"), localizedString(prop.description, "en")),
+    helpTextTh: firstString(localizedString(uiMeta["ui:help"], "th"), localizedString(uiMeta.helpText, "th"), thaiHelpForField(fieldId, prop, type)),
     type,
-    options,
+    options: optionsForField(fieldId, options, prop, uiMeta),
     default: defaultValue,
-    placeholder: firstString(uiMeta["ui:placeholder"], uiMeta.placeholder),
+    placeholder: firstString(localizedString(uiMeta["ui:placeholder"], "en"), localizedString(uiMeta.placeholder, "en")),
+    placeholderTh: firstString(localizedString(uiMeta["ui:placeholder"], "th"), localizedString(uiMeta.placeholder, "th")),
+    accept: firstString(prop["x-ui-accept"], prop.accept, prop.items?.contentMediaType),
     required: required.includes(fieldId),
     example: firstString(uiMeta.example, uiMeta["ui:example"], prop.examples?.[0], sampleForField(fieldId, prop)),
     min: prop.minimum,
@@ -426,18 +623,19 @@ function fieldFromInputSchema(fieldId, prop = {}, uiMeta = {}, required = [], in
   if (type === "object" && prop.properties && depth < 3) {
     const childRequired = Array.isArray(prop.required) ? prop.required : [];
     field.fields = Object.keys(prop.properties).map((childId) =>
-      fieldFromInputSchema(childId, prop.properties[childId], {}, childRequired, inputSchema, depth + 1)
+      fieldFromInputSchema(childId, prop.properties[childId], nestedUiForField(uiMeta, childId), childRequired, inputSchema, depth + 1)
     );
   }
   if (type === "array") {
     const itemSchema = resolveLocalSchema(inputSchema, prop.items || {});
     if (itemSchema.enum) {
       field.type = "multiselect";
-      field.options = withAutoOption(fieldId, itemSchema.enum, itemSchema);
+      const itemOptions = withAutoOption(fieldId, itemSchema.enum, itemSchema);
+      field.options = optionsForField(fieldId, itemOptions, itemSchema, uiMeta);
     } else if ((itemSchema.type === "object" || itemSchema.properties) && depth < 3) {
       const childRequired = Array.isArray(itemSchema.required) ? itemSchema.required : [];
       field.itemFields = Object.keys(itemSchema.properties || {}).map((childId) =>
-        fieldFromInputSchema(childId, itemSchema.properties[childId], {}, childRequired, inputSchema, depth + 1)
+        fieldFromInputSchema(childId, itemSchema.properties[childId], nestedUiForField(uiMeta, childId), childRequired, inputSchema, depth + 1)
       );
       field.itemLabel = humanizeFieldId(fieldId).replace(/s$/, "");
     } else {
@@ -732,13 +930,19 @@ function targetLanguageName(params) {
   return raw || "the language requested by the user";
 }
 
+function isImageDataUrl(value) {
+  return typeof value === "string" && value.startsWith("data:image/");
+}
+
 function isImagePayload(value) {
-  return value && typeof value === "object" && typeof value.dataUrl === "string" && value.dataUrl.startsWith("data:image/");
+  return value && typeof value === "object" && isImageDataUrl(value.dataUrl);
 }
 
 function collectImages(value, path = []) {
   const images = [];
-  if (isImagePayload(value)) {
+  if (isImageDataUrl(value)) {
+    images.push({ dataUrl:value, path:path.join(".") });
+  } else if (isImagePayload(value)) {
     images.push({ ...value, path:path.join(".") });
   } else if (Array.isArray(value)) {
     value.forEach((item, index) => images.push(...collectImages(item, [...path, String(index)])));
@@ -888,8 +1092,22 @@ function imageInputGuidance(targets = []) {
 }
 
 function paramsWithoutImageData(value) {
+  if (isImageDataUrl(value)) {
+    return { type:"image", note:"Image data sent as compressed multimodal attachment." };
+  }
   if (isImagePayload(value)) {
-    return { type:"image", name:value.name, mimeType:value.mimeType, size:value.size, note:"Image data sent as base64 multimodal attachment." };
+    return {
+      type:"image",
+      name:value.name,
+      mimeType:value.mimeType,
+      size:value.size,
+      originalSize:value.originalSize,
+      width:value.width,
+      height:value.height,
+      originalWidth:value.originalWidth,
+      originalHeight:value.originalHeight,
+      note:"Image data sent as compressed multimodal attachment."
+    };
   }
   if (Array.isArray(value)) return value.map(paramsWithoutImageData);
   if (value && typeof value === "object") {
@@ -907,8 +1125,7 @@ function userMessageContent(params) {
     { type:"text", text },
     ...images.map((image, index) => ({
       type:"image_url",
-      image_url: { url:image.dataUrl },
-      detail:"auto",
+      image_url: { url:image.dataUrl, detail:"low" },
       name:image.name || `reference-image-${index + 1}`
     }))
   ];
@@ -916,6 +1133,22 @@ function userMessageContent(params) {
 
 function llmSystemPrompt(info, params) {
   const languageName = targetLanguageName(params);
+  const cosmeticStoryboardVisualRules = info.id === "cosmatic_reference_storyboard"
+    ? [
+        "",
+        "Product reference storyboard rules:",
+        "- Preserve the referenced product shape, brand markings, material, proportions, and key design details.",
+        "- Infer the product category and real-world usage method from the reference images, then design storyboard beats that show believable product interaction and application.",
+        "- Product usage beats should include handling/opening/dispensing/applying/using/result moments when appropriate for the product type.",
+        cosmeticUsageGuidance,
+        handAnatomyGuidance,
+        "- Do not show unrealistic use: never treat cosmetics as food/drink; do not apply products to the wrong facial area; do not use skincare like color makeup; do not use eye products on lips/cheeks unless the product is explicitly multi-use.",
+        "- If generation_mode is multi_frame_storyboard, write the final prompt for a clean visual storyboard/contact sheet only.",
+        "- For multi_frame_storyboard, the generated image itself must contain NO visible captions, NO frame descriptions, NO frame numbers, NO text boxes, NO lower-third bars, NO subtitles, and NO overlay labels. Preserve product packaging text, logos, and brand markings when they are part of the referenced product.",
+        "- Describe the visual action/composition for each frame in the prompt text if useful, but explicitly instruct the image model to render image panels only without printed descriptions inside the panels.",
+        "- If storyboard captions, layout labels, or descriptions would normally appear in a storyboard layout, replace them with clean image-only panels."
+      ].join("\n")
+    : "";
   return [
     "You are running a local Codex skill from a schema-driven UI.",
     `The final user-facing output language is ${languageName}.`,
@@ -935,6 +1168,7 @@ function llmSystemPrompt(info, params) {
     `Skill description: ${info.description}`,
     "Skill instructions:",
     info.markdown || "(No skill markdown found.)",
+    cosmeticStoryboardVisualRules,
     "Input schema:",
     JSON.stringify(info.inputSchema)
   ].join("\n");
@@ -1120,7 +1354,359 @@ function textFromNestedPayload(value) {
   return "";
 }
 
-function normalizeLlmResult(parsed, info) {
+function hasItems(value) {
+  return Array.isArray(value) && value.length > 0;
+}
+
+function promptHas(text, patterns) {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+const cosmeticUsageGuidance = [
+  "Cosmetic usage taxonomy:",
+  "- Eyeliner or liquid liner: show cap/applicator opened, controlled line drawn along upper lash line, close eye/eyelid detail, wing or definition result; do not apply to lips or cheeks.",
+  "- Lipstick, lip tint, or lip gloss: show cap removed or applicator wand, product applied directly to lips or with wand, lip close-up, color payoff/result; do not apply to eyes or face skin.",
+  "- Compact powder, cushion, pressed powder, or foundation compact: show compact opened with mirror/puff/sponge, product picked up with puff/brush, patting onto cheeks/T-zone, soft matte/even complexion result.",
+  "- Eyebrow pencil, brow gel, brow mascara, or brow pen: show spoolie/brush or pencil tip, shaping/filling brow hairs with short strokes, brow close-up, natural defined brow result; do not use as eyeliner unless explicitly labeled dual-use.",
+  "- Eyeshadow palette or eye makeup palette: show palette opened, brush/applicator picking up a specific matte or shimmer shade, gentle application to eyelid/crease/lower lash line, blending/detail close-up, and finished polished eye makeup result; do not apply powder inside the eye or to lips.",
+  "- Eyelash mascara: show wand removed from tube, brushing lashes from root to tip, eye/lash close-up, lifted separated lashes result; do not apply eyelash mascara to brows/lips.",
+  "- Face cream, moisturizer, sunscreen, or night cream: show jar/tube/pump opened, small amount on fingertip/spatula/back of hand, dotting/spreading on cheeks/forehead/neck, hydrated/dewy/protected skin result.",
+  "- Serum, essence, ampoule, or facial oil: show dropper/pump, few drops onto palm or fingertips, pressing/patting into face, glow/hydration result; avoid pouring large amounts.",
+  "- Toner, essence toner, glycolic acid toner, or exfoliating acid toner: show cap/nozzle opened, small amount dispensed onto a cotton pad or palm, gentle sweeping/patting over face while avoiding eye and lip areas, then smoother brighter skin texture result; do not scrub harshly or pour directly over the face.",
+  "- Micellar cleansing water or makeup remover: show flip cap opened, liquid poured onto cotton pad, gently wiping makeup or cleansing face/neck, bottle beside cotton pad, fresh clean-skin result; do not pour directly into hands as primary use.",
+  "- Cleanser or face wash: show tube/pump opened, small amount in wet hands, gentle lather/massage on face, rinsed fresh result.",
+  "- Perfume/fragrance: show bottle held upright, spray mist near pulse points/wrist/neck, elegant scent mood; do not apply like skincare cream."
+].join("\n");
+
+const handAnatomyGuidance = [
+  "Hand anatomy and product-grip guard:",
+  "- Hands must be anatomically plausible: natural left/right orientation, correct palm direction, realistic wrist rotation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no duplicated hands, no reversed palms, and no broken or rubbery joints.",
+  "- Product grip must match real use: liner and brow pencils held like a pen, mascara/lip wand held by the handle, compact held from the edge, puff/cotton pad pinched naturally, serum dropper held vertically, cream applied with a simple fingertip gesture.",
+  "- Prefer one clearly visible active hand per close-up when possible; avoid crossing two hands over the face, overlapping hands with bottles, or complex mirrored poses unless the anatomy is simple and readable.",
+  "- If a product-use action is difficult, simplify the pose: show the product in one hand and the application surface clearly, with the other hand out of frame or softly cropped."
+].join("\n");
+
+function usageContextText(params = {}, prompt = "") {
+  const textParts = [prompt];
+  for (const key of ["product_type", "productType", "scene_descriptions", "topic", "description"]) {
+    const value = params[key];
+    if (Array.isArray(value)) textParts.push(value.join(" "));
+    else if (value) textParts.push(String(value));
+  }
+  for (const image of collectImages(params)) textParts.push(String(image.name || ""));
+  return textParts.join(" ").toLowerCase();
+}
+
+function cosmeticCategoryUsageRules(context) {
+  const rules = [
+    {
+      id: "eyeliner_usage",
+      label: "Eyeliner usage is realistic",
+      match: /\b(eyeliner|eye liner|liquid liner|gel liner)\b|อายไลเนอร์/i,
+      patterns: [/(lash line|eyelid|wing|draw.*line|applicator|liner tip)/i, /(เปลือกตา|ขอบตา|หางตา|เส้นไลเนอร์)/i],
+      repair: "Eyeliner usage: show opening the liner, controlled applicator/pen tip near the eyelid, drawing along the upper lash line, optional wing detail, and a clean defined-eye result. Do not apply eyeliner to lips, cheeks, or unrelated surfaces."
+    },
+    {
+      id: "lip_usage",
+      label: "Lip product usage is realistic",
+      match: /\b(lip\s?stick|lip\s?tint|lip\s?gloss|lip\s?balm|ลิปสติก|ลิปทินท์|ลิปกลอส)\b/i,
+      patterns: [
+        /((cap|applicator|wand|bullet|swipe|glide|apply|applying)[^.]{0,100}(lip|lips|mouth))|((lip|lips|mouth)[^.]{0,100}(close-up|color payoff|finish|moisturized|glossy))/i,
+        /(เปิดฝา|หัวแปรง|แท่งลิป|ทา|ปาด)[^.]{0,80}(ริมฝีปาก|ปาก|สีปาก)/i
+      ],
+      repair: "Lip product usage: show cap/applicator opened, product applied to the lips with the bullet or wand, close-up lip detail, and a color payoff or moisturized-lip result. Do not apply lip product to eyes or cheeks."
+    },
+    {
+      id: "compact_powder_usage",
+      label: "Compact powder usage is realistic",
+      match: /\b(compact powder|pressed powder|cushion|powder foundation|foundation compact|แป้งพับ|คุชชั่น)\b/i,
+      patterns: [/(compact opened|mirror|puff|sponge|brush|patting|t-zone|complexion|matte)/i, /(เปิดตลับ|พัฟ|ฟองน้ำ|แปรง|ตบเบา|ผิวเนียน)/i],
+      repair: "Compact powder usage: show compact opened with mirror and puff/sponge, product picked up from the pan, patting onto cheeks or T-zone, and a soft matte even-complexion result. Do not pour or smear it like liquid skincare."
+    },
+    {
+      id: "eyebrow_usage",
+      label: "Eyebrow product usage is realistic",
+      match: /\b(eyebrow pencil|brow pencil|brow gel|brow mascara|eyebrow mascara|brow pen|ดินสอเขียนคิ้ว|มาสคาร่าคิ้ว|มาสคาร่าปัดคิ้ว|เจลคิ้ว|เขียนคิ้ว)\b/i,
+      patterns: [
+        /((spoolie|brush|pencil tip|short strokes|hair-like strokes|fill|shape|define)[^.]{0,100}(brow|eyebrow))|((brow|eyebrow)[^.]{0,100}(filled|shaped|defined|natural result|close-up))/i,
+        /(แปรงคิ้ว|หัวดินสอ|เส้นสั้น|วาด|เติม|จัดทรง)[^.]{0,80}(คิ้ว|ทรงคิ้ว)/i
+      ],
+      repair: "Eyebrow product usage: show spoolie brushing or pencil tip, short hair-like strokes filling and shaping the brows, brow close-up, and natural defined-brow result. Do not use it as lipstick or skincare."
+    },
+    {
+      id: "eyeshadow_palette_usage",
+      label: "Eyeshadow palette usage is realistic",
+      match: /\b(eyeshadow|eye shadow|eye palette|eyeshadow palette|makeup palette|eye makeup palette|อายแชโดว์|พาเลตต์ตา|พาเลทตา)\b/i,
+      patterns: [
+        /((palette|pan|shade|matte|shimmer|glitter)[^.]{0,140}(brush|applicator|pick|select|tap))|((brush|applicator)[^.]{0,140}(palette|pan|shade|matte|shimmer|glitter))/i,
+        /(eyelid|crease|outer corner|lower lash line|inner corner|blend|blending|eye makeup|finished eye look)/i,
+        /(เปลือกตา|เบ้าตา|หางตา|ขอบตาล่าง|แปรง|พาเลตต์|อายแชโดว์|เกลี่ย|สีชิมเมอร์|สีแมตต์)/i
+      ],
+      repair: "Eyeshadow palette usage: show the palette opened, brush/applicator picking up a specific matte or shimmer shade from the pan, gentle application to eyelid/crease/lower lash line or outer corner, soft blending detail, and a finished polished eye makeup result. Keep powder on eyelid/skin around the eye only; do not place powder inside the eye, on lips, or on unrelated face areas."
+    },
+    {
+      id: "mascara_usage",
+      label: "Eyelash mascara usage is realistic",
+      match: /\b(eyelash mascara|lash mascara|mascara|มาสคาร่าขนตา|มาสคาร่า)\b/i,
+      exclude: /\b(eyebrow mascara|brow mascara)\b|มาสคาร่าคิ้ว|มาสคาร่าปัดคิ้ว/i,
+      patterns: [/(wand|lashes|root to tip|brushing lashes|lifted lashes)/i, /(ขนตา|ปัดขนตา|แปรงมาสคาร่า)/i],
+      repair: "Eyelash mascara usage: show wand removed from tube, brushing lashes from root to tip, eye/lash close-up, and lifted separated lashes result. Do not apply eyelash mascara to brows, lips, cheeks, or skin."
+    },
+    {
+      id: "cream_usage",
+      label: "Cream or moisturizer usage is realistic",
+      match: /\b(cream|moisturizer|sunscreen|night cream|ครีม|มอยส์เจอไรเซอร์|กันแดด)\b/i,
+      patterns: [/(jar|tube|pump|fingertip|spatula|dotting|spread.*face|neck|hydrated|dewy)/i, /(กระปุก|หลอด|ปั๊ม|ปลายนิ้ว|ทา|เกลี่ย|ชุ่มชื้น)/i],
+      repair: "Cream/moisturizer usage: show opening jar/tube/pump, small amount on fingertip/spatula/back of hand, dotting and spreading on cheeks/forehead/neck, and hydrated/dewy/protected skin result. Do not use it like makeup color product."
+    },
+    {
+      id: "serum_usage",
+      label: "Serum usage is realistic",
+      match: /\b(serum|essence|ampoule|facial oil|เซรั่ม|เอสเซนส์)\b/i,
+      exclude: /\b(toner|essence toner|acid toner|exfoliating toner)\b|โทนเนอร์/i,
+      patterns: [/(dropper|pump|drops|palm|fingertips|patting|press.*skin|glow|hydration)/i, /(ดรอปเปอร์|หยด|ฝ่ามือ|ปลายนิ้ว|ตบเบา|ผิวโกลว์)/i],
+      repair: "Serum usage: show dropper/pump, a few drops onto palm or fingertips, pressing/patting into the face, and a glow/hydration result. Avoid pouring excessive product."
+    },
+    {
+      id: "toner_usage",
+      label: "Toner or exfoliating acid toner usage is realistic",
+      match: /\b(toner|essence toner|glycolic acid|salicylic acid toner|exfoliating toner|aha|bha|pha|โทนเนอร์|กรดไกลโคลิก)\b/i,
+      patterns: [
+        /((cap|nozzle|flip top|open|dispense|pour|drops?)[^.]{0,140}(cotton pad|palm|hand|fingertips|toner))|((cotton pad|palm|fingertips)[^.]{0,140}(sweep|swipe|pat|apply|toner))/i,
+        /(avoid|avoiding|do not apply)[^.]{0,100}(eye area|eyes|lips|broken skin)|((smooth|brighter|glow|radiance|texture)[^.]{0,100}(skin|result))/i,
+        /(โทนเนอร์|สำลี|หยด|เท|เช็ด|ตบเบา|หลีกเลี่ยง)[^.]{0,100}(รอบดวงตา|ริมฝีปาก|ผิว|หน้า)/i
+      ],
+      repair: "Toner/exfoliating acid toner usage: show cap or nozzle opened, a small amount dispensed onto a cotton pad or palm, gentle sweeping/patting across face or target skin while avoiding eye and lip areas, and a smoother brighter skin-texture result. For glycolic/salicylic/AHA/BHA toners, use a gentle thin layer, do not scrub harshly, do not pour directly over the face, and imply sensible skincare routine care."
+    },
+    {
+      id: "acid_toner_care",
+      label: "Acid toner care constraints are realistic",
+      match: /\b(glycolic acid|salicylic acid|lactic acid|mandelic acid|aha|bha|pha|acid toner|exfoliating toner|กรดไกลโคลิก)\b/i,
+      patterns: [
+        /(avoid|avoiding|do not apply|keep away)[^.]{0,120}(eye area|eyes|lips|mouth|broken skin)/i,
+        /(gentle|thin layer|do not scrub|no harsh rubbing|sunscreen|daytime sunscreen|patch test|sensitive skin)/i,
+        /(หลีกเลี่ยง|ห้ามใช้)[^.]{0,120}(รอบดวงตา|ดวงตา|ริมฝีปาก|ผิวถลอก)|((บาง ๆ|อ่อนโยน|กันแดด|ไม่ถูแรง)[^.]{0,120}(ผิว|หน้า))/i
+      ],
+      repair: "Acid toner care: because this is a glycolic/salicylic/AHA/BHA-style toner, show a gentle thin-layer application and explicitly avoid the eye area, lips, and irritated or broken skin. Do not scrub harshly, do not pour directly over the face, and imply sensible skincare care such as hydration and daytime sunscreen after exfoliating acids."
+    },
+    {
+      id: "micellar_usage",
+      label: "Micellar or makeup remover usage is realistic",
+      match: /\b(micellar|cleansing water|makeup remover|เมคอัพรีมูฟเวอร์|คลีนซิ่งวอเตอร์)\b/i,
+      patterns: [/(flip cap|cotton pad|pour.*cotton|wipe|cleanse|remove makeup|fresh clean)/i, /(เปิดฝา|สำลี|เท.*สำลี|เช็ด|ล้างเครื่องสำอาง|ผิวสะอาด)/i],
+      repair: "Micellar cleansing water usage: show flip cap opened, liquid poured onto a cotton pad, gently wiping makeup or cleansing face/neck, bottle beside cotton pad, and a fresh clean-skin result. Do not pour directly into hands as the primary use or treat it as perfume/lotion."
+    }
+  ];
+  return rules.filter((rule) => rule.match.test(context) && !(rule.exclude && rule.exclude.test(context)));
+}
+
+function productStoryboardCompletenessRules(params = {}, prompt = "", infoId = "") {
+  const effectiveInfoId = infoId || "cosmatic_reference_storyboard";
+  const mode = String(params.generation_mode || params.generationMode || "").toLowerCase();
+  const isMultiFrame = mode === "multi_frame_storyboard" ||
+    ((mode === "auto" || !mode) && (
+      effectiveInfoId === "cosmatic_reference_storyboard" ||
+      effectiveInfoId === "furniture-reference-storyboard" ||
+      /(3x3|grid|panels|contact sheet|storyboard|frame \d)/i.test(prompt)
+    ));
+  return [
+    {
+      id: "usable_prompt",
+      label: "Prompt is non-empty and generation-ready",
+      required: true,
+      test: (text) => text.trim().length >= 80,
+      repair: "Write this as a complete, directly usable image-generation prompt with clear subject, scene, composition, lighting, and output constraints."
+    },
+    {
+      id: "product_lock",
+      label: "Product identity and geometry are protected",
+      required: true,
+      test: (text) => promptHas(text, [
+        /preserve[^.]{0,120}(product|shape|geometry|logo|brand|material|proportion|design)/i,
+        /(bottle|cap|label|logo|packaging|base|button|control panel|grille|cage|motor housing|standing column|pedestal|Hatari|Garnier)[^.]{0,180}(preserve|exact|same|match|lock)/i,
+        /(product|สินค้า)[^.]{0,120}(lock|identity|geometry|shape|material|logo|brand|preservation|คง|รักษา)/i,
+        /(do not|must not|no)[^.]{0,120}(redesign|alter|change)[^.]{0,80}(product|logo|brand|shape|geometry)/i
+      ]),
+      repair: "Product lock: preserve the exact product from the reference images, including silhouette, proportions, geometry, material/transparency, color palette, cap/top shape, label layout, logo/brand placement, barcode or fine label areas when present, control/button layout when present, surface finish, and all key packaging or industrial-design details; do not redesign, simplify, distort, relabel, recolor, replace, invent a different product, change the container shape, change the cap color/shape, change label hierarchy, or hide the product."
+    },
+    {
+      id: "negative_constraints",
+      label: "Negative constraints are present",
+      required: true,
+      test: (text) => promptHas(text, [
+        /negative constraints?/i,
+        /\b(no|avoid|must not|do not)\b[^.]{0,160}(text|watermark|distort|deform|redesign|extra logo|caption|subtitle|label)/i,
+        /ห้าม[^.]{0,160}(ตัวหนังสือ|ลายน้ำ|บิดเบี้ยว|เปลี่ยน|ฉลาก|คำบรรยาย)/i
+      ]),
+      repair: "Negative constraints: no watermark, no extra logos, no wrong brand text, no fake labels, no product redesign, no altered packaging silhouette, no wrong bottle/cap shape, no wrong label layout, no altered grille/base/button pattern when the product is mechanical, no distorted geometry, no warped controls, no duplicated product, no missing key product parts, no unrelated props blocking the product, no low-resolution blur, and no visible text overlays unless explicitly requested."
+    },
+    {
+      id: "product_variant_consistency",
+      label: "Multiple product references keep variant logic consistent",
+      required: Array.isArray(params.reference_product_images) && params.reference_product_images.length > 1,
+      test: (text) => promptHas(text, [
+        /(choose|select|hero|primary)[^.]{0,120}(variant|formula|shade|color|bottle|palette|compact|case|product)/i,
+        /(variant|formula|shade|color|bottle|palette|compact|case|pan layout|packaging)[^.]{0,180}(consistent|same|do not blend|do not mix|lineup|all variants|three variants|multiple variants)/i,
+        /(สูตร|สี|รุ่น|ขวด|พาเลตต์|ตลับ)[^.]{0,120}(เดียวกัน|เลือก|หลัก|ห้ามผสม|หลายสูตร|ทุกสูตร)/i
+      ]),
+      repair: "Product variant consistency: when multiple product reference images show different variants, formulas, colors, scents, shades, palette layouts, or packaging colors, do not blend them into one mixed product. Choose one clear hero variant for the storyboard and preserve that variant's exact packaging color, container/case shape, cap/lid/closure when present, palette pan layout when present, logo placement, formula or shade text, and packaging details across every frame; alternatively, if showing multiple variants, present them intentionally as a neat lineup while keeping each variant visually distinct."
+    },
+    {
+      id: "usage_intelligence",
+      label: "Storyboard includes realistic product usage beats",
+      required: effectiveInfoId === "cosmatic_reference_storyboard" && isMultiFrame,
+      test: (text) => promptHas(text, [
+        /(use|usage|routine|application|apply|open|pour|dispense|wipe|cleanse|remove makeup|cotton pad|hands|skin|before\/after|result)/i,
+        /(วิธีใช้|ใช้งาน|เปิด|เท|หยด|ปั๊ม|บีบ|ทา|เช็ด|สำลี|ผิว|ผลลัพธ์)/i
+      ]),
+      repair: `Product usage intelligence: infer the real-world use method from the cosmetic product category and include believable usage beats in the storyboard. Include handling/opening, dispensing or product pickup, correct application/use, and a result/benefit moment. Do not invent impossible usage or use the product in an unrelated way.\n${cosmeticUsageGuidance}`
+    },
+    {
+      id: "hand_anatomy_guard",
+      label: "Hands and product grips are anatomically plausible",
+      required: isMultiFrame,
+      test: (text) => promptHas(text, [
+        /(hand anatomy|anatomically plausible|natural left\/right|correct thumb|five fingers|no fused fingers|no extra fingers|no reversed palms|realistic wrist)/i,
+        /(product grip|held like a pen|held by the handle|pinched naturally|simple fingertip gesture|one clearly visible active hand)/i,
+        /(มือ|นิ้ว|ข้อมือ|นิ้วโป้ง|ฝ่ามือ)[^.]{0,140}(สมจริง|ถูกธรรมชาติ|ไม่สลับ|ไม่ผิดด้าน|ไม่เกิน|ไม่ติดกัน)/i
+      ]),
+      repair: handAnatomyGuidance
+    },
+    ...(effectiveInfoId === "cosmatic_reference_storyboard" ? cosmeticCategoryUsageRules(usageContextText(params, prompt)) : []).map((rule) => ({
+      id: rule.id,
+      label: rule.label,
+      required: isMultiFrame,
+      test: (text) => promptHas(text, rule.patterns),
+      repair: rule.repair
+    })),
+    {
+      id: "character_lock",
+      label: "Character continuity is protected when character references exist",
+      required: hasItems(params.reference_character_images),
+      test: (text) => promptHas(text, [
+        /(character|person|model|woman|man|face|identity|wardrobe|hair|skin)[^.]{0,120}(preserve|consistent|lock|same|continuity)/i,
+        /(preserve|consistent|lock|same)[^.]{0,120}(character|person|model|face|identity|wardrobe|hair)/i,
+        /(ตัวละคร|คน|ใบหน้า|เสื้อผ้า|ทรงผม)[^.]{0,120}(คง|เหมือนเดิม|ต่อเนื่อง)/i
+      ]),
+      repair: "Character lock: if a person appears, preserve the same identity, face structure, hairstyle, wardrobe, body proportions, expression style, and styling continuity across every frame."
+    },
+    {
+      id: "environment_lock",
+      label: "Environment continuity is protected when environment references exist",
+      required: hasItems(params.reference_environment_images),
+      test: (text) => promptHas(text, [
+        /(environment|room|location|setting|background|lighting|color palette|mood)[^.]{0,120}(preserve|consistent|same|continuity|lock)/i,
+        /(preserve|consistent|same|continuity|lock)[^.]{0,120}(environment|room|location|setting|background|lighting|color palette|mood)/i,
+        /(ฉาก|สถานที่|พื้นหลัง|แสง|โทนสี)[^.]{0,120}(คง|เหมือนเดิม|ต่อเนื่อง)/i
+      ]),
+      repair: "Environment lock: preserve the referenced location, background layout, lighting direction, color palette, mood, furniture/props relationship, and spatial continuity across the storyboard."
+    },
+    {
+      id: "multi_frame_image_only",
+      label: "Multi-frame storyboard forbids visible frame text",
+      required: isMultiFrame,
+      test: (text) => promptHas(text, [
+        /image-only[^.]{0,120}(panels|storyboard|contact sheet)/i,
+        /\b(no|without|must not contain)[^.]{0,180}(captions|frame numbers|text boxes|lower-third|subtitles|overlay labels|visible frame descriptions|storyboard labels)/i,
+        /ห้าม[^.]{0,180}(เลขเฟรม|คำบรรยาย|กล่องข้อความ|ซับไตเติล|ตัวหนังสือ|ข้อความ)/i
+      ]),
+      repair: "Multi-frame storyboard visual rule: render a clean image-only storyboard/contact sheet with visual panels only; the image must contain no frame numbers, no captions, no text boxes, no lower-third description bars, no subtitles, no overlay labels, no storyboard layout typography, and no visible frame descriptions. Preserve real product packaging text, logos, and brand markings when they are part of the referenced product."
+    },
+    {
+      id: "cabinet_drawer_fidelity",
+      label: "Cabinet and drawer fidelity, materials, handle styling, and legless/leg locks",
+      required: effectiveInfoId === "furniture-reference-storyboard" && (
+        /(drawer|cabinet|dresser|chest of drawers|wardrobe|storage|sideboard|buffet|credenza)/i.test(prompt) ||
+        /(drawer|cabinet|dresser|chest of drawers|wardrobe|storage|sideboard|buffet|credenza)/i.test(String(params.product_type || params.productType || ""))
+      ),
+      test: (text) => {
+        const hasLock = promptHas(text, [
+          /(preserve|lock|exact)[^.]{0,120}(drawer count|drawer layout|drawer fronts|recessed scoop|handleless|keyholes|lock holes|no legs|legless|flat base|plinth)/i,
+          /(do not|must not|no)[^.]{0,120}(add legs|invent legs|change material)/i
+        ]);
+        const hasBaseStance = promptHas(text, [
+          /(no legs|legless|flat base|flat-bottom|sits flatly on the floor|no feet|plinth base|tapered legs|wooden legs|metal legs|exposed feet)/i,
+          /ไม่มีขา|ติดพื้น|ฐานแบน|ไม่มีขาตั้ง/i
+        ]);
+        return hasLock && hasBaseStance;
+      },
+      repair: "Cabinet & drawer fidelity rule: preserve the exact drawer/cabinet configuration, drawer count, panel lines, handle type (e.g. recessed scoop handles, groove handles, knobs, or handleless flat fronts), presence of keyholes or lock holes, and the base structure from the reference images. If the product is legless or sits flat on a low base or plinth with no legs, strictly enforce \"no legs, legless, no tapered legs, no wooden feet, sits flat on the floor base\" in every panel. Do not invent legs, do not change material (e.g., do not turn plastic drawers into wood or vice-versa), do not invent metal slide rails or wooden drawer interiors unless clearly visible in the reference, and do not add generic handles or slit cuts that differ from the reference."
+    },
+    {
+      id: "borderless_layout",
+      label: "Borderless contiguous grid with zero divider lines, gutters, or borders",
+      required: isMultiFrame,
+      test: (text) => {
+        const hasPositive = promptHas(text, [
+          /(borderless|seamless|contiguous|edge-to-edge)[^.]{0,120}(grid|panels|layout|frames)/i
+        ]);
+        const hasNegative = promptHas(text, [
+          /(no|without|zero|must not contain|ban|exclude|remove)[^.]{0,180}(white divider|divider line|panel divider|border|gutter|margin|separator line|graphic divider|frame outline|grid separator|white line)/i,
+          /ไม่มี[^.]{0,180}(เส้นคั่น|เส้นสีขาว|ช่องว่างระหว่าง|รอยต่อ|ขอบเฟรม|เส้นสีขาวคั่น)/i
+        ]);
+        return hasPositive && hasNegative;
+      },
+      repair: "Borderless contiguous layout rule: the storyboard must be a clean 100% borderless, seamless, contiguous grid where all panels touch perfectly edge-to-edge. There must be zero white divider lines, zero black lines, zero colored borders, zero gutters, zero margins, and zero frame separator lines between the panels. Every panel must have mathematically identical height and width, forming a perfectly aligned grid with no gaps or margins to allow clean automatic cropping and frame slicing."
+    }
+  ];
+}
+
+export function checkAndRepairProductStoryboardPrompt(prompt, params = {}, infoId = "") {
+  const originalPrompt = String(prompt || "").trim();
+  const rules = productStoryboardCompletenessRules(params, originalPrompt, infoId);
+  const checks = rules.map((rule) => ({
+    id: rule.id,
+    label: rule.label,
+    required: Boolean(rule.required),
+    passed: !rule.required || rule.test(originalPrompt)
+  }));
+  const missing = checks.filter((check) => check.required && !check.passed).map((check) => check.id);
+  const repairs = rules.filter((rule) => missing.includes(rule.id)).map((rule) => rule.repair);
+  const repairedPrompt = repairs.length
+    ? [originalPrompt, "Prompt completeness guard:", ...repairs.map((repair) => `- ${repair}`)].filter(Boolean).join("\n\n")
+    : originalPrompt;
+  return {
+    prompt: repairedPrompt,
+    qualityCheck: {
+      passed: missing.length === 0,
+      fixed: repairs.length ? missing : [],
+      missing,
+      checks
+    }
+  };
+}
+
+function applyPromptCompletenessCheck(result, info, params = {}) {
+  if (info.id !== "cosmatic_reference_storyboard" && info.id !== "furniture-reference-storyboard") return result;
+  const output = result.output && typeof result.output === "object" ? result.output : {};
+  const checked = checkAndRepairProductStoryboardPrompt(output.prompt, params, info.id);
+  const qualityCheck = {
+    skill_id: info.id,
+    checked_at: new Date().toISOString(),
+    ...checked.qualityCheck
+  };
+  return {
+    ...result,
+    output: {
+      ...output,
+      prompt: checked.prompt,
+      metadata: {
+        ...(output.metadata && typeof output.metadata === "object" ? output.metadata : {}),
+        prompt_quality_check: qualityCheck
+      },
+      quality_check: qualityCheck
+    },
+    review: {
+      ...(result.review && typeof result.review === "object" ? result.review : {}),
+      prompt_quality_check: qualityCheck
+    },
+    warnings: qualityCheck.fixed.length
+      ? [...(Array.isArray(result.warnings) ? result.warnings : []), `Prompt completeness check auto-fixed: ${qualityCheck.fixed.join(", ")}`]
+      : result.warnings
+  };
+}
+
+function normalizeLlmResult(parsed, info, params = {}) {
   const result = parsed && typeof parsed === "object" ? parsed : {};
   const output = result.output && typeof result.output === "object" ? result.output : {};
   let prompt = output.prompt ?? output.prompts?.detailed ?? output.prompts?.structured ?? output.prompts?.short ?? result.prompt;
@@ -1131,14 +1717,14 @@ function normalizeLlmResult(parsed, info) {
   const article = output.article ?? result.article ?? "";
   const isPromptSkill = /prompt|image|video|seedance/i.test(`${info.id} ${info.title} ${info.description}`);
   if (isPromptSkill && (!prompt || !String(prompt).trim()) && article) prompt = article;
-  return {
+  return applyPromptCompletenessCheck({
     ...result,
     output: {
       ...output,
       prompt: prompt === undefined || prompt === null ? "" : String(prompt).trim(),
       article: article === undefined || article === null ? "" : String(article).trim()
     }
-  };
+  }, info, params);
 }
 
 async function postChatCompletion(target, info, params) {
@@ -1177,7 +1763,7 @@ async function postChatCompletion(target, info, params) {
       const finishReason = payload.choices?.[0]?.finish_reason;
       throw new Error(`LLM returned empty content${finishReason ? ` (finish_reason: ${finishReason})` : ""}`);
     }
-    const parsed = normalizeLlmResult(parseLlmJson(text), info);
+    const parsed = normalizeLlmResult(parseLlmJson(text), info, params);
     if (info.id === "video-storyboard-to-prompts" && isBadStoryboardPrompt(parsed.output?.prompt, params)) {
       parsed.output.prompt = renderStoryboardPrompt(params);
       parsed.warnings = [...(parsed.warnings || []), "LLM output was reformatted by the video storyboard adapter."];

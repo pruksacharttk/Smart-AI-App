@@ -23,10 +23,14 @@ function resultTone(ok?: boolean, skipped?: boolean) {
   return "fail";
 }
 
-function resultLabel(ok?: boolean, skipped?: boolean) {
-  if (ok) return "OK";
-  if (skipped) return "SKIP";
-  return "ACTION NEEDED";
+function resultLabel(language: Language, ok?: boolean, skipped?: boolean) {
+  if (ok) return t(language, "ok");
+  if (skipped) return t(language, "skip");
+  return t(language, "actionNeeded");
+}
+
+function formatText(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
 }
 
 export function ConfigPage({ language, config, onConfigChange, setStatus }: ConfigPageProps) {
@@ -64,9 +68,9 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
 
     const provider = draft.providers[id];
     if (!provider.apiKey && provider.hasApiKey) {
-      const ok = window.confirm("Reveal this saved API key in the browser? Hide it again when finished.");
+      const ok = window.confirm(t(language, "revealSavedKeyConfirm"));
       if (!ok) return;
-      setStatus(`Revealing ${providerLabels[id]} key`, "warn");
+      setStatus(formatText(t(language, "revealKeyStatus"), { provider: providerLabels[id] }), "warn");
       try {
         const response = await revealConfigKey(id);
         setDraft((current) => ({
@@ -78,9 +82,9 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
         }));
         setRevealedKeys((current) => ({ ...current, [id]: true }));
         setShowKeys((current) => ({ ...current, [id]: true }));
-        setStatus(`${providerLabels[id]} key revealed`, "ok");
+        setStatus(formatText(t(language, "revealKeyDone"), { provider: providerLabels[id] }), "ok");
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : "Unable to reveal saved key", "error");
+        setStatus(error instanceof Error ? error.message : t(language, "unableToRevealKey"), "error");
       }
       return;
     }
@@ -96,7 +100,7 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
   }
 
   async function saveDraft() {
-    setStatus("Saving config", "warn");
+    setStatus(t(language, "savingConfig"), "warn");
     const response = await saveConfig(draft);
     const next = mergeConfig(response.config);
     setDraft(next);
@@ -104,10 +108,10 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
     setResults({
       kind: "message",
       tone: "ok",
-      title: "Config saved",
-      message: "Secrets are stored encrypted. Normal config loading only returns saved/unsaved status, not API key values."
+      title: t(language, "configSavedTitle"),
+      message: t(language, "configSavedMessage")
     });
-    setStatus("Config saved", "ok");
+    setStatus(t(language, "configSavedTitle"), "ok");
   }
 
   async function clearDraft() {
@@ -115,8 +119,8 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
     const next = mergeConfig(response.config);
     setDraft(next);
     onConfigChange(next);
-    setResults({ kind: "message", tone: "warn", title: "Config cleared", message: "All saved provider keys and fallback settings were reset." });
-    setStatus("Config cleared", "ok");
+    setResults({ kind: "message", tone: "warn", title: t(language, "configClearedTitle"), message: t(language, "configClearedMessage") });
+    setStatus(t(language, "configClearedTitle"), "ok");
   }
 
   async function rotateKey() {
@@ -129,10 +133,10 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
     setResults({
       kind: "message",
       tone: "ok",
-      title: "Encryption key rotated",
-      message: "Saved API keys were re-encrypted. Keep the SQLite DB and .env together."
+      title: t(language, "encryptionKeyRotatedTitle"),
+      message: t(language, "encryptionKeyRotatedMessage")
     });
-    setStatus("Encryption key rotated", "ok");
+    setStatus(t(language, "encryptionKeyRotatedTitle"), "ok");
   }
 
   async function runLlmTest() {
@@ -141,15 +145,15 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
       const response = await testLlm(draft);
       setResults({
         kind: "llm",
-        title: "LLM fallback test",
-        description: "Tests the configured fallback rows in order. This is where OpenRouter/NVIDIA chat-completions compatible models are checked.",
+        title: t(language, "llmFallbackTestTitle"),
+        description: t(language, "llmFallbackTestDesc"),
         rows: sanitizePayload(response.results)
       });
-      setStatus("LLM test completed", response.results?.some((item) => item.ok) ? "ok" : "warn");
+      setStatus(t(language, "llmTestCompleted"), response.results?.some((item) => item.ok) ? "ok" : "warn");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "LLM test failed.";
-      setResults({ kind: "message", tone: "error", title: "LLM test failed", message });
-      setStatus("LLM test failed", "error");
+      const message = error instanceof Error ? error.message : t(language, "llmTestFailed");
+      setResults({ kind: "message", tone: "error", title: t(language, "llmTestFailed"), message });
+      setStatus(t(language, "llmTestFailed"), "error");
     }
   }
 
@@ -159,15 +163,15 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
       const response = await Promise.all((["fal", "kie", "wavespeed"] as ProviderId[]).map((id) => testProvider(id)));
       setResults({
         kind: "media",
-        title: "Media provider API test",
-        description: "Tests fal.ai, Kie.ai, and WaveSpeedAI service keys only. OpenRouter/NVIDIA are tested by Test LLM Fallbacks.",
+        title: t(language, "mediaProviderTestTitle"),
+        description: t(language, "mediaProviderTestDesc"),
         rows: sanitizePayload(response)
       });
-      setStatus("Provider tests completed", response.some((item) => item.ok) ? "ok" : "warn");
+      setStatus(t(language, "providerTestsCompleted"), response.some((item) => item.ok) ? "ok" : "warn");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Provider API test failed.";
-      setResults({ kind: "message", tone: "error", title: "Provider API test failed", message });
-      setStatus("Provider test failed", "error");
+      const message = error instanceof Error ? error.message : t(language, "providerTestFailed");
+      setResults({ kind: "message", tone: "error", title: t(language, "providerTestFailed"), message });
+      setStatus(t(language, "providerTestFailed"), "error");
     }
   }
 
@@ -193,19 +197,19 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
           {results.kind === "llm"
             ? results.rows.map((item, index) => (
               <article className={`test-result-card ${resultTone(item.ok, Boolean(item.skipped))}`} key={`${item.provider}-${item.model}-${index}`}>
-                <strong>{resultLabel(item.ok, Boolean(item.skipped))}</strong>
-                <span>Fallback #{String(item.rank ?? index + 1)}</span>
-                <b>{item.provider || "Unknown provider"}</b>
+                <strong>{resultLabel(language, item.ok, Boolean(item.skipped))}</strong>
+                <span>{t(language, "fallbackPrefix")} #{String(item.rank ?? index + 1)}</span>
+                <b>{item.provider || t(language, "unknownProvider")}</b>
                 <code>{item.model || "-"}</code>
-                <p>{String(item.preview || item.message || item.error || (item.ok ? "Model responded successfully." : "This fallback did not pass."))}</p>
+                <p>{String(item.preview || item.message || item.error || (item.ok ? t(language, "modelResponded") : t(language, "fallbackDidNotPass")))}</p>
               </article>
             ))
             : results.rows.map((item) => (
               <article className={`test-result-card ${resultTone(item.ok, false)}`} key={String(item.provider)}>
-                <strong>{resultLabel(item.ok, false)}</strong>
-                <span>{item.ok ? "Connected" : item.status === 0 ? "Missing key" : `HTTP ${item.status ?? "-"}`}</span>
+                <strong>{resultLabel(language, item.ok, false)}</strong>
+                <span>{item.ok ? t(language, "connected") : item.status === 0 ? t(language, "missingKey") : formatText(t(language, "httpStatus"), { status: item.status ?? "-" })}</span>
                 <b>{String(item.label || providerLabels[item.provider as ProviderId] || item.provider)}</b>
-                <p>{String(item.message || item.error || (item.ok ? "Provider API key is usable." : "Add a key above, save config, then test again."))}</p>
+                <p>{String(item.message || item.error || (item.ok ? t(language, "providerKeyUsable") : t(language, "addKeyAbove")))}</p>
               </article>
             ))}
         </div>
@@ -218,12 +222,12 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
       <div className="page-head">
         <div>
           <h2>{t(language, "config")}</h2>
-          <p>Encrypted LLM and provider configuration.</p>
+          <p>{t(language, "configDesc")}</p>
         </div>
       </div>
 
       <div className="warning">
-        DB กับ .env ต้องอยู่คู่กัน ถ้า .env หาย จะถอดรหัส API key เดิมไม่ได้
+        {t(language, "configWarning")}
       </div>
 
       <div className="provider-grid">
@@ -231,23 +235,23 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
           <section className="provider-card" key={id}>
             <div className="card-head">
               <h3>{providerLabels[id]}</h3>
-              <a href={providerKeyLinks[id]} target="_blank" rel="noreferrer">Create key</a>
+              <a href={providerKeyLinks[id]} target="_blank" rel="noreferrer">{t(language, "createKey")}</a>
             </div>
             <label>
-              <span>API key</span>
+              <span>{t(language, "apiKey")}</span>
               <input
                 type={showKeys[id] ? "text" : "password"}
                 value={draft.providers[id].apiKey}
-                placeholder={draft.providers[id].hasApiKey ? "Saved encrypted key - leave blank to keep" : "Paste API key"}
+                placeholder={draft.providers[id].hasApiKey ? t(language, "savedEncryptedKey") : t(language, "pasteApiKey")}
                 onChange={(event) => updateProvider(id, { apiKey: event.target.value })}
                 autoComplete="off"
               />
             </label>
             <button type="button" className="link-button" onClick={() => void toggleProviderKey(id)}>
-              {showKeys[id] ? "Hide" : "Show"}
+              {showKeys[id] ? t(language, "hide") : t(language, "show")}
             </button>
             <label>
-              <span>Base URL</span>
+              <span>{t(language, "baseUrl")}</span>
               <input value={draft.providers[id].baseUrl} onChange={(event) => updateProvider(id, { baseUrl: event.target.value })} />
             </label>
           </section>
@@ -255,7 +259,7 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
       </div>
 
       <section className="panel">
-        <h3>Fallback models</h3>
+        <h3>{t(language, "fallbackModels")}</h3>
         <div className="fallback-list">
           {draft.fallback.map((item, index) => (
             <div className="fallback-row" key={index}>
@@ -269,13 +273,13 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
                   <option key={model} value={model}>{model}</option>
                 ))}
               </select>
-              <input value={item.customModel || ""} placeholder="custom provider/model" onChange={(event) => updateFallback(index, { customModel: event.target.value })} />
+              <input value={item.customModel || ""} placeholder={t(language, "customProviderModel")} onChange={(event) => updateFallback(index, { customModel: event.target.value })} />
             </div>
           ))}
         </div>
         <aside className="model-guidance">
-          <strong>If you attach images, use a model that supports image input</strong>
-          <p>Text-only models and some free OpenRouter routes may not read uploaded images. Recommended Qwen vision fallback models:</p>
+          <strong>{t(language, "imageInputWarningTitle")}</strong>
+          <p>{t(language, "imageInputWarningBody")}</p>
           <ul>
             {imageModelRecommendations.map((model) => <li key={model}>{model}</li>)}
           </ul>
@@ -287,10 +291,10 @@ export function ConfigPage({ language, config, onConfigChange, setStatus }: Conf
         <button type="button" onClick={() => void rotateKey()}>{t(language, "rotateKey")}</button>
         <button type="button" onClick={() => void runProviderTests()}>{t(language, "testProviders")}</button>
         <button type="button" onClick={() => void runLlmTest()}>{t(language, "testLlm")}</button>
-        <button type="button" className="primary" onClick={() => void saveDraft()}>{t(language, "save")}</button>
+    <button type="button" className="primary" onClick={() => void saveDraft()}>{t(language, "save")}</button>
       </div>
       <p className="test-help">
-        Media provider test checks fal.ai, Kie.ai, and WaveSpeedAI keys. LLM fallback test checks OpenRouter/NVIDIA model rows above.
+        {t(language, "configTestHelp")}
       </p>
 
       {renderResults()}

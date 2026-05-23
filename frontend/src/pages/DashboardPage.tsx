@@ -15,31 +15,31 @@ export function DashboardPage({ language, rows, loading, error, onRefresh }: Das
       <div className="page-head">
         <div>
           <h2>{t(language, "dashboard")}</h2>
-          <p>LLM provider and model usage.</p>
+          <p>{t(language, "dashboardDesc")}</p>
         </div>
         <button type="button" onClick={onRefresh}>{t(language, "refresh")}</button>
       </div>
       {loading ? <p className="muted">{t(language, "loading")}</p> : null}
       {error ? <p className="alert">{error}</p> : null}
-      {!loading && !error && !rows.length ? <p className="muted">No usage rows yet.</p> : null}
+      {!loading && !error && !rows.length ? <p className="muted">{t(language, "noUsageRows")}</p> : null}
       {rows.length ? (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Provider</th>
-                <th>Model</th>
-                <th>Count</th>
-                <th>Last used</th>
+                <th>{t(language, "provider")}</th>
+                <th>{t(language, "model")}</th>
+                <th>{t(language, "count")}</th>
+                <th>{t(language, "lastUsed")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={`${row.provider}:${row.model}`}>
-                  <td data-label="Provider">{row.provider}</td>
-                  <td data-label="Model">{row.model}</td>
-                  <td data-label="Count">{row.usageCount}</td>
-                  <td data-label="Last used">{row.lastUsedAt ? new Date(row.lastUsedAt).toLocaleString() : "-"}</td>
+                  <td data-label={t(language, "provider")}>{row.provider}</td>
+                  <td data-label={t(language, "model")}>{row.model}</td>
+                  <td data-label={t(language, "count")}>{row.usageCount}</td>
+                  <td data-label={t(language, "lastUsed")}>{row.lastUsedAt ? new Date(row.lastUsedAt).toLocaleString() : "-"}</td>
                 </tr>
               ))}
             </tbody>

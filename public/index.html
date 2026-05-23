@@ -1545,6 +1545,12 @@
         if (!item) return "";
         return language === "th" ? item[`${base}Th`] || item[base] || "" : item[base] || item[`${base}Th`] || "";
       }
+      function syncFormLanguageValue() {
+        const field = form.elements.ui_language;
+        if (field && (field.value === "en" || field.value === "th") && field.value !== language) {
+          field.value = language;
+        }
+      }
       function toSnakeCase(id) {
         return String(id || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/[-\s]+/g, "_").toLowerCase();
       }
@@ -1830,6 +1836,7 @@
           formRoot.append(node);
         }
         restorePayload(previous);
+        syncFormLanguageValue();
         renderCoverage();
         if (!skill.hasRuntime && !hasConfiguredLlm()) promptOutput.textContent = t("noRuntime");
       }
@@ -2112,6 +2119,11 @@
         setStatus(t("ready"), "ok");
       }
       form.addEventListener("submit", (event) => { event.preventDefault(); runSkill(); });
+      form.addEventListener("change", (event) => {
+        if (event.target?.name === "ui_language" && (event.target.value === "en" || event.target.value === "th")) {
+          setLanguage(event.target.value);
+        }
+      });
       skillSelect.addEventListener("change", async () => { selectedSkillId = skillSelect.value; localStorage.setItem("selectedSkillId", selectedSkillId); currentBundle = null; await loadSchema(false); });
       document.querySelector("#runBtnTop").addEventListener("click", runSkill);
       document.querySelector("#resetBtn").addEventListener("click", resetForm);

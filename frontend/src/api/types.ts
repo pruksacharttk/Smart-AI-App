@@ -12,7 +12,9 @@ export interface SkillIssue {
 export interface SkillSummary {
   id: string;
   title: string;
+  titleTh?: string;
   description?: string;
+  descriptionTh?: string;
   hasRuntime?: boolean;
   issues?: SkillIssue[];
 }
@@ -33,8 +35,8 @@ export interface UiField {
   input?: string;
   widget?: string;
   required?: boolean;
-  options?: Array<string | number | { value?: string | number; label?: string; id?: string; name?: string }>;
-  choices?: Array<string | number | { value?: string | number; label?: string; id?: string; name?: string }>;
+  options?: Array<string | number | { value?: string | number; label?: string; labelTh?: string; id?: string; name?: string }>;
+  choices?: Array<string | number | { value?: string | number; label?: string; labelTh?: string; id?: string; name?: string }>;
   enum?: Array<string | number>;
   default?: unknown;
   placeholder?: string;

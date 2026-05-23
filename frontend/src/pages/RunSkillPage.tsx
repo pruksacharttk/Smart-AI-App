@@ -11,6 +11,7 @@ interface RunSkillPageProps {
   selectedSkillId: string;
   config: LlmConfig;
   onSkillChange: (skillId: string) => void;
+  onLanguageChange: (language: Language) => void;
   onRunComplete: () => void;
   setStatus: (message: string, tone?: "ok" | "warn" | "error") => void;
 }
@@ -33,6 +34,15 @@ function optionValue(option: string | number | { value?: string | number; id?: s
 
 function optionLabel(option: string | number | { value?: string | number; id?: string; label?: string; labelTh?: string; name?: string }, language: Language) {
   return typeof option === "string" || typeof option === "number" ? String(option) : String((language === "th" ? option.labelTh : option.label) || option.label || option.name || option.value || "");
+}
+
+function skillTitleFor(skill: SkillSummary, language: Language) {
+  return (language === "th" ? skill.titleTh : skill.title) || skill.title;
+}
+
+function skillDescriptionFor(skill: SkillSummary | undefined, language: Language) {
+  if (!skill) return t(language, "schemaDrivenRuntime");
+  return (language === "th" ? skill.descriptionTh : skill.description) || skill.description || t(language, "schemaDrivenRuntime");
 }
 
 function defaultFor(field: UiField): unknown {
@@ -105,7 +115,7 @@ function sectionsFromSchema(schema: UiSchemaResponse | null) {
   const sections = schema.uiSchema?.sections || [];
   if (sections.length) return sections;
   const directFields = schema.uiSchema?.fields || schema.fields || [];
-  return directFields.length ? [{ id: "inputs", title: "Inputs", titleTh: "ข้อมูลนำเข้า", fields: directFields }] : [];
+  return directFields.length ? [{ id: "inputs", title: t("en", "inputs"), titleTh: t("th", "inputs"), fields: directFields }] : [];
 }
 
 function extractRequired(schema: UiSchemaResponse | null) {
@@ -124,38 +134,102 @@ function isImageField(field: UiField) {
   return field.type === "images" || field.type === "imageUpload" || field.input === "image";
 }
 
-async function filesToDataUrls(files: FileList | null) {
+interface OptimizedImagePayload {
+  type: "image";
+  dataUrl: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  originalSize: number;
+  originalWidth: number;
+  originalHeight: number;
+  width: number;
+  height: number;
+}
+
+function imageSrc(value: unknown) {
+  if (typeof value === "string") return value.startsWith("data:image/") ? value : "";
+  if (value && typeof value === "object" && typeof (value as { dataUrl?: unknown }).dataUrl === "string") {
+    const dataUrl = (value as { dataUrl: string }).dataUrl;
+    return dataUrl.startsWith("data:image/") ? dataUrl : "";
+  }
+  return "";
+}
+
+const visionImageMaxDimension = 1024;
+const visionImageQuality = 0.72;
+
+function dataUrlByteSize(dataUrl: string) {
+  const base64 = dataUrl.split(",", 2)[1] || "";
+  return Math.ceil((base64.length * 3) / 4);
+}
+
+async function fileToOptimizedImage(file: File, language: Language): Promise<OptimizedImagePayload> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error(t(language, "unableToReadImageFile")));
+    };
+    img.src = url;
+  });
+
+  const originalWidth = image.naturalWidth || image.width;
+  const originalHeight = image.naturalHeight || image.height;
+  const scale = Math.min(1, visionImageMaxDimension / Math.max(originalWidth, originalHeight));
+  const width = Math.max(1, Math.round(originalWidth * scale));
+  const height = Math.max(1, Math.round(originalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error(t(language, "unableToReadImageFile"));
+  context.drawImage(image, 0, 0, width, height);
+  const dataUrl = canvas.toDataURL("image/jpeg", visionImageQuality);
+
+  return {
+    type: "image",
+    dataUrl,
+    name: file.name,
+    mimeType: "image/jpeg",
+    size: dataUrlByteSize(dataUrl),
+    originalSize: file.size,
+    originalWidth,
+    originalHeight,
+    width,
+    height
+  };
+}
+
+async function filesToImagePayloads(files: FileList | null, language: Language) {
   if (!files) return [];
-  return Promise.all(
-    Array.from(files).map(
-      (file) =>
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = () => reject(reader.error || new Error("Unable to read image file."));
-          reader.readAsDataURL(file);
-        })
-    )
-  );
+  return Promise.all(Array.from(files).map((file) => fileToOptimizedImage(file, language)));
 }
 
 interface ImageUploadControlProps {
   field: UiField;
+  language: Language;
   value: unknown;
-  onChange: (value: string | string[]) => void;
+  onChange: (value: string | OptimizedImagePayload | OptimizedImagePayload[]) => void;
 }
 
-function ImageUploadControl({ field, value, onChange }: ImageUploadControlProps) {
+function ImageUploadControl({ field, language, value, onChange }: ImageUploadControlProps) {
+  const [isDragging, setIsDragging] = useState(false);
   const maxImages = maxImagesFor(field);
   const images = Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && Boolean(item))
-    : typeof value === "string" && value
-      ? [value]
+    ? value.filter((item): item is OptimizedImagePayload => Boolean(imageSrc(item)))
+    : imageSrc(value)
+      ? [value as OptimizedImagePayload]
       : [];
   const isSingle = field.multiple === false || maxImages === 1;
 
   async function addFiles(files: FileList | null) {
-    const next = await filesToDataUrls(files);
+    const next = await filesToImagePayloads(files, language);
     const limited = (isSingle ? next.slice(0, 1) : [...images, ...next].slice(0, maxImages)).filter(Boolean);
     onChange(isSingle ? limited[0] || "" : limited);
   }
@@ -167,8 +241,29 @@ function ImageUploadControl({ field, value, onChange }: ImageUploadControlProps)
 
   return (
     <div className="image-upload">
-      <label className="file-picker">
-        <span>{images.length ? "Add / replace image" : "Choose image"}</span>
+      <label
+        className={`file-picker image-dropzone${isDragging ? " is-dragging" : ""}`}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault();
+          if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+          setIsDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDragging(false);
+          void addFiles(event.dataTransfer.files);
+        }}
+      >
+        <span>{t(language, "dropImagesHere")}</span>
+        <small>{images.length ? t(language, "addReplaceImage") : t(language, "chooseImage")}</small>
         <input
           type="file"
           accept={field.accept || "image/*"}
@@ -184,14 +279,14 @@ function ImageUploadControl({ field, value, onChange }: ImageUploadControlProps)
       {images.length ? (
         <div className="image-preview-grid">
           {images.map((src, index) => (
-            <div className="image-preview" key={`${src.slice(0, 32)}-${index}`}>
-              <img src={src} alt="" />
-              <button type="button" onClick={() => removeImage(index)}>Remove</button>
+            <div className="image-preview" key={`${imageSrc(src).slice(0, 32)}-${index}`}>
+              <img src={imageSrc(src)} alt="" />
+              <button type="button" onClick={() => removeImage(index)}>{t(language, "remove")}</button>
             </div>
           ))}
         </div>
       ) : null}
-      <small>{images.length ? `${images.length}/${maxImages} images attached` : `No images attached (${maxImages} max)`}</small>
+      <small>{images.length ? t(language, "imagesAttached").replace("{count}", String(images.length)).replace("{max}", String(maxImages)) : t(language, "noImagesAttached").replace("{max}", String(maxImages))}</small>
     </div>
   );
 }
@@ -203,6 +298,7 @@ export function RunSkillPage({
   selectedSkillId,
   config,
   onSkillChange,
+  onLanguageChange,
   onRunComplete,
   setStatus
 }: RunSkillPageProps) {
@@ -223,7 +319,7 @@ export function RunSkillPage({
     }
     let cancelled = false;
     setSchemaError("");
-    setStatus("Loading schema", "warn");
+    setStatus(t(language, "loadingSchema"), "warn");
     getUiSchema(selectedSkillId)
       .then((next) => {
         if (cancelled) return;
@@ -231,7 +327,7 @@ export function RunSkillPage({
         const initial: Record<string, unknown> = {};
         for (const field of fieldsFromSchema(next)) {
           const id = fieldId(field);
-          if (id) initial[id] = valueForForm(field);
+          if (id) initial[id] = id === "ui_language" ? language : valueForForm(field);
         }
         setValues(initial);
         setStatus(t(language, "ready"), "ok");
@@ -248,6 +344,9 @@ export function RunSkillPage({
 
   function updateValue(id: string, value: unknown) {
     setValues((current) => ({ ...current, [id]: value }));
+    if (id === "ui_language" && (value === "en" || value === "th")) {
+      onLanguageChange(value);
+    }
   }
 
   function renderHelp(field: UiField) {
@@ -255,7 +354,7 @@ export function RunSkillPage({
     return (
       <div className="field-help">
         {help ? <small>{help}</small> : null}
-        {field.example ? <small><strong>{language === "th" ? "ตัวอย่าง:" : "Example:"}</strong> {field.example}</small> : null}
+        {field.example ? <small><strong>{t(language, "example")}</strong> {field.example}</small> : null}
       </div>
     );
   }
@@ -263,7 +362,7 @@ export function RunSkillPage({
   function renderNestedControl(field: UiField, value: unknown, onChange: (next: unknown) => void) {
     const options = field.options || field.choices || field.enum || [];
     if (isImageField(field)) {
-      return <ImageUploadControl field={field} value={value} onChange={onChange as (value: string | string[]) => void} />;
+      return <ImageUploadControl field={field} language={language} value={value} onChange={onChange as (value: string | OptimizedImagePayload | OptimizedImagePayload[]) => void} />;
     }
     if (field.type === "object") {
       const current = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -291,8 +390,8 @@ export function RunSkillPage({
           {rows.map((row, index) => (
             <div className="repeater-item" key={index}>
               <div className="repeater-head">
-                <strong>{field.itemLabel || "Item"} {index + 1}</strong>
-                <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>Remove</button>
+                <strong>{field.itemLabel || t(language, "item")} {index + 1}</strong>
+                <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>{t(language, "remove")}</button>
               </div>
               {(field.itemFields || []).map((child) => {
                 const childId = fieldId(child);
@@ -311,7 +410,7 @@ export function RunSkillPage({
             </div>
           ))}
           <button type="button" className="link-button" onClick={() => onChange([...rows, blank()])}>
-            Add {field.itemLabel || "item"}
+            {t(language, "addItem")} {field.itemLabel || t(language, "item")}
           </button>
         </div>
       );
@@ -348,10 +447,10 @@ export function RunSkillPage({
           {rows.map((row, index) => (
             <div className="list-row" key={index}>
               <input value={row} onChange={(event) => onChange(rows.map((item, rowIndex) => rowIndex === index ? event.target.value : item))} />
-              <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>Remove</button>
+              <button type="button" onClick={() => onChange(rows.filter((_, rowIndex) => rowIndex !== index))}>{t(language, "remove")}</button>
             </div>
           ))}
-          <button type="button" className="link-button" onClick={() => onChange([...rows, ""])}>Add item</button>
+          <button type="button" className="link-button" onClick={() => onChange([...rows, ""])}>{t(language, "addItem")}</button>
         </div>
       );
     }
@@ -390,7 +489,7 @@ export function RunSkillPage({
     const error = samplePayload ? "" : validate();
     if (error) {
       setRuntimeStatus(error);
-      setStatus("Needs input", "warn");
+      setStatus(t(language, "needsInput"), "warn");
       return;
     }
     const params = samplePayload || fields.reduce<Record<string, unknown>>((payload, field) => {
@@ -399,18 +498,18 @@ export function RunSkillPage({
       return payload;
     }, {});
     setRunning(true);
-    setRuntimeStatus("Starting...");
+    setRuntimeStatus(t(language, "starting"));
     setResult(null);
-    setStatus("Running", "warn");
+    setStatus(t(language, "running"), "warn");
     try {
       const next = await runSkillStream({ skillId: selectedSkillId, params, llmConfig: config }, (status) => {
-        setRuntimeStatus(status.message || status.phase || "Running");
+        setRuntimeStatus(status.message || status.phase || t(language, "running"));
       });
       setResult(next);
-      setStatus("Completed", "ok");
+      setStatus(t(language, "completed"), "ok");
       onRunComplete();
     } catch (error) {
-      setRuntimeStatus(error instanceof Error ? error.message : "Skill run failed.");
+      setRuntimeStatus(error instanceof Error ? error.message : t(language, "skillRunFailed"));
       setStatus(t(language, "error"), "error");
     } finally {
       setRunning(false);
@@ -446,24 +545,24 @@ export function RunSkillPage({
       <div className="page-head">
         <div>
           <h2>{t(language, "runSkill")}</h2>
-          <p>{schema?.skill.description || "Schema-driven skill runtime."}</p>
+          <p>{skillDescriptionFor(schema?.skill, language)}</p>
         </div>
         <button type="button" className="primary" disabled={running || !selectedSkillId} onClick={() => void runSkill()}>
-          {running ? "Running..." : t(language, "run")}
+          {running ? t(language, "starting") : t(language, "run")}
         </button>
       </div>
 
       <label className="skill-select">
-        <span>Skill</span>
-        <select value={selectedSkillId} onChange={(event) => onSkillChange(event.target.value)} aria-label="Skill">
-          {skills.map((skill) => <option key={skill.id} value={skill.id}>{skill.title}</option>)}
-          {invalidSkills.map((skill) => <option key={skill.id} value={skill.id} disabled>{skill.title} (invalid)</option>)}
+        <span>{t(language, "chooseSkill")}</span>
+        <select value={selectedSkillId} onChange={(event) => onSkillChange(event.target.value)} aria-label={t(language, "chooseSkill")}>
+          {skills.map((skill) => <option key={skill.id} value={skill.id}>{skillTitleFor(skill, language)}</option>)}
+          {invalidSkills.map((skill) => <option key={skill.id} value={skill.id} disabled>{skillTitleFor(skill, language)}{t(language, "invalidSkillSuffix")}</option>)}
         </select>
       </label>
 
       {schemaError ? <p className="alert">{schemaError}</p> : null}
       {schema?.skill && !schema.skill.hasRuntime && !hasConfiguredLlm(config) ? (
-        <p className="warning">This skill has no local runtime. Configure an LLM key and fallback model to run it.</p>
+        <p className="warning">{t(language, "noLocalRuntime")}</p>
       ) : null}
 
       <div className="workbench">
@@ -499,7 +598,7 @@ export function RunSkillPage({
             );
           })}
           <div className="actions">
-            <button type="submit" className="primary" disabled={running || !selectedSkillId}>{running ? "Running..." : t(language, "run")}</button>
+            <button type="submit" className="primary" disabled={running || !selectedSkillId}>{running ? t(language, "starting") : t(language, "run")}</button>
             <button type="button" onClick={resetForm}>{t(language, "reset")}</button>
             {selectedSkillId === "gpt-image-prompt-engineer" ? (
               <button type="button" onClick={thaiCatsSample}>{t(language, "sample")}</button>
@@ -507,7 +606,7 @@ export function RunSkillPage({
           </div>
           {runtimeStatus ? <p className="runtime-status">{runtimeStatus}</p> : null}
         </form>
-        <OutputTabs language={language} result={result} placeholder="Choose a skill, fill required fields, then run." />
+        <OutputTabs language={language} result={result} placeholder={t(language, "chooseSkillPlaceholder")} />
       </div>
     </section>
   );

@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createAppConfigStore } from "../src/app-config-store.js";
 import { createUsageStore } from "../src/usage-store.js";
-import { configureAppConfigStoreForTests, configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, hasConfigAccess, recordSuccessfulLlmUsage, requestHandler, resolveStaticRoot } from "../server.js";
+import { checkAndRepairProductStoryboardPrompt, configureAppConfigStoreForTests, configureUsageStoreForTests, enrichKpopChoreographyParams, enrichReferenceLockedCharacterParams, hasConfigAccess, recordSuccessfulLlmUsage, requestHandler, resolveStaticRoot } from "../server.js";
 
 function listenWithHandler() {
   const server = createServer(requestHandler);
@@ -595,3 +595,303 @@ test("enrichKpopChoreographyParams builds a reference-anchored choreography brie
   assert.match(params.choreography_sequence_brief, /K-pop dance-sequence instruction sheet/);
   assert.match(params.choreography_sequence_brief, /@img1/);
 });
+
+test("product storyboard prompt check repairs missing multi-frame safeguards", () => {
+  const result = checkAndRepairProductStoryboardPrompt("Create a six panel storyboard for this fan in a warm living room.", {
+    generation_mode: "multi_frame_storyboard",
+    reference_character_images: [{ type: "image" }],
+    reference_environment_images: [{ type: "image" }]
+  });
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.ok(result.qualityCheck.fixed.includes("product_lock"));
+  assert.ok(result.qualityCheck.fixed.includes("multi_frame_image_only"));
+  assert.ok(result.qualityCheck.fixed.includes("hand_anatomy_guard"));
+  assert.match(result.prompt, /Product lock:/);
+  assert.match(result.prompt, /no frame numbers, no captions, no text boxes/i);
+  assert.match(result.prompt, /Preserve real product packaging text, logos, and brand markings/i);
+  assert.match(result.prompt, /Hand anatomy and product-grip guard:/);
+  assert.match(result.prompt, /no fused fingers, no extra fingers, no duplicated hands, no reversed palms/i);
+  assert.match(result.prompt, /Character lock:/);
+  assert.match(result.prompt, /Environment lock:/);
+});
+
+test("product storyboard prompt check passes complete multi-frame prompt", () => {
+  const prompt = [
+    "Create a complete image-generation prompt for a clean image-only storyboard/contact sheet.",
+    "Product lock: preserve the exact product silhouette, proportions, geometry, material finish, color, logo/brand markings, button/control layout, and all key industrial-design details.",
+    "Product variant consistency: choose one clear hero variant and keep the same formula, shade, packaging color, container or case shape, cap or lid, palette pan layout when present, label layout, logo placement, and packaging details consistent across every frame.",
+    "Character lock: preserve the same identity, face structure, hairstyle, wardrobe, body proportions, expression style, and styling continuity across every frame.",
+    "Environment lock: preserve the referenced location, background layout, lighting direction, color palette, mood, furniture/props relationship, and spatial continuity across the storyboard.",
+    "Product usage intelligence: infer the real-world use method from the product category, include opening or handling the product, applying or using it correctly, and showing a believable result moment.",
+    "Hand anatomy guard: hands must be anatomically plausible with natural left/right orientation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no reversed palms, realistic wrist rotation, and product grip held like a pen or handle when appropriate.",
+    "Negative constraints: no watermark, no extra logos, no wrong brand text, no product redesign, no distorted geometry, no warped buttons, no duplicated product.",
+    "Multi-frame storyboard visual rule: render visual panels only; no frame numbers, no captions, no text boxes, no lower-third description bars, no subtitles, no overlay labels, no storyboard layout typography, no visible frame descriptions, and preserve product packaging text, logos, and brand markings.",
+    "borderless contiguous panels grid with no white divider lines."
+  ].join(" ");
+  const result = checkAndRepairProductStoryboardPrompt(prompt, {
+    generation_mode: "multi_frame_storyboard",
+    reference_character_images: [{ type: "image" }],
+    reference_environment_images: [{ type: "image" }]
+  });
+
+  assert.equal(result.qualityCheck.passed, true);
+  assert.deepEqual(result.qualityCheck.fixed, []);
+  assert.equal(result.prompt, prompt);
+});
+
+test("product storyboard prompt check repairs missing hand anatomy safeguards", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    [
+      "Create a complete image-only multi-panel cosmetic storyboard for lipstick and micellar cleansing water.",
+      "Product lock: preserve the exact product shape, logo, packaging, material, proportions, and design.",
+      "Product usage intelligence: infer real-world usage with opening, dispensing, applying, cotton pad wiping, and result frames.",
+      "Lip product usage: show cap/applicator opened, product applied to the lips with the bullet or wand, close-up lip detail, and color payoff.",
+      "Micellar cleansing water usage: show flip cap opened, liquid poured onto a cotton pad, gently wiping makeup from the face, and fresh clean-skin result.",
+      "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+      "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text.",
+      "borderless contiguous panels grid with no white divider lines."
+    ].join(" "),
+    {
+      generation_mode: "multi_frame_storyboard",
+      product_type: "lipstick and micellar cleansing water"
+    }
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.deepEqual(result.qualityCheck.fixed, ["hand_anatomy_guard"]);
+  assert.match(result.prompt, /Hand anatomy and product-grip guard:/);
+  assert.match(result.prompt, /Prefer one clearly visible active hand per close-up/i);
+});
+
+test("product storyboard prompt check repairs missing multi-variant product consistency", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    [
+      "Create a complete image-only multi-panel cosmetic storyboard for Glad2Glow micellar water.",
+      "Product lock: preserve the exact product shape, logo, packaging, material, proportions, and design.",
+      "Product usage intelligence: infer real-world usage with opening, pouring onto cotton pad, wiping makeup, and clean-skin result frames.",
+      "Micellar cleansing water usage: show flip cap opened, liquid poured onto a cotton pad, gently wiping makeup from the face, and fresh clean-skin result.",
+      "Hand anatomy guard: hands must be anatomically plausible with natural left/right orientation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no reversed palms, realistic wrist rotation, and product grip held naturally.",
+      "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+      "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text.",
+      "borderless contiguous panels grid with no white divider lines."
+    ].join(" "),
+    {
+      generation_mode: "multi_frame_storyboard",
+      reference_product_images: [{ type: "image" }, { type: "image" }, { type: "image" }]
+    }
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.deepEqual(result.qualityCheck.fixed, ["product_variant_consistency"]);
+  assert.match(result.prompt, /Product variant consistency:/);
+  assert.match(result.prompt, /palette pan layout/i);
+});
+
+test("product storyboard prompt check detects cosmetic category inferred in prompt text", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    [
+      "Create a 6-frame image-only storyboard for an eyebrow mascara product in a luxury vanity room.",
+      "Product lock: preserve the exact product shape, logo, packaging, material, proportions, and design.",
+      "Product usage intelligence: infer real-world usage with opening, handling, application, and result frames.",
+      "Hand anatomy guard: hands must be anatomically plausible with natural left/right orientation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no reversed palms, realistic wrist rotation, and product grip held by the handle.",
+      "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+      "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text."
+    ].join(" "),
+    {
+      generation_mode: "multi_frame_storyboard"
+    }
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.ok(result.qualityCheck.fixed.includes("eyebrow_usage"));
+  assert.ok(!result.qualityCheck.checks.some((check) => check.id === "mascara_usage"));
+  assert.match(result.prompt, /Eyebrow product usage:/);
+});
+
+test("product storyboard prompt check separates toner from serum usage", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    [
+      "Create a 6-frame image-only storyboard for Glad2Glow 7% glycolic acid essence toner in a luxury bathroom.",
+      "Product lock: preserve the exact product shape, logo, packaging, material, proportions, and design.",
+      "Product variant consistency: choose one hero variant and keep the same formula, packaging color, container or case shape, cap or lid, palette pan layout when present, and label layout consistent across every frame.",
+      "Product usage intelligence: infer real-world usage with opening, small amount, face application, and skin result frames.",
+      "Hand anatomy guard: hands must be anatomically plausible with natural left/right orientation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no reversed palms, realistic wrist rotation, and product grip held naturally.",
+      "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+      "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text."
+    ].join(" "),
+    {
+      generation_mode: "multi_frame_storyboard",
+      reference_product_images: [{ type: "image" }, { type: "image" }]
+    }
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.ok(result.qualityCheck.fixed.includes("toner_usage"));
+  assert.ok(result.qualityCheck.fixed.includes("acid_toner_care"));
+  assert.ok(!result.qualityCheck.checks.some((check) => check.id === "serum_usage"));
+  assert.match(result.prompt, /Toner\/exfoliating acid toner usage:/);
+  assert.match(result.prompt, /Acid toner care:/);
+});
+
+test("product storyboard prompt check repairs missing eyeshadow palette usage", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    [
+      "Create a 6-frame image-only storyboard for a pink eyeshadow palette in a luxury bathroom.",
+      "Product lock: preserve the exact palette shape, translucent pink packaging, pan layout, heart-shaped pan, logo markings, powder colors, material, proportions, and design.",
+      "Product variant consistency: choose one hero palette and keep the same color story, pan layout, packaging color, and label layout consistent across every frame.",
+      "Product usage intelligence: infer real-world usage with opening, handling, application, and result frames.",
+      "Hand anatomy guard: hands must be anatomically plausible with natural left/right orientation, correct thumb placement, five fingers only, no fused fingers, no extra fingers, no reversed palms, realistic wrist rotation, and product grip held naturally.",
+      "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+      "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text."
+    ].join(" "),
+    {
+      generation_mode: "multi_frame_storyboard",
+      reference_product_images: [{ type: "image" }, { type: "image" }]
+    }
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.ok(result.qualityCheck.fixed.includes("eyeshadow_palette_usage"));
+  assert.match(result.prompt, /Eyeshadow palette usage:/);
+});
+
+test("product storyboard prompt check repairs cosmetic category usage gaps", () => {
+  const cases = [
+    {
+      product_type: "eyeliner",
+      expected: "eyeliner_usage",
+      repair: /Eyeliner usage:/
+    },
+    {
+      product_type: "lipstick",
+      expected: "lip_usage",
+      repair: /Lip product usage:/
+    },
+    {
+      product_type: "compact powder",
+      expected: "compact_powder_usage",
+      repair: /Compact powder usage:/
+    },
+    {
+      product_type: "eyebrow pencil",
+      expected: "eyebrow_usage",
+      repair: /Eyebrow product usage:/
+    },
+    {
+      product_type: "eyebrow mascara",
+      expected: "eyebrow_usage",
+      repair: /Eyebrow product usage:/
+    },
+    {
+      product_type: "eyeshadow palette",
+      expected: "eyeshadow_palette_usage",
+      repair: /Eyeshadow palette usage:/
+    },
+    {
+      product_type: "mascara",
+      expected: "mascara_usage",
+      repair: /Eyelash mascara usage:/
+    },
+    {
+      product_type: "moisturizer cream",
+      expected: "cream_usage",
+      repair: /Cream\/moisturizer usage:/
+    },
+    {
+      product_type: "serum",
+      expected: "serum_usage",
+      repair: /Serum usage:/
+    },
+    {
+      product_type: "glycolic acid essence toner",
+      expected: "acid_toner_care",
+      repair: /Acid toner care:/
+    },
+    {
+      product_type: "micellar cleansing water",
+      expected: "micellar_usage",
+      repair: /Micellar cleansing water usage:/
+    }
+  ];
+
+  for (const item of cases) {
+    const result = checkAndRepairProductStoryboardPrompt(
+      [
+        `Create a 6-frame image-only storyboard for ${item.product_type}.`,
+        "Product lock: preserve the exact product shape, logo, packaging, material, proportions, and design.",
+        "Product variant consistency: choose one hero variant and keep the same formula, packaging color, container or case shape, cap or lid, palette pan layout when present, and label layout consistent across every frame.",
+        "Negative constraints: no watermark, no extra logos, no product redesign, no captions, no subtitles, no overlay labels, no visible text overlays.",
+        "Multi-frame storyboard visual rule: image-only panels with no frame numbers, no captions, no text boxes, no overlay labels, no visible frame descriptions, and preserve product packaging text."
+      ].join(" "),
+      {
+        generation_mode: "multi_frame_storyboard",
+        product_type: item.product_type
+      }
+    );
+
+    assert.ok(result.qualityCheck.fixed.includes(item.expected), item.product_type);
+    assert.match(result.prompt, item.repair, item.product_type);
+  }
+});
+
+test("product storyboard prompt check enforces multi-frame checks when mode is auto", () => {
+  const result = checkAndRepairProductStoryboardPrompt(
+    "Create a 3x3 storyboard for a white dresser.",
+    {
+      generation_mode: "auto"
+    },
+    "furniture-reference-storyboard"
+  );
+
+  assert.equal(result.qualityCheck.passed, false);
+  assert.ok(result.qualityCheck.fixed.includes("borderless_layout"));
+  assert.match(result.prompt, /Borderless contiguous layout rule:/);
+});
+
+test("product storyboard prompt check strict borderless layout requires both positive and negative constraints", () => {
+  // Only positive borderless term - should fail because it lacks negative constraints!
+  const resultPositiveOnly = checkAndRepairProductStoryboardPrompt(
+    "Create a borderless grid storyboard for cosmetic cream.",
+    {
+      generation_mode: "multi_frame_storyboard"
+    }
+  );
+  assert.equal(resultPositiveOnly.qualityCheck.passed, false);
+  assert.ok(resultPositiveOnly.qualityCheck.fixed.includes("borderless_layout"));
+
+  // Both positive and negative constraints - should pass borderless check!
+  const resultBoth = checkAndRepairProductStoryboardPrompt(
+    "Create a borderless grid storyboard for cosmetic cream with zero white divider lines.",
+    {
+      generation_mode: "multi_frame_storyboard"
+    }
+  );
+  assert.ok(!resultBoth.qualityCheck.fixed.includes("borderless_layout"));
+});
+
+test("product storyboard prompt check cabinet and drawer fidelity rule and repair", () => {
+  // Missing locks and drawer stance - should fail cabinet_drawer_fidelity
+  const resultMissing = checkAndRepairProductStoryboardPrompt(
+    "Create a 3x3 storyboard for a white drawer cabinet unit.",
+    {
+      generation_mode: "auto"
+    },
+    "furniture-reference-storyboard"
+  );
+  assert.equal(resultMissing.qualityCheck.passed, false);
+  assert.ok(resultMissing.qualityCheck.fixed.includes("cabinet_drawer_fidelity"));
+  assert.match(resultMissing.prompt, /Cabinet & drawer fidelity rule:/);
+
+  // Having both locks and stance - should pass cabinet_drawer_fidelity
+  const resultComplete = checkAndRepairProductStoryboardPrompt(
+    "Create a 3x3 storyboard for a white drawer cabinet unit. product lock: exact drawer count, no legs, legless flat base.",
+    {
+      generation_mode: "auto"
+    },
+    "furniture-reference-storyboard"
+  );
+  assert.ok(!resultComplete.qualityCheck.fixed.includes("cabinet_drawer_fidelity"));
+});
+
+

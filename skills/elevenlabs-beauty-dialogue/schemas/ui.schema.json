@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/elevenlabs-beauty-dialogue-skill/schemas/ui.schema.json",
+  "title": "UI Schema for Beauty Dialogue Skill v18",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "product_details": {
+      "ui:widget": "textarea",
+      "ui:placeholder": "Paste product details here...",
+      "ui:options": {
+        "rows": 12
+      }
+    },
+    "product_images": {
+      "ui:widget": "file",
+      "ui:title": "Upload product images (optional, max 5)",
+      "ui:help": "Drag images here or click upload. Optional. Use packaging, front label, back label, ingredients, usage, texture, or swatch photos. Max 5 images. URLs are not needed.",
+      "ui:options": {
+        "accept": "image/*",
+        "multiple": true,
+        "maxFiles": 5,
+        "dragAndDrop": true,
+        "buttonLabel": "Upload product images"
+      }
+    },
+    "image_analysis_mode": {
+      "ui:widget": "select",
+      "ui:help": "Default: analyze uploaded images to extract visible details and detect conflicts/risky claims. Turn off if you want text-only generation."
+    },
+    "image_evidence_policy": {
+      "ui:widget": "select",
+      "ui:help": "Controls how cautiously image details are used. Images support the text; they do not create new claims."
+    },
+    "output_language": {
+      "ui:widget": "select",
+      "ui:help": "Default is English. Thai and other popular languages are supported."
+    },
+    "speech_style": {
+      "ui:widget": "select",
+      "ui:help": "Choose the speaking tone: pro, friendly, humorous, sarcastic, complaining, or roast-but-praise."
+    },
+    "persuasion_style": {
+      "ui:widget": "select",
+      "ui:help": "Choose how the dialogue persuades the listener."
+    },
+    "target_duration_seconds": {
+      "ui:widget": "range",
+      "ui:options": {
+        "min": 15,
+        "max": 55,
+        "step": 5
+      }
+    },
+    "speaker_count": {
+      "ui:widget": "radio"
+    },
+    "enable_audio_tags": {
+      "ui:widget": "checkbox"
+    },
+    "strict_claim_guard": {
+      "ui:widget": "checkbox"
+    },
+    "avoid_brand_endorsement": {
+      "ui:widget": "checkbox"
+    },
+    "evergreen_mode": {
+      "ui:widget": "checkbox"
+    },
+    "medical_reference_policy": {
+      "ui:widget": "select"
+    },
+    "professional_warning_enabled": {
+      "ui:widget": "checkbox"
+    },
+    "format": {
+      "ui:widget": "hidden"
+    },
+    "regulated_product_mode": {
+      "ui:widget": "select",
+      "ui:help": "Use cautious mode automatically for dental, intimate-care, hygiene, and medical-adjacent products."
+    },
+    "no_meta_compliance_dialogue": {
+      "ui:widget": "checkbox",
+      "ui:help": "Keep final dialogue ad-ready. Do not speak compliance notes or banned-claim explanations."
+    },
+    "multi_sku_handling": {
+      "ui:widget": "select",
+      "ui:help": "For mixed listings, avoid combining unrelated product claims into one super-product."
+    },
+    "fragrance_brand_guard": {
+      "ui:widget": "checkbox",
+      "ui:help": "Remove famous brand names and unauthorized scent-dupe comparisons from fragrance scripts."
+    },
+    "near_eye_product_caution": {
+      "ui:widget": "checkbox",
+      "ui:help": "Add gentle-use cautions for products used around the eye area."
+    },
+    "self_heating_near_eye_caution": {
+      "ui:widget": "checkbox",
+      "ui:help": "Add safe-use cautions for steam/self-heating eye masks."
+    },
+    "intimate_care_external_use_caution": {
+      "ui:widget": "checkbox",
+      "ui:help": "Keep intimate cleanser copy external-use and non-medical."
+    },
+    "heat_appliance_safety_caution": {
+      "ui:widget": "checkbox",
+      "ui:help": "Add safety lines for heated hair tools."
+    },
+    "dermatology_endorsement_guard": {
+      "ui:widget": "checkbox",
+      "ui:help": "Omit unverified dermatologist/doctor endorsements as sales proof."
+    },
+    "simple_accessory_mode": {
+      "ui:widget": "checkbox",
+      "ui:help": "Use stable feature-led scripts for mirrors, hair patches, and simple tools."
+    },
+    "medical_device_cautious_mode": {
+      "ui:widget": "checkbox",
+      "ui:title": "Medical-device cautious mode"
+    },
+    "supplement_warning_enabled": {
+      "ui:widget": "checkbox",
+      "ui:title": "Food supplement warning"
+    },
+    "scalp_condition_guard": {
+      "ui:widget": "checkbox",
+      "ui:title": "Scalp condition claim guard"
+    },
+    "textile_uv_guard": {
+      "ui:widget": "checkbox",
+      "ui:title": "UV apparel/textile guard"
+    },
+    "clinical_number_simplifier": {
+      "ui:widget": "checkbox",
+      "ui:title": "Clinical number simplifier"
+    }
+  }
+}

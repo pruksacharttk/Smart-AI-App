@@ -96,6 +96,7 @@ export function App() {
           selectedSkillId={selectedSkillId}
           config={config}
           onSkillChange={changeSkill}
+          onLanguageChange={changeLanguage}
           onRunComplete={() => setUsageDashboardStale(true)}
           setStatus={setStatus}
         />

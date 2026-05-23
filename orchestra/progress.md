@@ -1,22 +1,70 @@
-# Orchestra Progress
+# Progress
 
-- Session started: 2026-05-05
-- Platform: standard
-- Dirty state at start: three untracked auto cinematic skill directories.
-- Wave 1 complete: The three auto cinematic skill packages have required schema/docs files and valid input/output JSON shapes.
-- Wave 2 complete: Root cause found in UI contract mismatch. The new skills use RJSF/JSON-Schema UI metadata, while the app expected `uiSchema.sections[].fields[]`.
-- Wave 3 complete: `server.js` now normalizes RJSF/JSON-Schema UI metadata into app sections and uses `skill.json.display_name` for skill titles.
-- Wave 4 complete: API, typecheck, unit tests, production build, and Playwright smoke check passed.
-- Follow-up completion: Added local Python runtimes for all three auto cinematic skills, added SKILL.md frontmatter metadata, and improved JSON textarea handling in the React form.
-- Follow-up completion: Replaced JSON textarea UX with schema-driven object fieldsets, repeatable array item editors, checkbox groups for multi-choice fields, and list controls. Added auto choices/defaults and Thai help/example metadata for the three auto cinematic skills.
-- Follow-up completion: Converted the three auto cinematic skills to quick-start UI. Each now shows only the reference image field plus one optional guidance field, while backend defaults fill hidden fields before validation and execution.
-- Follow-up correction: Rebalanced the three auto cinematic UIs to show editable basic controls with ready-to-run defaults, plus collapsed advanced sections at the bottom.
-- Bug fix: Resolved React file input async event bug that caused `Cannot set properties of null (setting 'value')` after attaching an image.
-- Bug fix: Auto cinematic skills now prefer their local Python runtimes even when LLM fallback config exists, preventing configured LLM failures from breaking local skill execution.
-- Prompt fix: Auto Cinematic Image output now emits mode-specific final generation prompts instead of metadata/report-style prompt packages, including a concrete 3x3 angle grid prompt for `angle_grid_3x3`.
-- Prompt fix: Converted the primary `output.prompt` for all three auto cinematic local runtimes to normal prose prompts that reference uploaded images as `@image1`, `@image2`, etc. Removed report-style headings from the Prompt tab output while keeping structured details available in JSON output.
-- Verification: Direct runtime prose checks passed for all three auto cinematic skills. `npm run typecheck`, `npm test`, and `npm run build` passed.
-- Verification: `/api/run-skill` smoke test for `auto_cinematic_image` passed through `local-python`; prompt output contains `@image1` and no report-style headings.
-- Storyboard Master correction: Changed the primary Prompt tab output to copy-friendly per-shot blocks, with `SHOT NN`, `Prompt สร้างภาพ:`, and `Prompt สร้างวีดีโอ:` for each shot. Runtime and `/api/run-skill` checks confirmed matching image/video block counts and `@image1` references.
-- Storyboard Master correction: Rebuilt the local runtime as a duration-based storyboard planner. It now splits the short story idea into source story events, calculates shot count from `target_duration_minutes` and `average_shot_seconds`, and generates one copy-ready image prompt plus one copy-ready video prompt per shot instead of repeating the whole synopsis in every shot. Added visible basic inputs for target minutes, average shot seconds, and auto shot count.
-- Verification: `/api/run-skill` with only a reference image now succeeds for Storyboard Master with default 1 minute / 8 seconds per shot, producing 8 image prompt blocks and 8 video prompt blocks. `npm run typecheck`, `npm test`, and `npm run build` passed.
+- 2026-05-10T11:01:36+07:00 - Fresh review session started after archiving stale orchestra state.
+- 2026-05-10T11:01:36+07:00 - UI review completed for Dashboard, Run Skill, and Config pages.
+- 2026-05-10T11:26:00+07:00 - Implemented localization fixes for dashboard, config, run skill, and image upload UI.
+- 2026-05-10T11:26:00+07:00 - Verified with browser inspection, `npm run typecheck`, and `npm run build`.
+- 2026-05-14T13:45:43+07:00 - Updated product_reference_storyboard schemas and schema-driven Run Skill UI so reference image inputs render as drag/drop upload controls and choice-capable fields render as selects with Auto defaults.
+- 2026-05-14T13:45:43+07:00 - Verified JSON parsing, API schema normalization, `npm run typecheck`, `npm run build`, and Playwright DOM inspection for product_reference_storyboard.
+- 2026-05-14T13:57:30+07:00 - Added browser-side reference image optimization before upload payload creation: max long edge 1024px, JPEG quality 0.72, with original/optimized metadata.
+- 2026-05-14T13:57:30+07:00 - Updated server multimodal payload construction to strip data URLs from JSON text and send images as `image_url` attachments with `detail: low`.
+- 2026-05-14T13:57:30+07:00 - Verified `npm run typecheck`, `npm run build`, `node --check server.js`, and Playwright upload test. Sample screenshot compressed from 125845 bytes to about 56766 bytes.
+- 2026-05-14T14:33:48+07:00 - Added readable option labels for product_reference_storyboard enum fields and server support for enum label metadata.
+- 2026-05-14T14:33:48+07:00 - Added product_reference_storyboard prompt rules so multi-frame storyboard prompts request clean image-only panels with no captions, numbers, labels, text boxes, or frame descriptions rendered in the image.
+- 2026-05-14T14:33:48+07:00 - Verified JSON parsing, `node --check server.js`, `npm run typecheck`, `npm run build`, API schema labels, and Playwright option text.
+- 2026-05-14T14:40:45+07:00 - Added product_reference_storyboard prompt completeness check and auto-repair before final LLM output is returned.
+- 2026-05-14T14:40:45+07:00 - Completeness check now validates usable prompt length, product lock, negative constraints, optional character/environment continuity, and multi-frame image-only/no-visible-text safeguards.
+- 2026-05-14T14:40:45+07:00 - Added unit coverage for auto-repair and pass-through complete prompt cases. Verified `node --check server.js`, `npm run typecheck`, `npm test`, and `npm run build`.
+- 2026-05-14T15:36:00+07:00 - Expanded product_reference_storyboard prompt intelligence for cosmetic categories so multi-frame prompts infer realistic product usage beats for eyeliner, lip products, compact powder/cushion, eyebrow products, mascara, creams, serums, and micellar/makeup remover.
+- 2026-05-14T15:36:00+07:00 - Tightened category usage validation so prompts must include actual usage/application actions rather than merely mentioning the product category name.
+- 2026-05-14T15:36:00+07:00 - Verified `node --check server.js`, `npm run typecheck`, focused prompt-check tests, full `npm test`, and `npm run build`.
+- 2026-05-14T16:02:00+07:00 - Added hand anatomy and product-grip safeguards to product_reference_storyboard system instructions, skill instructions, and prompt completeness auto-repair.
+- 2026-05-14T16:02:00+07:00 - Added regression coverage for missing hand anatomy safeguards and verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T19:50:00+07:00 - Tested product_reference_storyboard with the provided beach character, eyebrow mascara product, and luxury walk-in closet environment. The LLM correctly inferred eyebrow mascara and produced brow-use storyboard beats.
+- 2026-05-14T19:50:00+07:00 - Fixed a discovered classification edge case so eyebrow mascara / brow mascara / มาสคาร่าปัดคิ้ว activates eyebrow usage checks without also activating eyelash mascara usage checks.
+- 2026-05-14T19:50:00+07:00 - Updated category checks to inspect the LLM-generated prompt text as well as typed input, so image-inferred product categories can be validated even when the user does not type a product type.
+- 2026-05-14T19:50:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_brow_mascara_test_v3.json` and `_prompt.txt`. Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T20:04:00+07:00 - Tested a fan/appliance reference set, then kept product_reference_storyboard scoped to cosmetics per user direction by removing the temporary fan/appliance guard additions.
+- 2026-05-14T20:04:00+07:00 - Verified cosmetic-only prompt checks with `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T20:18:00+07:00 - Tested Swiss Lab Nature Power Cream references with the corrected Nida character image and luxury closet environment. The skill inferred face cream usage and produced correct opening, fingertip pickup, dotting/spreading, and dewy-skin result beats.
+- 2026-05-14T20:18:00+07:00 - Clarified multi-frame no-text rules so storyboard captions/overlay labels are forbidden while real product packaging text, logos, and brand markings remain preserved.
+- 2026-05-14T20:18:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_swiss_lab_cream_test_v2.json` and `_prompt.txt`. Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T20:31:00+07:00 - Tested Glad2Glow Micellar Water references with three product variants, Nida character, and luxury closet environment. The skill inferred micellar cleansing water usage and produced correct flip-cap, cotton-pad, dispense, wipe, and clean hydrated result beats.
+- 2026-05-14T20:31:00+07:00 - Added product variant consistency guard for multi-product-reference cosmetic tests so different formulas/colors are not blended into a single inconsistent product.
+- 2026-05-14T20:31:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_glad2glow_micellar_test_v2.json` and `_prompt.txt`. Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T20:45:00+07:00 - Tested Glad2Glow 7% Glycolic Acid Essence Toner references with bathroom environment and character reference. The skill inferred toner usage and produced cap/nozzle, cotton pad, dispense, apply, and skin glow beats.
+- 2026-05-14T20:45:00+07:00 - Added toner/exfoliating acid toner usage guard and acid toner care guard so glycolic/salicylic/AHA/BHA toners do not fall through to serum usage and include realistic avoidance/care constraints.
+- 2026-05-14T20:45:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_glad2glow_glycolic_toner_test_v3.json` and `_prompt.txt`. Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T21:37:00+07:00 - Tested the latest eyeshadow palette reference set with the product_reference_storyboard skill. The LLM inferred an eyeshadow palette and produced correct open-palette, shade selection, brush pickup, eyelid application, finished eye look, and beauty result beats.
+- 2026-05-14T21:37:00+07:00 - Added an eyeshadow palette usage guard and generalized the multi-variant product consistency guard so palette layouts, compact/case shapes, lids, shade text, and packaging colors are protected, not only bottle/cap details.
+- 2026-05-14T21:37:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_eyeshadow_palette_test_v3.json` and `_prompt.txt`. Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, and `npm run build`.
+- 2026-05-14T22:02:00+07:00 - Tested the 4U2 You Forever shade 12 lipstick reference set with product_reference_storyboard. The skill inferred lipstick use and produced product reveal, twist-up bullet, hand swatch, lip application, gradient lip result, and lifestyle beauty result beats.
+- 2026-05-14T22:02:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_4u2_lipstick_test_v1.json` and `_prompt.txt`.
+- 2026-05-14T22:16:00+07:00 - Tested the Papa Feel Ultra 5A Retinol Anti-Aging Moisturizer reference set with product_reference_storyboard. The skill inferred face cream use and produced product reveal, unscrew cap, fingertip scoop, face dotting, upward spreading while avoiding the eye area, and hydrated skin result beats.
+- 2026-05-14T22:16:00+07:00 - Saved test outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_papafeel_retinol_cream_test_v1.json` and `_prompt.txt`.
+- 2026-05-14T22:29:00+07:00 - Re-tested the Papa Feel retinol moisturizer set exactly as a 6-frame `multi_frame_storyboard` flow before image generation. The skill produced realistic cream workflow beats and auto-repaired missing hand anatomy/environment safeguards.
+- 2026-05-14T22:29:00+07:00 - Saved retest outputs to `D:/AI Test/HappyHorse/test3/product_reference_storyboard_papafeel_retinol_cream_test_v2.json` and `_prompt.txt`.
+- 2026-05-14T23:48:00+07:00 - Renamed the canonical skill folder from `skills/product_reference_storyboard` to `skills/cosmatic_reference_storyboard` and updated server-side skill id checks to use `cosmatic_reference_storyboard`.
+- 2026-05-14T23:48:00+07:00 - Renamed the local duplicate folder `skills/product_reference_storyboard skill` to `skills/cosmatic_reference_storyboard skill` so no folder with the old product_reference_storyboard name remains in `skills`.
+- 2026-05-14T23:48:00+07:00 - Verified `node --check server.js`, focused prompt-check tests, `npm run typecheck`, full `npm test`, `npm run build`, and `/api/skills` reporting `cosmatic_reference_storyboard` with no `product_reference_storyboard` canonical id.
+- Status: COMPLETE
+- Remaining waves: none
+
+- 2026-05-20T07:11:15+07:00 - Upgraded `skills/furniture-reference-storyboard/skill.md` to fully support all 12+ categories in the furniture taxonomy with custom 3x3 customer journey maps.
+- 2026-05-20T07:11:15+07:00 - Implemented "Video-Friendly Storyboard Continuity & Framerate Flow Rule" inside `skill.md` to guarantee static background locks, lighting consistency, smooth camera flight paths, and zero clothing/hair drift for animation/video readiness.
+- 2026-05-20T07:11:15+07:00 - Implemented "Strict Product Detail Visual Persistence & Component Lock-In Rule" inside `skill.md` to lock down joinery, wood grain flow, micro-parts, texture density, and motif consistency.
+- 2026-05-20T07:11:15+07:00 - Verified structural integrity using `node dev/check-furniture.js` returning `isValid: true` and 0 errors.
+- 2026-05-20T07:11:15+07:00 - Verified E2E mock prompt compilation showing correct journey mappings, video-ready continuity anchors, and micro-component locks.
+- 2026-05-20T08:15:00+07:00 - Fully upgraded `skills/cosmatic-reference-storyboard/skill.md` to establish visual excellence parity with the furniture skill.
+- 2026-05-20T08:15:00+07:00 - Configured Zero Character & Wardrobe Drift rules in the cosmetic skill, locking face, hairstyle, hair color/length, and clothes perfectly across panels (allowing only logical spa headband shifts for skincare application).
+- 2026-05-20T08:15:00+07:00 - Mandated Borderless & Contiguous Grid Layout with 0 margin, divider line, or gutter, assuring standard 9:16 vertical storyboard canvas sizes are mathematically divisible for automatic video cropping.
+- 2026-05-20T08:15:00+08:00 - Added the Global Anti-Hallucination & Packaging Material Fidelity Rule to ban imaginary hardware, steel rails, wooden lids, or unreferenced pump/spray dispensers, ensuring internal open finishes match external primary packaging.
+- 2026-05-20T08:15:00+07:00 - Added Video-Friendly Storyboard Continuity featuring room environment anchors (vanity dressing tables, mirror frames, props), static lighting/specular shine directions, and camera pan vectors.
+- 2026-05-20T08:15:00+07:00 - Ran E2E validation scripts `check-cosmatic.js` and `mock-run-cosmatic.js` to ensure clean compiling, schema conformity, and correct 3x3 journey mapping outputs.
+- 2026-05-20T08:42:00+07:00 - Resolved the furniture skill's white-border issue by enabling prompt completeness validation and auto-repair checking for `furniture-reference-storyboard` in `server.js`.
+- 2026-05-20T08:42:00+07:00 - Introduced `borderless_layout` rule to completeness checker, validating that the generated storyboard prompt explicitly requests borderless grids with zero white lines, borders, or gutters, and auto-repairing any prompt missing this rule.
+- 2026-05-20T08:42:00+07:00 - Verified all 76 unit tests pass, typechecks pass, and production frontend bundles compile cleanly.
+- 2026-05-20T08:52:00+07:00 - Fixed a critical edge case where the default 'auto' generation mode bypassed storyboard validations and borderless grid repairs. Dynamically inferred multi-frame layout from prompt text when generation_mode is 'auto' or empty, ensuring borderless_layout is actively validated and repaired. Added focused unit test and verified 100% of all 77 tests pass.
+- 2026-05-20T08:58:00+07:00 - Restructured the borderless check in server.js, resolved layout bypasses, implemented cabinet_drawer_fidelity rule in server.js, updated cabinet/dresser visual lock guidelines in skill.md to prevent wooden leg hallucinations and protect recessed handles, added 2 new unit tests, and verified all 79 tests pass with 100% success.
+
+
